@@ -100,7 +100,7 @@ function ProductImg({ brand, item, size = 48 }) {
     else setStep(3);
   };
   if (!item || step === 3) return fallbackDiv;
-  return <img src={src} alt={item?.brand + " " + item?.name} onError={onError} style={{ width: size, height: size, borderRadius: 10, objectFit: "cover", border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" }} />;
+  return <img src={src} alt={item?.brand + " " + item?.name} onError={onError} loading="lazy" decoding="async" style={{ width: size, height: size, borderRadius: 10, objectFit: "cover", border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" }} />;
 }
 
 // ─── AUTH MODAL ───
@@ -213,10 +213,11 @@ function BannerCarousel({ banners, onNav }) {
   return <section style={{ maxWidth: 860, margin: "0 auto", padding: "0 20px 24px", position: "relative" }}>
     <div key={idx} onClick={() => onNav("cat", b.catId)} style={{
       animation: "slideFadeIn 0.5s ease-out",
-      background: b.image ? `url(${b.image}) center center / cover no-repeat` : b.bg,
-      borderRadius: 16, padding: b.image ? 0 : "36px 56px", cursor: "pointer", minHeight: b.image ? 320 : 200, display: "flex", alignItems: "center", gap: 28, position: "relative", overflow: "hidden", border: "1px solid rgba(0,0,0,.06)", boxShadow: "0 4px 24px rgba(0,0,0,.08)",       transition: "transform .25s ease, box-shadow .25s ease",
+      background: b.image ? undefined : b.bg,
+      borderRadius: 16, padding: b.image ? 0 : "36px 56px", cursor: "pointer", minHeight: b.image ? 320 : 200, display: "flex", alignItems: "center", gap: 28, position: "relative", overflow: "hidden", border: "1px solid rgba(0,0,0,.06)", boxShadow: "0 4px 24px rgba(0,0,0,.08)", transition: "transform .25s ease, box-shadow .25s ease",
     }}
       onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,.12)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,.08)"; }}>
+      {b.image && <img src={b.image} alt="" fetchPriority={idx === 0 ? "high" : "auto"} loading={idx === 0 ? "eager" : "lazy"} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }} />}
       {b.image && <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,.2) 50%, transparent 100%)", pointerEvents: "none", zIndex: 1 }} aria-hidden />}
       <div style={{ display: "flex", alignItems: "center", gap: 28, position: "relative", zIndex: 2, padding: b.image ? "36px 56px" : 0, flex: 1, minWidth: 0 }}>
         {!b.image && <div style={{ width: 100, height: 100, borderRadius: 24, background: (b.dark ? "#fff" : ACCENT) + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -241,9 +242,9 @@ function Hero({ onSearch, onNav }) {
   const sug = qNorm.length > 1 ? ITEMS.filter(i => `${i.brand} ${i.name} ${i.productType}`.toLowerCase().includes(qNorm)).slice(0, 6) : [];
   const exactMatch = qNorm.length > 0 ? ITEMS.find(i => `${i.brand} ${i.name}`.toLowerCase() === qNorm) : null;
   const banners = [
-    { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=860&q=80", title: "Les meilleurs prix pour votre smartphone", sub: "Comparez, réparez ou rachetez un smartphone reconditionné", catId: "smartphones", icon: "smartphone", dark: false },
-    { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=860&q=80", title: "Réparez votre console de jeux", sub: "Donnez une seconde vie à votre PS5", catId: "consoles", icon: "gamepad", dark: true },
-    { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=860&q=80", title: "Un problème dans votre cuisine ?", sub: "Réparez vos appareils à prix imbattables", catId: "cuisine", icon: "kitchen", dark: false },
+    { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=640&q=75", title: "Les meilleurs prix pour votre smartphone", sub: "Comparez, réparez ou rachetez un smartphone reconditionné", catId: "smartphones", icon: "smartphone", dark: false },
+    { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=640&q=75", title: "Réparez votre console de jeux", sub: "Donnez une seconde vie à votre PS5", catId: "consoles", icon: "gamepad", dark: true },
+    { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=640&q=75", title: "Un problème dans votre cuisine ?", sub: "Réparez vos appareils à prix imbattables", catId: "cuisine", icon: "kitchen", dark: false },
   ];
   return <><div style={{ background: `linear-gradient(180deg, ${W} 0%, #F0EDE6 50%, #E8E6E0 100%)`, paddingBottom: 0 }}>
     <section style={{ padding: "40px 20px 32px", textAlign: "center" }}>

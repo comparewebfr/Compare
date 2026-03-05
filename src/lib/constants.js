@@ -4,8 +4,7 @@ export const AMBER = "#F59E0B";
 export const W = "#F8F6F0";
 export const F = "'DM Sans', sans-serif";
 
-export const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
-@keyframes slideFadeIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+export const CSS = `@keyframes slideFadeIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
 @keyframes pageFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes contentSlideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes subtlePulse{0%,100%{opacity:1}50%{opacity:.92}}
