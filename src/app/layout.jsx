@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata = {
   title: "Compare. — Réparer, occasion ou neuf ?",
   description: "Comparez réparation, achat reconditionné et neuf pour faire le meilleur choix. Estimations de coût, verdict et alternatives.",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {

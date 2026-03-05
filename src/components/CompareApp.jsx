@@ -6,7 +6,7 @@ import Link from "next/link";
 import { PRODUCT_IMAGES } from "../data/product-images";
 import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, RET, TECH_CATS, WHEN_REPAIR_SPEC } from "../lib/data";
-import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRepairerMapsUrl, pathCategory, pathProduct, pathCompare, buildSeo, findProductByChip, findProductByPopular, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime } from "../lib/helpers";
+import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRepairerMapsUrl, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime } from "../lib/helpers";
 
 // ─── LOGO ───
 function Logo({ s = 32 }) {
@@ -300,7 +300,7 @@ function Hero({ onSearch, onNav }) {
 
 // ─── CATEGORY PAGE ───
 const BRAND_CATS = ["smartphones","tablettes","ordinateurs","tv","consoles","audio","photo","montres","velo"];
-function CategoryPage({ catId, onNav }) {
+function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
   const cat = CATS.find(c => c.id === catId);
   const items = ITEMS.filter(i => i.category === catId);
   const types = PTYPES[catId] || [];
@@ -309,7 +309,12 @@ function CategoryPage({ catId, onNav }) {
   const [sort, setSort] = useState("pop");
   const isBrandFirst = BRAND_CATS.includes(catId);
 
-  useEffect(() => { setSelType(null); setSelBrand(null); setSort("pop"); }, [catId]);
+  useEffect(() => {
+    setSelType(initialProductType || null);
+    const brand = initialBrandSlug ? items.find(i => slugify(i.brand) === initialBrandSlug)?.brand : null;
+    setSelBrand(brand || null);
+    setSort("pop");
+  }, [catId, initialProductType, initialBrandSlug]);
 
   // Compute brands with counts
   const brandsMap = {};
@@ -365,8 +370,8 @@ function CategoryPage({ catId, onNav }) {
         {types.length > 1 && <div style={{ marginBottom: isBrandFirst && brands.length > 1 ? 12 : 0 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".04em" }}>{isBrandFirst ? "Type de produit" : "Type d'appareil"}</div>
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-            <Pill active={!selType} onClick={() => setSelType(null)}>Tous</Pill>
-            {types.map(t => { const c = typesFiltered.filter(i => i.productType === t).length; return c > 0 && <Pill key={t} active={selType === t} onClick={() => setSelType(t)}>{t} ({c})</Pill>; })}
+            <Pill active={!selType} onClick={() => onNav("cat", catId)}>Tous</Pill>
+            {types.map(t => { const c = typesFiltered.filter(i => i.productType === t).length; return c > 0 && <Pill key={t} active={selType === t} onClick={() => onNav("cat-type", { catId, productType: t })}>{t} ({c})</Pill>; })}
           </div>
         </div>}
 
@@ -374,15 +379,15 @@ function CategoryPage({ catId, onNav }) {
         {brands.length > 1 && <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".04em" }}>Marque</div>
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-            <Pill active={!selBrand} onClick={() => setSelBrand(null)}>Toutes</Pill>
-            {brands.slice(0, 12).map(b => <Pill key={b.name} active={selBrand === b.name} onClick={() => setSelBrand(b.name)}>{b.name} ({b.count})</Pill>)}
+            <Pill active={!selBrand} onClick={() => onNav(selType ? "cat-type" : "cat", selType ? { catId, productType: selType } : catId)}>Toutes</Pill>
+            {brands.slice(0, 12).map(b => <Pill key={b.name} active={selBrand === b.name} onClick={() => onNav("cat-brand", { catId, productType: selType, brand: b.name })}>{b.name} ({b.count})</Pill>)}
             {brands.length > 12 && !selBrand && <span style={{ fontSize: 11, color: "#9CA3AF", alignSelf: "center" }}>+{brands.length - 12} marques</span>}
           </div>
         </div>}
 
         {/* Reset */}
         {hasFilters && <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #F3F4F6" }}>
-          <button onClick={resetFilters} style={{ fontSize: 12, color: ACCENT, fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontFamily: F, padding: 0 }}>✕ Réinitialiser les filtres</button>
+          <button onClick={() => onNav("cat", catId)} style={{ fontSize: 12, color: ACCENT, fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontFamily: F, padding: 0 }}>✕ Réinitialiser les filtres</button>
         </div>}
       </div>
 
@@ -392,7 +397,7 @@ function CategoryPage({ catId, onNav }) {
         <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
           {brands.slice(0, 8).map(b => {
             const sample = items.filter(i => i.brand === b.name)[0];
-            return <div key={b.name} onClick={() => setSelBrand(b.name)} style={{ background: "#fff", border: "1px solid #E0DDD5", borderRadius: 8, padding: "16px 12px", cursor: "pointer", textAlign: "center", transition: "all .2s" }}
+            return <div key={b.name} onClick={() => onNav("cat-brand", { catId, productType: null, brand: b.name })} style={{ background: "#fff", border: "1px solid #E0DDD5", borderRadius: 8, padding: "16px 12px", cursor: "pointer", textAlign: "center", transition: "all .2s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0DDD5"; e.currentTarget.style.transform = "none"; }}>
               <ProductImg brand={b.name} item={sample} size={36} />
@@ -410,7 +415,7 @@ function CategoryPage({ catId, onNav }) {
           {types.map(t => {
             const c = items.filter(i => i.productType === t).length;
             if (c === 0) return null;
-            return <div key={t} onClick={() => setSelType(t)} style={{ background: "#fff", border: "1px solid #E0DDD5", borderRadius: 8, padding: "16px 14px", cursor: "pointer", transition: "all .2s" }}
+            return <div key={t} onClick={() => onNav("cat-type", { catId, productType: t })} style={{ background: "#fff", border: "1px solid #E0DDD5", borderRadius: 8, padding: "16px 14px", cursor: "pointer", transition: "all .2s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0DDD5"; e.currentTarget.style.transform = "none"; }}>
               <div style={{ fontWeight: 700, fontSize: 13, color: "#111" }}>{t}</div>
@@ -452,10 +457,10 @@ function CategoryPage({ catId, onNav }) {
 }
 
 // ─── COMPARATOR ───
-function ComparatorPage({ itemId, onNav, user, onAuth }) {
+function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const item = ITEMS.find(i => i.id === itemId);
   const issues = item ? getIssues(item) : [];
-  const [selIssue, setSelIssue] = useState(issues[0]?.id);
+  const [selIssue, setSelIssue] = useState(initialIssueId ?? issues[0]?.id);
   const [cumul, setCumul] = useState(false);
   const [selMulti, setSelMulti] = useState([]);
   const [place, setPlace] = useState("");
@@ -467,9 +472,9 @@ function ComparatorPage({ itemId, onNav, user, onAuth }) {
 
   useEffect(() => {
     const iss = item ? getIssues(item) : [];
-    setSelIssue(iss[0]?.id);
+    setSelIssue(initialIssueId ?? iss[0]?.id);
     setCumul(false); setSelMulti([]); setPlace(""); setReviews([]); setReviewText("");
-  }, [itemId]);
+  }, [itemId, initialIssueId]);
 
   if (!item) return <div style={{ padding: 80, textAlign: "center", fontFamily: F }}>Produit non trouvé</div>;
 
@@ -520,7 +525,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth }) {
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {issues.map(iss => {
               const active = cumul ? selMulti.includes(iss.id) : selIssue === iss.id;
-              return <Pill key={iss.id} active={active} onClick={() => cumul ? toggleMulti(iss.id) : setSelIssue(iss.id)}>{iss.name}</Pill>;
+              return <Pill key={iss.id} active={active} onClick={() => cumul ? toggleMulti(iss.id) : onNav("issue", { item, issue: iss })}>{iss.name}</Pill>;
             })}
           </div>
           {cumul && selMulti.length > 1 && <p style={{ fontSize: 12, color: ACCENT, fontWeight: 600, marginTop: 10 }}>{selMulti.length} problèmes sélectionnés — coûts cumulés</p>}
@@ -1488,57 +1493,128 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [sidebar, setSidebar] = useState(false);
-  const isAff = pathname?.endsWith("/aff");
-  const idParam = params?.id;
-  const itemId = idParam ? parseInt(String(idParam).split("-")[0], 10) : null;
-  const catSlug = params?.category ?? (pathname?.match(/^\/c\/([^/]+)/)?.[1]);
-  const affType = searchParams?.get("type") || "neuf";
+  // Params SEO (nouvelles routes)
+  const categorySlug = params?.categorySlug;
+  const productTypeSlug = params?.productTypeSlug;
+  const brandSlug = params?.brandSlug;
+  const productSlug = params?.productSlug;
+  const issueSlug = params?.issueSlug;
+
+  // Fallback anciennes routes /c/ et /p/
+  const legacyCatSlug = params?.category ?? (pathname?.match(/^\/c\/([^/]+)/)?.[1]);
+  const legacyIdParam = params?.id;
+  const legacyItemId = legacyIdParam ? parseInt(String(legacyIdParam).split("-")[0], 10) : null;
+
   const panneParam = searchParams?.get("panne") || "";
   const panneIds = panneParam ? panneParam.split(",").map(x => parseInt(x, 10)).filter(Boolean) : [];
 
   let pageType = "home";
+  let affType = "neuf";
+
   if (pathname === "/") pageType = "home";
-  else if (pathname?.startsWith("/c/") && !isAff) pageType = "cat";
-  else if (pathname?.startsWith("/p/") && isAff) pageType = "aff";
-  else if (pathname?.startsWith("/p/")) pageType = "compare";
+  else if (pathname === "/comment-ca-marche") pageType = "guide";
+  else if (pathname === "/guide/reparer-ou-racheter") pageType = "repair-guide";
   else if (pathname === "/faq") pageType = "faq";
   else if (pathname === "/mentions-legales") pageType = "legal";
-  else if (pathname === "/guide") pageType = "guide";
-  else if (pathname === "/guide-reparation") pageType = "repair-guide";
   else if (pathname === "/a-propos") pageType = "about";
   else if (pathname === "/contact") pageType = "contact";
-
-  const page = { type: pageType, catId: undefined, itemId, item: null, issues: [], affType, alts: null };
-  if (pageType === "cat" && catSlug) {
-    page.catId = CATS.find(c => slugify(c.id) === catSlug)?.id || catSlug;
-  }
-  if ((pageType === "compare" || pageType === "aff") && itemId) {
-    page.item = ITEMS.find(i => i.id === itemId);
-    if (page.item && pageType === "aff") {
-      const allIssues = getIssues(page.item);
-      page.issues = panneIds.length ? allIssues.filter(i => panneIds.includes(i.id)) : allIssues.slice(0, 1);
-      page.alts = getAlternatives(page.item);
+  else   if (pathname?.startsWith("/categories/")) {
+    if (brandSlug) pageType = "cat-brand";
+    else if (productTypeSlug) {
+      const catForResolve = categorySlug ? findCategoryBySlug(categorySlug) : null;
+      const ptype = catForResolve ? findProductTypeBySlug(catForResolve.id, productTypeSlug) : null;
+      const isBrand = catForResolve && ITEMS.some(i => i.category === catForResolve.id && slugify(i.brand) === productTypeSlug);
+      pageType = ptype ? "cat-type" : isBrand ? "cat-brand" : "cat-type";
+    } else pageType = "cat";
+  } else if (pathname?.startsWith("/produits/")) {
+    if (pathname?.endsWith("/reparer")) {
+      pageType = "aff";
+      affType = "pcs";
+    } else if (pathname?.endsWith("/acheter-neuf")) {
+      pageType = "aff";
+      affType = "neuf";
+    } else if (pathname?.endsWith("/acheter-reconditionne")) {
+      pageType = "aff";
+      affType = "occ";
+    } else if (issueSlug) {
+      pageType = "issue";
+    } else {
+      pageType = "compare";
     }
+  } else if (pathname?.startsWith("/c/")) pageType = "cat";
+  else if (pathname?.startsWith("/p/") && pathname?.endsWith("/aff")) {
+    pageType = "aff";
+    affType = searchParams?.get("type") || "neuf";
+  } else if (pathname?.startsWith("/p/")) pageType = "compare";
+  else if (pathname === "/guide") pageType = "guide";
+  else if (pathname === "/guide-reparation") pageType = "repair-guide";
+
+  const page = { type: pageType, catId: undefined, productType: undefined, brandSlug: undefined, itemId: null, item: null, issue: null, issues: [], affType, alts: null };
+
+  if (pageType === "cat" || pageType === "cat-type" || pageType === "cat-brand") {
+    const slug = categorySlug || legacyCatSlug;
+    const cat = slug ? findCategoryBySlug(slug) : null;
+    page.catId = cat?.id || slug;
+    if (pageType === "cat-type" || pageType === "cat-brand") {
+      const ptype = findProductTypeBySlug(page.catId, productTypeSlug);
+      page.productType = ptype || undefined;
+      page.brandSlug = pageType === "cat-brand" ? (brandSlug || productTypeSlug) : undefined;
+    }
+  }
+
+  if ((pageType === "compare" || pageType === "issue" || pageType === "aff") && (productSlug || legacyItemId)) {
+    page.item = productSlug ? findProductBySlug(productSlug) : ITEMS.find(i => i.id === legacyItemId);
+    if (page.item) {
+      const allIssues = getIssues(page.item);
+      if (pageType === "issue" && issueSlug) {
+        page.issue = findIssueBySlug(page.item, issueSlug);
+        page.issues = page.issue ? [page.issue] : allIssues.slice(0, 1);
+      } else if (pageType === "aff") {
+        page.issues = panneIds.length ? allIssues.filter(i => panneIds.includes(i.id)) : allIssues.slice(0, 1);
+      } else {
+        page.issues = [];
+      }
+      if (pageType === "aff") page.alts = getAlternatives(page.item);
+    }
+    page.itemId = page.item?.id ?? legacyItemId;
   }
 
 
   useEffect(() => {
-    const data = page.type === "cat" ? { cat: page.catId } : page.type === "compare" ? { item: ITEMS.find(i => i.id === page.itemId) } : page.type === "aff" ? { item: page.item, affType: page.affType } : null;
+    const data = page.type === "cat" || page.type === "cat-type" || page.type === "cat-brand" ? { cat: page.catId } : page.type === "compare" || page.type === "issue" ? { item: page.item, issue: page.issue } : page.type === "aff" ? { item: page.item, affType: page.affType } : null;
     const seo = buildSeo(page.type, data);
     document.title = seo.title;
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", seo.description);
-  }, [page.type, page.itemId, page.catId, page.item, page.affType]);
+  }, [page.type, page.itemId, page.catId, page.item, page.issue, page.affType]);
+
+  // Redirection des anciennes routes /c/ et /p/ vers les URLs SEO
+  useEffect(() => {
+    if (!pathname || !router) return;
+    if (pathname.startsWith("/c/") && page.catId) {
+      const target = pathCategory(page.catId);
+      if (pathname !== target) router.replace(target);
+    } else if (pathname.startsWith("/p/") && page.item && !pathname.endsWith("/aff")) {
+      const target = pathProduct(page.item);
+      if (pathname !== target) router.replace(target);
+    } else if (pathname.startsWith("/p/") && pathname.endsWith("/aff") && page.item) {
+      const target = pathAff(page.item, page.affType, page.issues);
+      if (!pathname.startsWith(target.split("?")[0])) router.replace(target);
+    }
+  }, [pathname, page.catId, page.item, page.affType, page.issues]);
 
   function nav(type, data) {
     if (type === "home") router.push("/");
     else if (type === "cat") router.push(pathCategory(data));
-    else if (type === "compare") { const item = ITEMS.find(i => i.id === data); if (item) router.push(pathProduct(item)); }
-    else if (type === "aff") { const base = pathProduct(data.item) + "/aff"; const panne = data.issues?.length ? "panne=" + data.issues.map(i => i.id).join(",") : ""; router.push(base + "?type=" + (data.affType || "neuf") + (panne ? "&" + panne : "")); }
+    else if (type === "cat-type") router.push(pathProductType(data.catId, data.productType));
+    else if (type === "cat-brand") router.push(pathBrand(data.catId, data.productType, data.brand));
+    else if (type === "compare") { const item = typeof data === "number" ? ITEMS.find(i => i.id === data) : data; if (item) router.push(pathProduct(item)); }
+    else if (type === "issue") { if (data?.item && data?.issue) router.push(pathProductIssue(data.item, data.issue)); }
+    else if (type === "aff") router.push(pathAff(data.item, data.affType || "neuf", data.issues));
     else if (type === "faq") router.push("/faq");
     else if (type === "legal") router.push("/mentions-legales");
-    else if (type === "guide") router.push("/guide");
-    else if (type === "repair-guide") router.push("/guide-reparation");
+    else if (type === "guide") router.push("/comment-ca-marche");
+    else if (type === "repair-guide") router.push("/guide/reparer-ou-racheter");
     else if (type === "about") router.push("/a-propos");
     else if (type === "contact") router.push("/contact");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1642,8 +1718,23 @@ export default function App() {
         </div>
       </section>
     </>}
-    {page.type === "cat" && <CategoryPage catId={page.catId} onNav={nav} />}
-    {page.type === "compare" && <ComparatorPage itemId={page.itemId} onNav={nav} user={user} onAuth={() => setShowAuth(true)} />}
+    {(page.type === "cat" || page.type === "cat-type" || page.type === "cat-brand") && (
+      <CategoryPage
+        catId={page.catId}
+        onNav={nav}
+        initialProductType={page.productType}
+        initialBrandSlug={page.brandSlug}
+      />
+    )}
+    {(page.type === "compare" || page.type === "issue") && (
+      <ComparatorPage
+        itemId={page.itemId}
+        onNav={nav}
+        user={user}
+        onAuth={() => setShowAuth(true)}
+        initialIssueId={page.issue?.id}
+      />
+    )}
     {page.type === "aff" && <AffPage item={page.item} issues={page.issues} affType={page.affType} alts={page.alts} onNav={nav} />}
     {page.type === "faq" && <FaqPage onNav={nav} />}
     {page.type === "legal" && <LegalPage onNav={nav} />}

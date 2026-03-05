@@ -4,17 +4,9 @@
 
 import { CATS } from "./data";
 import { OCC_CATS, ISS_TPL, ITEMS, TECH_CATS, RET, CHIP_TO_PRODUCT } from "./data";
+import * as R from "./routes";
 
-export function slugify(s) {
-  if (!s || typeof s !== "string") return "";
-  return s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
+export { slugify } from "./routes";
 
 export function getIssues(item) {
   const tpl = ISS_TPL[item.productType] || ISS_TPL.default;
@@ -189,36 +181,70 @@ export function buildRepairerMapsUrl(item, place) {
 }
 
 export function pathCategory(catId) {
-  const cat = typeof catId === "string" ? CATS.find(c => c.id === catId) : catId;
-  if (!cat) return "/";
-  return `/c/${slugify(cat.id) || cat.id}`;
+  return R.pathCategory(catId);
 }
 
 export function pathProduct(item) {
-  if (!item) return "/";
-  return `/p/${item.id}-${slugify(item.brand)}-${slugify(item.name)}`;
+  return R.pathProduct(item);
 }
 
 export function pathCompare(item, issueId) {
   if (!item) return "/";
-  const base = pathProduct(item);
-  return issueId ? `${base}?panne=${issueId}` : base;
+  if (issueId) {
+    const issues = getIssues(item);
+    const issue = issues.find(i => i.id === issueId);
+    if (issue) return R.pathProductIssue(item, issue);
+  }
+  return R.pathProduct(item);
+}
+
+export function pathProductIssue(item, issue) {
+  return R.pathProductIssue(item, issue);
+}
+
+export function findIssueBySlug(item, slug) {
+  return R.findIssueBySlugFromIssues(getIssues(item), slug);
+}
+
+export function pathAff(item, affType, issues) {
+  return R.pathAff(item, affType, issues);
+}
+
+export function pathProductType(catId, productType) {
+  return R.pathProductType(catId, productType);
+}
+
+export function pathBrand(catId, productType, brand) {
+  return R.pathBrand(catId, productType, brand);
+}
+
+export function findCategoryBySlug(slug) {
+  return R.findCategoryBySlug(slug);
+}
+
+export function findProductBySlug(slug) {
+  return R.findProductBySlug(slug);
+}
+
+export function findProductTypeBySlug(catId, slug) {
+  return R.findProductTypeBySlug(catId, slug);
 }
 
 export function buildSeo(page, data) {
   const siteName = "Compare.";
   if (page === "home") return { title: `${siteName} — Réparer, occasion ou neuf ?`, description: "Comparez réparation, achat reconditionné et neuf pour faire le meilleur choix. Estimations de coût, verdict et alternatives.", canonicalPath: "/", breadcrumb: [{ label: "Accueil", path: "/" }] };
-  if (page === "cat" && data?.cat) {
+  if ((page === "cat" || page === "cat-type" || page === "cat-brand") && data?.cat) {
     const cat = typeof data.cat === "string" ? CATS.find(c => c.id === data.cat) : data.cat;
     const name = cat?.name || data.cat;
     const path = pathCategory(cat?.id || data.cat);
     return { title: `${name} — Réparer ou remplacer ? | ${siteName}`, description: `Comparez réparation, occasion et neuf pour les ${name}. Trouvez le meilleur choix pour votre appareil.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: name, path }] };
   }
-  if (page === "compare" && data?.item) {
+  if ((page === "compare" || page === "issue") && data?.item) {
     const item = data.item;
     const name = `${item.brand} ${item.name}`;
-    const path = pathCompare(item);
-    return { title: `Réparer ou remplacer ${name} ? | ${siteName}`, description: `Coût de réparation, occasion et neuf pour ${name} (${item.productType}, ${item.year}). Notre recommandation et les alternatives.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: CATS.find(c => c.id === item.category)?.name || item.category, path: pathCategory(item.category) }, { label: name, path }] };
+    const path = data.issue ? R.pathProductIssue(item, data.issue) : pathCompare(item);
+    const issueLabel = data.issue ? ` — ${data.issue.name}` : "";
+    return { title: `Réparer ou remplacer ${name}${issueLabel} ? | ${siteName}`, description: `Coût de réparation, occasion et neuf pour ${name} (${item.productType}, ${item.year}). Notre recommandation et les alternatives.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: CATS.find(c => c.id === item.category)?.name || item.category, path: pathCategory(item.category) }, { label: name, path }] };
   }
   if (page === "aff" && data?.item) {
     const item = data.item;
