@@ -10,7 +10,7 @@ const dmSans = DM_Sans({
   preload: true,
 });
 
-const LCP_IMAGE = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=640&q=75";
+const LCP_IMAGE = "/banner-hero.jpg";
 
 export const metadata = {
   title: "Compare. — Réparer, occasion ou neuf ?",
@@ -25,7 +25,6 @@ export default function RootLayout({ children }) {
     <html lang="fr">
       <head>
         <link rel="preload" as="image" href={LCP_IMAGE} fetchPriority="high" />
-        <link rel="preconnect" href="https://images.unsplash.com" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
       </head>
       <body className={dmSans.className} style={{ background: W, margin: 0, minHeight: "100vh" }}>
