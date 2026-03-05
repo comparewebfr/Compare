@@ -5,12 +5,10 @@ import "./globals.css";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
   preload: true,
 });
-
-const LCP_IMAGE = "/banner-hero.jpg";
 
 export const metadata = {
   title: "Compare. — Réparer, occasion ou neuf ?",
@@ -24,7 +22,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr">
       <head>
-        <link rel="preload" as="image" href={LCP_IMAGE} fetchPriority="high" />
+        <link rel="preload" as="image" href="/banner-hero.jpg" fetchPriority="high" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
       </head>
       <body className={dmSans.className} style={{ background: W, margin: 0, minHeight: "100vh" }}>

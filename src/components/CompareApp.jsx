@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { PRODUCT_IMAGES } from "../data/product-images";
-import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
+import { ACCENT, GREEN, AMBER, W, F } from "../lib/constants";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, RET, TECH_CATS, WHEN_REPAIR_SPEC } from "../lib/data";
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRepairerMapsUrl, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime } from "../lib/helpers";
 
 // ─── LOGO ───
 function Logo({ s = 32 }) {
-  return <img src="/logo.png" alt="Compare." style={{ width: s, height: s, objectFit: "contain", borderRadius: "50%" }} />;
+  return <Image src="/logo.png" alt="Compare." width={s} height={s} style={{ width: s, height: s, objectFit: "contain", borderRadius: "50%" }} />;
 }
 
 // ─── MINIMAL ICONS (no decorative emojis) ───
@@ -100,7 +101,9 @@ function ProductImg({ brand, item, size = 48 }) {
     else setStep(3);
   };
   if (!item || step === 3) return fallbackDiv;
-  return <img src={src} alt={item?.brand + " " + item?.name} onError={onError} loading="lazy" decoding="async" style={{ width: size, height: size, borderRadius: 10, objectFit: "cover", border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" }} />;
+  return (
+    <Image src={src} alt={item?.brand + " " + item?.name} onError={onError} loading="lazy" width={size} height={size} sizes={`${size}px`} style={{ width: size, height: size, borderRadius: 10, objectFit: "cover", border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" }} />
+  );
 }
 
 // ─── AUTH MODAL ───
@@ -172,7 +175,7 @@ function Navbar({ onNav, user, onAuth, onMenu }) {
         {[0,1,2].map(i => <div key={i} style={{ width: 17, height: 2, background: "#fff", borderRadius: 1 }} />)}
       </button>
       <div onClick={() => onNav("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
-        <img src="/logo.png" alt="Compare." style={{ width: 44, height: 44, objectFit: "contain", borderRadius: "50%" }} />
+        <Image src="/logo.png" alt="Compare." width={44} height={44} style={{ width: 44, height: 44, objectFit: "contain", borderRadius: "50%" }} />
         <span style={{ fontSize: 24, fontWeight: 800, color: W, letterSpacing: "-.03em" }}>Compare<span style={{ color: "#52B788" }}>.</span></span>
       </div>
     </div>
@@ -192,12 +195,12 @@ function Navbar({ onNav, user, onAuth, onMenu }) {
 function BannerCarousel({ banners, onNav }) {
   const [idx, setIdx] = useState(0);
   const b = banners[idx] || banners[0];
-  const prev = (e) => { e?.stopPropagation(); setIdx(i => (i - 1 + banners.length) % banners.length); };
-  const next = (e) => { e?.stopPropagation(); setIdx(i => (i + 1) % banners.length); };
+  const prev = useCallback((e) => { e?.stopPropagation(); setIdx(i => (i - 1 + banners.length) % banners.length); }, [banners.length]);
+  const next = useCallback((e) => { e?.stopPropagation(); setIdx(i => (i + 1) % banners.length); }, [banners.length]);
   useEffect(() => {
     const t = setInterval(() => setIdx(i => (i + 1) % banners.length), 5000);
     return () => clearInterval(t);
-  }, [idx]);
+  }, [banners.length]);
   const arrowBtn = (dir) => {
     const isPrev = dir === "prev";
     return <button onClick={isPrev ? prev : next} aria-label={isPrev ? "Précédent" : "Suivant"} style={{
@@ -217,7 +220,9 @@ function BannerCarousel({ banners, onNav }) {
       borderRadius: 16, padding: b.image ? 0 : "36px 56px", cursor: "pointer", minHeight: b.image ? 320 : 200, display: "flex", alignItems: "center", gap: 28, position: "relative", overflow: "hidden", border: "1px solid rgba(0,0,0,.06)", boxShadow: "0 4px 24px rgba(0,0,0,.08)", transition: "transform .25s ease, box-shadow .25s ease",
     }}
       onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,.12)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,.08)"; }}>
-      {b.image && <img src={b.image} alt="" width={640} height={320} fetchPriority={idx === 0 ? "high" : "auto"} loading={idx === 0 ? "eager" : "lazy"} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }} />}
+      {b.image && (
+        <Image src={b.image} alt="" width={640} height={320} priority={idx === 0} loading={idx === 0 ? "eager" : "lazy"} fill sizes="(max-width: 640px) 100vw, 860px" style={{ objectFit: "cover", zIndex: 0 }} />
+      )}
       {b.image && <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,.2) 50%, transparent 100%)", pointerEvents: "none", zIndex: 1 }} aria-hidden />}
       <div style={{ display: "flex", alignItems: "center", gap: 28, position: "relative", zIndex: 2, padding: b.image ? "36px 56px" : 0, flex: 1, minWidth: 0 }}>
         {!b.image && <div style={{ width: 100, height: 100, borderRadius: 24, background: (b.dark ? "#fff" : ACCENT) + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -236,16 +241,17 @@ function BannerCarousel({ banners, onNav }) {
 }
 
 // ─── HERO ───
+const HERO_BANNERS = (W, ACCENT, GREEN) => [
+  { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "/banner-hero.jpg", title: "Les meilleurs prix pour votre smartphone", sub: "Comparez, réparez ou rachetez un smartphone reconditionné", catId: "smartphones", icon: "smartphone", dark: false },
+  { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=640&q=75", title: "Réparez votre console de jeux", sub: "Donnez une seconde vie à votre PS5", catId: "consoles", icon: "gamepad", dark: true },
+  { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=640&q=75", title: "Un problème dans votre cuisine ?", sub: "Réparez vos appareils à prix imbattables", catId: "cuisine", icon: "kitchen", dark: false },
+];
 function Hero({ onSearch, onNav }) {
   const [q, setQ] = useState(""); const [show, setShow] = useState(false); const [noMatchMsg, setNoMatchMsg] = useState(false);
   const qNorm = (q || "").trim().toLowerCase();
-  const sug = qNorm.length > 1 ? ITEMS.filter(i => `${i.brand} ${i.name} ${i.productType}`.toLowerCase().includes(qNorm)).slice(0, 6) : [];
-  const exactMatch = qNorm.length > 0 ? ITEMS.find(i => `${i.brand} ${i.name}`.toLowerCase() === qNorm) : null;
-  const banners = [
-    { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "/banner-hero.jpg", title: "Les meilleurs prix pour votre smartphone", sub: "Comparez, réparez ou rachetez un smartphone reconditionné", catId: "smartphones", icon: "smartphone", dark: false },
-    { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=640&q=75", title: "Réparez votre console de jeux", sub: "Donnez une seconde vie à votre PS5", catId: "consoles", icon: "gamepad", dark: true },
-    { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=640&q=75", title: "Un problème dans votre cuisine ?", sub: "Réparez vos appareils à prix imbattables", catId: "cuisine", icon: "kitchen", dark: false },
-  ];
+  const sug = useMemo(() => qNorm.length > 1 ? ITEMS.filter(i => `${i.brand} ${i.name} ${i.productType}`.toLowerCase().includes(qNorm)).slice(0, 6) : [], [qNorm]);
+  const exactMatch = useMemo(() => qNorm.length > 0 ? ITEMS.find(i => `${i.brand} ${i.name}`.toLowerCase() === qNorm) : null, [qNorm]);
+  const banners = useMemo(() => HERO_BANNERS(W, ACCENT, GREEN), []);
   return <><div style={{ background: `linear-gradient(180deg, ${W} 0%, #F0EDE6 50%, #E8E6E0 100%)`, paddingBottom: 0 }}>
     <section style={{ padding: "40px 20px 32px", textAlign: "center" }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Logo s={56} /></div>
@@ -315,25 +321,25 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
     const brand = initialBrandSlug ? items.find(i => slugify(i.brand) === initialBrandSlug)?.brand : null;
     setSelBrand(brand || null);
     setSort("pop");
-  }, [catId, initialProductType, initialBrandSlug]);
+  }, [catId, initialProductType, initialBrandSlug, items]);
 
-  // Compute brands with counts
-  const brandsMap = {};
-  items.forEach(i => { brandsMap[i.brand] = (brandsMap[i.brand] || 0) + 1; });
-  const brands = Object.entries(brandsMap).sort((a,b) => b[1] - a[1]).map(([b,c]) => ({ name: b, count: c }));
+  const brands = useMemo(() => {
+    const m = {};
+    items.forEach(i => { m[i.brand] = (m[i.brand] || 0) + 1; });
+    return Object.entries(m).sort((a,b) => b[1] - a[1]).map(([b,c]) => ({ name: b, count: c }));
+  }, [items]);
 
-  // Filter
-  let filtered = items;
-  if (selType) filtered = filtered.filter(i => i.productType === selType);
-  if (selBrand) filtered = filtered.filter(i => i.brand === selBrand);
+  const filtered = useMemo(() => {
+    let f = items;
+    if (selType) f = f.filter(i => i.productType === selType);
+    if (selBrand) f = f.filter(i => i.brand === selBrand);
+    if (sort === "price-asc") f = [...f].sort((a,b) => a.priceNew - b.priceNew);
+    else if (sort === "price-desc") f = [...f].sort((a,b) => b.priceNew - a.priceNew);
+    else if (sort === "year") f = [...f].sort((a,b) => b.year - a.year);
+    return f;
+  }, [items, selType, selBrand, sort]);
 
-  // Sort
-  if (sort === "price-asc") filtered = [...filtered].sort((a,b) => a.priceNew - b.priceNew);
-  else if (sort === "price-desc") filtered = [...filtered].sort((a,b) => b.priceNew - a.priceNew);
-  else if (sort === "year") filtered = [...filtered].sort((a,b) => b.year - a.year);
-
-  // Types count (filtered by brand)
-  const typesFiltered = selBrand ? items.filter(i => i.brand === selBrand) : items;
+  const typesFiltered = useMemo(() => selBrand ? items.filter(i => i.brand === selBrand) : items, [items, selBrand]);
 
   if (!cat) return null;
 
