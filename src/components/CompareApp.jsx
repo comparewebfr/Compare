@@ -350,10 +350,11 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
   }, [catId, initialProductType, initialBrandSlug, items]);
 
   const brands = useMemo(() => {
+    const baseItems = selType ? items.filter(i => i.productType === selType) : items;
     const m = {};
-    items.forEach(i => { m[i.brand] = (m[i.brand] || 0) + 1; });
+    baseItems.forEach(i => { m[i.brand] = (m[i.brand] || 0) + 1; });
     return Object.entries(m).sort((a,b) => b[1] - a[1]).map(([b,c]) => ({ name: b, count: c }));
-  }, [items]);
+  }, [items, selType]);
 
   const filtered = useMemo(() => {
     let f = items;
