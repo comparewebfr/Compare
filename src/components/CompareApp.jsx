@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { PRODUCT_IMAGES } from "../data/product-images";
-import { ACCENT, GREEN, AMBER, W, F } from "../lib/constants";
+import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, RET, TECH_CATS, WHEN_REPAIR_SPEC } from "../lib/data";
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRepairerMapsUrl, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime } from "../lib/helpers";
 
@@ -14,9 +14,9 @@ function Logo({ s = 32 }) {
   return <Image src="/logo.png" alt="Compare." width={s} height={s} style={{ width: s, height: s, objectFit: "contain", borderRadius: "50%" }} />;
 }
 
-// ─── MINIMAL ICONS (no decorative emojis) ───
+// ─── MINIMAL ICONS (decorative, aria-hidden) ───
 function Icon({ name, s = 18, color = "#111", style = {} }) {
-  const common = { width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: "block", ...style } };
+  const common = { width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: "block", ...style }, "aria-hidden": true, focusable: false };
   switch (name) {
     case "check": return <svg {...common}><path d="M20 6 9 17l-5-5" /></svg>;
     case "tool": return <svg {...common}><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2.7-2.7 2-2z" /></svg>;
@@ -60,15 +60,19 @@ function Icon({ name, s = 18, color = "#111", style = {} }) {
 // ═══════════════ UI COMPONENTS ═══════════════
 
 function Pill({ active, onClick, children }) {
-  return <button type="button" onClick={onClick} className="pill-hover" style={{ padding: "10px 16px", borderRadius: 10, cursor: "pointer", fontFamily: F, fontSize: 13, fontWeight: active ? 700 : 500, background: active ? ACCENT : "#fff", color: active ? "#fff" : "#374151", border: active ? `2px solid ${ACCENT}` : "1.5px solid #E0DDD5", whiteSpace: "nowrap", minHeight: 42 }}>{children}</button>;
+  return <button type="button" onClick={onClick} className="pill-hover" style={{ padding: "10px 16px", borderRadius: 10, cursor: "pointer", fontFamily: F, fontSize: 13, fontWeight: active ? 700 : 500, background: active ? ACCENT : "#fff", color: active ? "#fff" : "#374151", border: active ? `2px solid ${ACCENT}` : "1.5px solid #E0DDD5", whiteSpace: "nowrap", minHeight: 44 }}>{children}</button>;
 }
 function Badge({ color, children }) {
   return <span style={{ display: "inline-block", padding: "5px 11px", borderRadius: 100, background: color + "18", color, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", border: `1px solid ${color}30` }}>{children}</span>;
 }
-function Card({ children, onClick, style = {} }) {
-  return <div onClick={onClick} className={onClick ? "card-hover" : ""} style={{ background: "#fff", border: "1px solid #E5E3DE", borderRadius: 12, cursor: onClick ? "pointer" : "default", ...style }}>{children}</div>;
+function Card({ children, onClick, style = {}, as: Tag = "div", ...rest }) {
+  const baseStyle = { background: "#fff", border: "1px solid #E5E3DE", borderRadius: 12, cursor: onClick ? "pointer" : "default", ...style };
+  if (onClick && Tag === "div") {
+    return <button type="button" onClick={onClick} className="card-hover" style={{ ...baseStyle, width: "100%", textAlign: "left", font: "inherit" }} {...rest}>{children}</button>;
+  }
+  return <Tag onClick={onClick} className={onClick ? "card-hover" : ""} style={baseStyle} {...rest}>{children}</Tag>;
 }
-function Chev() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>; }
+function Chev() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6" /></svg>; }
 
 // ─── Images produits ────────────────────────────────────────────────────────
 // Priorité : 1) PRODUCT_IMAGES (src/data/product-images.js)  2) public/products/{id}.jpg  3) placeholder
@@ -102,82 +106,103 @@ function ProductImg({ brand, item, size = 48 }) {
   };
   if (!item || step === 3) return fallbackDiv;
   return (
-    <Image src={src} alt={item?.brand + " " + item?.name} onError={onError} loading="lazy" width={size} height={size} sizes={`${size}px`} style={{ width: size, height: size, borderRadius: 10, objectFit: "cover", border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" }} />
+    <Image src={src} alt={`Produit : ${item?.brand || ""} ${item?.name || ""}`.trim()} onError={onError} loading="lazy" width={size} height={size} sizes={`${size}px`} style={{ width: size, height: size, borderRadius: 10, objectFit: "cover", border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" }} />
   );
 }
 
 // ─── AUTH MODAL ───
 function AuthModal({ onClose, onLogin }) {
   const [email, setEmail] = useState("");
-  return <div style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-    <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 28, width: 370, maxWidth: "90vw" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 18 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: "#111" }}>Se connecter</h2>
-        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#9CA3AF" }}>×</button>
+  const dialogRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  useEffect(() => {
+    closeBtnRef.current?.focus();
+    const onEsc = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onEsc);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onEsc); document.body.style.overflow = ""; };
+  }, [onClose]);
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby="auth-title" ref={dialogRef} style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 28, width: 370, maxWidth: "90vw" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 18 }}>
+          <h2 id="auth-title" style={{ fontSize: 20, fontWeight: 800, color: "#111" }}>Se connecter</h2>
+          <button ref={closeBtnRef} onClick={onClose} aria-label="Fermer" style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#9CA3AF", minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+        </div>
+        {["Google", "Apple"].map(p => <button key={p} onClick={() => onLogin(p)} style={{ width: "100%", padding: 11, borderRadius: 10, border: p === "Apple" ? "1.5px solid #111" : "1.5px solid #D1D5DB", background: p === "Apple" ? "#111" : "#fff", color: p === "Apple" ? "#fff" : "#374151", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: F, marginBottom: 8 }}>Continuer avec {p}</button>)}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "12px 0" }}><div style={{ flex: 1, height: 1, background: "#E5E7EB" }} /><span style={{ fontSize: 12, color: "#9CA3AF" }}>ou</span><div style={{ flex: 1, height: 1, background: "#E5E7EB" }} /></div>
+        <label htmlFor="auth-email" className="sr-only">Adresse email</label>
+        <input id="auth-email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemple.com" type="email" autoComplete="email" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #D1D5DB", fontSize: 14, fontFamily: F, marginBottom: 8, outline: "none" }} />
+        <button onClick={() => onLogin("email")} style={{ width: "100%", padding: 11, borderRadius: 10, border: "none", background: ACCENT, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: F }}>Se connecter</button>
       </div>
-      {["Google", "Apple"].map(p => <button key={p} onClick={() => onLogin(p)} style={{ width: "100%", padding: 11, borderRadius: 10, border: p === "Apple" ? "1.5px solid #111" : "1.5px solid #D1D5DB", background: p === "Apple" ? "#111" : "#fff", color: p === "Apple" ? "#fff" : "#374151", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: F, marginBottom: 8 }}>Continuer avec {p}</button>)}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "12px 0" }}><div style={{ flex: 1, height: 1, background: "#E5E7EB" }} /><span style={{ fontSize: 12, color: "#9CA3AF" }}>ou</span><div style={{ flex: 1, height: 1, background: "#E5E7EB" }} /></div>
-      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemple.com" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #D1D5DB", fontSize: 14, fontFamily: F, marginBottom: 8, outline: "none" }} />
-      <button onClick={() => onLogin("email")} style={{ width: "100%", padding: 11, borderRadius: 10, border: "none", background: ACCENT, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: F }}>Se connecter</button>
     </div>
-  </div>;
+  );
 }
 
 // ─── SIDEBAR ───
 function Sidebar({ open, onClose, onNav }) {
+  useEffect(() => {
+    if (!open) return;
+    const onEsc = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onEsc);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onEsc); document.body.style.overflow = ""; };
+  }, [open, onClose]);
   if (!open) return null;
-  return <><div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.25)", zIndex: 200, backdropFilter: "blur(2px)" }} onClick={onClose} />
-    <div style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: 300, background: W, zIndex: 201, overflowY: "auto", boxShadow: "8px 0 32px rgba(0,0,0,.08)" }}>
+  const linkStyle = (base) => ({ ...base, padding: "8px 10px", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, color: "#374151", fontSize: 14, fontWeight: 500, background: "none", border: "none", width: "100%", textAlign: "left", font: "inherit" });
+  const infoStyle = (base) => ({ ...base, padding: "14px 16px", borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, color: "#374151", fontSize: 15, fontWeight: 600, background: "#F8FAF9", border: "1px solid #E8E6E2", width: "100%", textAlign: "left", font: "inherit" });
+  return <><button type="button" aria-label="Fermer le menu" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.25)", zIndex: 200, backdropFilter: "blur(2px)", border: "none", cursor: "pointer" }} onClick={onClose} />
+    <aside role="dialog" aria-label="Menu de navigation" style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: 300, background: W, zIndex: 201, overflowY: "auto", boxShadow: "8px 0 32px rgba(0,0,0,.08)" }}>
       <div style={{ padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E8E6E2" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Logo s={32} /><span style={{ fontSize: 15, fontWeight: 700, color: "#111", letterSpacing: "-.02em" }}>Compare<span style={{ color: ACCENT }}>.</span></span></div>
-        <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", color: "#6B7280", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => { e.currentTarget.style.background = "#F3F4F6"; e.currentTarget.style.color = "#111"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#6B7280"; }}>×</button>
+        <button onClick={onClose} aria-label="Fermer le menu" style={{ width: 44, height: 44, borderRadius: 8, background: "none", border: "none", color: "#6B7280", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => { e.currentTarget.style.background = "#F3F4F6"; e.currentTarget.style.color = "#111"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#6B7280"; }}>×</button>
       </div>
-      <div style={{ padding: "16px 16px 24px" }}>
+      <nav style={{ padding: "16px 16px 24px" }} aria-label="Navigation principale">
         {SIDEBAR_GROUPS.map(grp => {
           const cats = grp.ids.map(id => CATS.find(c => c.id === id)).filter(Boolean);
           return <div key={grp.label} style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".06em" }}>{grp.label}</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 2 }}>
               {cats.map(cat => (
-                <div key={cat.id} onClick={() => { onNav("cat", cat.id); onClose(); }}
-                  style={{ padding: "8px 10px", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, color: "#374151", fontSize: 14, fontWeight: 500 }}
-                  onMouseEnter={e => { e.currentTarget.style.background = ACCENT + "08"; e.currentTarget.style.color = ACCENT; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#374151"; }}>
-                  <Icon name={cat.icon} s={16} color="currentColor" style={{ opacity: .8 }} />
-                  {cat.name}
-                </div>
+                <li key={cat.id}>
+                  <button type="button" onClick={() => { onNav("cat", cat.id); onClose(); }} style={linkStyle({})} onMouseEnter={e => { e.currentTarget.style.background = ACCENT + "08"; e.currentTarget.style.color = ACCENT; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#374151"; }}>
+                    <Icon name={cat.icon} s={16} color="currentColor" style={{ opacity: .8 }} />
+                    {cat.name}
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>;
         })}
         <div style={{ paddingTop: 20, borderTop: "1px solid #E8E6E2", marginTop: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", marginBottom: 12, textTransform: "uppercase", letterSpacing: ".06em" }}>Infos</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
             {[{ l: "Comment ça marche", p: "guide", icon: "search" }, { l: "Guide réparation", p: "repair-guide", icon: "tool" }, { l: "À propos", p: "about", icon: "info" }, { l: "Contact", p: "contact", icon: "chat" }, { l: "FAQ", p: "faq", icon: "book" }].map(x =>
-              <div key={x.l} onClick={() => { onNav(x.p); onClose(); }}
-                style={{ padding: "14px 16px", borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, color: "#374151", fontSize: 15, fontWeight: 600, background: "#F8FAF9", border: "1px solid #E8E6E2" }}
-                onMouseEnter={e => { e.currentTarget.style.background = ACCENT + "12"; e.currentTarget.style.borderColor = ACCENT + "40"; e.currentTarget.style.color = ACCENT; }} onMouseLeave={e => { e.currentTarget.style.background = "#F8FAF9"; e.currentTarget.style.borderColor = "#E8E6E2"; e.currentTarget.style.color = "#374151"; }}>
-                <Icon name={x.icon} s={20} color="currentColor" style={{ opacity: .85 }} />
-                {x.l}
-              </div>
+              <li key={x.l}>
+                <button type="button" onClick={() => { onNav(x.p); onClose(); }} style={infoStyle({})} onMouseEnter={e => { e.currentTarget.style.background = ACCENT + "12"; e.currentTarget.style.borderColor = ACCENT + "40"; e.currentTarget.style.color = ACCENT; }} onMouseLeave={e => { e.currentTarget.style.background = "#F8FAF9"; e.currentTarget.style.borderColor = "#E8E6E2"; e.currentTarget.style.color = "#374151"; }}>
+                  <Icon name={x.icon} s={20} color="currentColor" style={{ opacity: .85 }} />
+                  {x.l}
+                </button>
+              </li>
             )}
-          </div>
+          </ul>
         </div>
-      </div>
-    </div>
+      </nav>
+    </aside>
   </>;
 }
 
 // ─── NAVBAR ───
 function Navbar({ onNav, user, onAuth, onMenu }) {
-  return <nav style={{ position: "sticky", top: 0, zIndex: 100, background: ACCENT, padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: F }}>
+  return <header><nav aria-label="Navigation principale" style={{ position: "sticky", top: 0, zIndex: 100, background: ACCENT, padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: F }}>
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <button onClick={onMenu} style={{ background: "none", border: "none", cursor: "pointer", padding: 8, display: "flex", flexDirection: "column", gap: 3, minWidth: 36, minHeight: 36, justifyContent: "center", alignItems: "center" }}>
+      <button onClick={onMenu} aria-label="Ouvrir le menu" style={{ background: "none", border: "none", cursor: "pointer", padding: 8, display: "flex", flexDirection: "column", gap: 3, minWidth: 44, minHeight: 44, justifyContent: "center", alignItems: "center" }}>
         {[0,1,2].map(i => <div key={i} style={{ width: 17, height: 2, background: "#fff", borderRadius: 1 }} />)}
       </button>
-      <div onClick={() => onNav("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
-        <Image src="/logo.png" alt="Compare." width={44} height={44} style={{ width: 44, height: 44, objectFit: "contain", borderRadius: "50%" }} />
+      <button type="button" onClick={() => onNav("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", padding: 0, font: "inherit" }} aria-label="Compare. - Retour à l'accueil">
+        <Image src="/logo.png" alt="" width={44} height={44} style={{ width: 44, height: 44, objectFit: "contain", borderRadius: "50%" }} />
         <span style={{ fontSize: 24, fontWeight: 800, color: W, letterSpacing: "-.03em" }}>Compare<span style={{ color: "#52B788" }}>.</span></span>
-      </div>
+      </button>
     </div>
     <div className="nav-links" style={{ display: "flex", gap: 2, alignItems: "center" }}>
       {[{ l: "Comment ça marche", p: "guide" }, { l: "Guide", p: "repair-guide" }, { l: "À propos", p: "about" }, { l: "Contact", p: "contact" }].map(x =>
@@ -186,9 +211,9 @@ function Navbar({ onNav, user, onAuth, onMenu }) {
       )}
     </div>
     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-      <button onClick={onAuth} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "1px solid rgba(255,255,255,.2)", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: F }}>{user ? user.name : "Connexion"}</button>
+      <button onClick={onAuth} aria-label={user ? `Connecté en tant que ${user.name}` : "Se connecter"} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "1px solid rgba(255,255,255,.2)", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: F }}>{user ? user.name : "Connexion"}</button>
     </div>
-  </nav>;
+  </nav></header>;
 }
 
 // ─── BANNER CAROUSEL (bandeau défilant, flèches intégrées, auto 5s) ───
@@ -213,15 +238,15 @@ function BannerCarousel({ banners, onNav }) {
       </svg>
     </button>;
   };
-  return <section style={{ maxWidth: 860, margin: "0 auto", padding: "0 20px 24px", position: "relative" }}>
-    <div key={idx} onClick={() => onNav("cat", b.catId)} style={{
+  return <section aria-label="Bannières catégories" style={{ maxWidth: 860, margin: "0 auto", padding: "0 20px 24px", position: "relative" }}>
+    <button type="button" key={idx} onClick={() => onNav("cat", b.catId)} aria-label={`Voir les produits ${b.title}`} style={{
       animation: "slideFadeIn 0.5s ease-out",
       background: b.image ? undefined : b.bg,
-      borderRadius: 16, padding: b.image ? 0 : "36px 56px", cursor: "pointer", minHeight: b.image ? 320 : 200, display: "flex", alignItems: "center", gap: 28, position: "relative", overflow: "hidden", border: "1px solid rgba(0,0,0,.06)", boxShadow: "0 4px 24px rgba(0,0,0,.08)", transition: "transform .25s ease, box-shadow .25s ease",
+      borderRadius: 16, padding: b.image ? 0 : "36px 56px", cursor: "pointer", minHeight: b.image ? 320 : 200, display: "flex", alignItems: "center", gap: 28, position: "relative", overflow: "hidden", border: "1px solid rgba(0,0,0,.06)", boxShadow: "0 4px 24px rgba(0,0,0,.08)", transition: "transform .25s ease, box-shadow .25s ease", width: "100%", textAlign: "left", font: "inherit",
     }}
       onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,.12)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,.08)"; }}>
       {b.image && (
-        <Image src={b.image} alt="" width={640} height={320} priority={idx === 0} loading={idx === 0 ? "eager" : "lazy"} fill sizes="(max-width: 640px) 100vw, 860px" style={{ objectFit: "cover", zIndex: 0 }} />
+        <Image src={b.image} alt="" fill priority={idx === 0} loading={idx === 0 ? "eager" : "lazy"} sizes="(max-width: 640px) 100vw, 860px" style={{ objectFit: "cover", zIndex: 0 }} />
       )}
       {b.image && <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,.2) 50%, transparent 100%)", pointerEvents: "none", zIndex: 1 }} aria-hidden />}
       <div style={{ display: "flex", alignItems: "center", gap: 28, position: "relative", zIndex: 2, padding: b.image ? "36px 56px" : 0, flex: 1, minWidth: 0 }}>
@@ -236,7 +261,7 @@ function BannerCarousel({ banners, onNav }) {
       </div>
       {arrowBtn("prev")}
       {arrowBtn("next")}
-    </div>
+    </button>
   </section>;
 }
 
@@ -256,12 +281,13 @@ function Hero({ onSearch, onNav }) {
     <section style={{ padding: "40px 20px 32px", textAlign: "center" }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Logo s={56} /></div>
       <h1 className="hero-title" style={{ fontSize: 38, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, margin: "0 0 6px", letterSpacing: "-.03em", fontFamily: F }}>Réparer ou racheter<span style={{ color: ACCENT }}> ?</span></h1>
-      <p style={{ fontSize: 14, color: "#5c5c5c", margin: "0 auto 28px", maxWidth: 380, fontWeight: 500, lineHeight: 1.5 }}>Comparez les coûts. Choisissez malin.</p>
+      <p style={{ fontSize: 14, color: "#4B5563", margin: "0 auto 28px", maxWidth: 380, fontWeight: 500, lineHeight: 1.5 }}>Comparez les coûts. Choisissez malin.</p>
       <div style={{ position: "relative", maxWidth: 460, margin: "0 auto" }}>
         <div style={{ display: "flex", background: "#fff", borderRadius: 14, padding: "4px 4px 4px 18px", boxShadow: "0 2px 20px rgba(27,67,50,.12), 0 0 0 1px rgba(27,67,50,.06)" }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" style={{ marginTop: 12, opacity: .6 }}><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-          <input value={q} onChange={e => { setQ(e.target.value); setShow(true); setNoMatchMsg(false); }} onFocus={() => setShow(true)} onBlur={() => setTimeout(() => setShow(false), 200)}
-            placeholder="iPhone 15, lave-linge Bosch, PS5..." style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: F, fontSize: 15, color: "#111", padding: "14px 12px" }} />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" style={{ marginTop: 12, opacity: .6 }} aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+          <label htmlFor="hero-search" className="sr-only">Rechercher un produit (ex: iPhone 15, lave-linge Bosch, PS5)</label>
+          <input id="hero-search" value={q} onChange={e => { setQ(e.target.value); setShow(true); setNoMatchMsg(false); }} onFocus={() => setShow(true)} onBlur={() => setTimeout(() => setShow(false), 200)}
+            placeholder="iPhone 15, lave-linge Bosch, PS5..." aria-label="Rechercher un produit" style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: F, fontSize: 15, color: "#111", padding: "14px 12px" }} />
           <button onClick={() => {
             setNoMatchMsg(false);
             if (exactMatch) { onSearch(exactMatch.id); setQ(""); }
@@ -272,13 +298,13 @@ function Hero({ onSearch, onNav }) {
         {noMatchMsg && !exactMatch && <div className="page-enter" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, padding: "14px 18px", background: "#FEF2F2", borderRadius: 12, border: "1px solid #FECACA", fontSize: 13, color: "#991B1B", zIndex: 50, boxShadow: "0 4px 16px rgba(153,27,27,.08)" }}>
           {sug.length === 0 ? "Aucun produit trouvé. Vérifiez l'orthographe ou parcourez les catégories." : "Sélectionnez un produit dans la liste ci-dessous pour un résultat précis."}
         </div>}
-        {show && sug.length > 0 && <div className="page-enter" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", borderRadius: 12, boxShadow: "0 8px 32px rgba(27,67,50,.12)", overflow: "hidden", zIndex: 50, border: "1px solid rgba(0,0,0,.06)" }}>
-          {sug.map(item => <div key={item.id} onMouseDown={() => { setQ(""); setNoMatchMsg(false); onSearch(item.id); }} className="link-hover" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #f0f0f0", transition: "background .2s" }}
+        {show && sug.length > 0 && <ul className="page-enter" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", borderRadius: 12, boxShadow: "0 8px 32px rgba(27,67,50,.12)", overflow: "hidden", zIndex: 50, border: "1px solid rgba(0,0,0,.06)", margin: 0, padding: 0, listStyle: "none" }}>
+          {sug.map(item => <li key={item.id}><button type="button" onMouseDown={() => { setQ(""); setNoMatchMsg(false); onSearch(item.id); }} className="link-hover" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #f0f0f0", transition: "background .2s", width: "100%", textAlign: "left", background: "none", borderLeft: "none", borderRight: "none", borderTop: "none", font: "inherit" }}
             onMouseEnter={e => e.currentTarget.style.background = "#F8FAF9"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
             <ProductImg brand={item.brand} item={item} size={34} />
-            <div style={{ textAlign: "left" }}><div style={{ fontWeight: 600, fontSize: 13, color: "#111" }}>{item.brand} {item.name}</div><div style={{ fontSize: 11, color: "#9CA3AF" }}>{item.productType} · {item.priceNew} €</div></div>
-          </div>)}
-        </div>}
+            <div style={{ textAlign: "left" }}><div style={{ fontWeight: 600, fontSize: 13, color: "#111" }}>{item.brand} {item.name}</div><div style={{ fontSize: 11, color: "#6B7280" }}>{item.productType} · {item.priceNew} €</div></div>
+          </button></li>)}
+        </ul>}
       </div>
       <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
         {["iPhone 13", "MacBook Air M3", "Galaxy S24", "Lave-linge Bosch", "PlayStation 5", "Dyson V15", "Thermomix TM6", "iPad Pro"].map(label => {
@@ -298,7 +324,7 @@ function Hero({ onSearch, onNav }) {
           {v.txt}
         </div>)}
       </div>
-      <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 16, marginBottom: 0 }}>{ITEMS.length} produits · {CATS.length} catégories</p>
+      <p style={{ fontSize: 12, color: "#6B7280", marginTop: 16, marginBottom: 0 }}>{ITEMS.length} produits · {CATS.length} catégories</p>
     </section>
     <BannerCarousel banners={banners} onNav={onNav} />
   </div>
@@ -347,11 +373,11 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
   const hasFilters = selType || selBrand;
 
   return <div className="page-enter" style={{ fontFamily: F }}>
-    <div style={{ padding: "12px 20px", maxWidth: 860, margin: "0 auto", fontSize: 12, color: "#9CA3AF", display: "flex", gap: 5, alignItems: "center" }}>
-      <span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>{cat.name}</span>
+    <nav aria-label="Fil d'Ariane" style={{ padding: "12px 20px", maxWidth: 860, margin: "0 auto", fontSize: 12, color: "#6B7280", display: "flex", gap: 5, alignItems: "center" }}>
+      <button type="button" onClick={() => onNav("home")} style={{ cursor: "pointer", color: "#111", fontWeight: 500, background: "none", border: "none", padding: 0, font: "inherit" }}>Accueil</button><Chev /><span>{cat.name}</span>
       {selBrand && <><Chev /><span>{selBrand}</span></>}
       {selType && <><Chev /><span>{selType}</span></>}
-    </div>
+    </nav>
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 20px 80px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
@@ -1480,10 +1506,10 @@ function Footer({ onNav }) {
         <p style={{ maxWidth: 200, lineHeight: 1.5 }}>La marketplace de la réparation intelligente. Paris.</p>
       </div>
       <div style={{ display: "flex", gap: 28 }}>
-        <div><div style={{ color: "#52B788", fontWeight: 600, marginBottom: 5, fontSize: 10, textTransform: "uppercase", letterSpacing: ".04em" }}>Technologies</div>{SIDEBAR_GROUPS[0].ids.map(id => CATS.find(c => c.id === id)).filter(Boolean).map(c => <div key={c.id} onClick={() => onNav("cat", c.id)} style={{ marginBottom: 2, cursor: "pointer" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{c.name}</div>)}</div>
-        <div><div style={{ color: "#52B788", fontWeight: 600, marginBottom: 5, fontSize: 10, textTransform: "uppercase", letterSpacing: ".04em" }}>Maison</div>{SIDEBAR_GROUPS[1].ids.map(id => CATS.find(c => c.id === id)).filter(Boolean).map(c => <div key={c.id} onClick={() => onNav("cat", c.id)} style={{ marginBottom: 2, cursor: "pointer" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{c.name}</div>)}</div>
+        <div><div style={{ color: "#52B788", fontWeight: 600, marginBottom: 5, fontSize: 10, textTransform: "uppercase", letterSpacing: ".04em" }}>Technologies</div>{SIDEBAR_GROUPS[0].ids.map(id => CATS.find(c => c.id === id)).filter(Boolean).map(c => <button key={c.id} type="button" onClick={() => onNav("cat", c.id)} style={{ marginBottom: 2, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{c.name}</button>)}</div>
+        <div><div style={{ color: "#52B788", fontWeight: 600, marginBottom: 5, fontSize: 10, textTransform: "uppercase", letterSpacing: ".04em" }}>Maison</div>{SIDEBAR_GROUPS[1].ids.map(id => CATS.find(c => c.id === id)).filter(Boolean).map(c => <button key={c.id} type="button" onClick={() => onNav("cat", c.id)} style={{ marginBottom: 2, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{c.name}</button>)}</div>
         <div><div style={{ color: "#52B788", fontWeight: 600, marginBottom: 5, fontSize: 10, textTransform: "uppercase", letterSpacing: ".04em" }}>Compare.</div>
-          {[{ l: "Comment ça marche", p: "guide" }, { l: "À propos", p: "about" }, { l: "Contact", p: "contact" }, { l: "FAQ", p: "faq" }, { l: "Mentions légales", p: "legal" }].map(x => <div key={x.l} onClick={() => onNav(x.p)} style={{ marginBottom: 2, cursor: "pointer" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{x.l}</div>)}
+          {[{ l: "Comment ça marche", p: "guide" }, { l: "À propos", p: "about" }, { l: "Contact", p: "contact" }, { l: "FAQ", p: "faq" }, { l: "Mentions légales", p: "legal" }].map(x => <button key={x.l} type="button" onClick={() => onNav(x.p)} style={{ marginBottom: 2, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{x.l}</button>)}
         </div>
       </div>
     </div>
@@ -1629,10 +1655,11 @@ export default function App() {
 
   return <div style={{ minHeight: "100vh", background: W }}>
     <style>{CSS}</style>
+    <a href="#main" className="skip-link">Aller au contenu</a>
     {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={m => { setUser({ name: m === "email" ? "Utilisateur" : `Utilisateur ${m}`, method: m }); setShowAuth(false); }} />}
     <Sidebar open={sidebar} onClose={() => setSidebar(false)} onNav={nav} />
     <Navbar onNav={nav} user={user} onAuth={() => user ? setUser(null) : setShowAuth(true)} onMenu={() => setSidebar(true)} />
-
+    <main id="main">
     {page.type === "home" && <>
       <Hero onSearch={id => nav("compare", id)} onNav={nav} />
       {/* Populaires — FIRST */}
@@ -1682,7 +1709,7 @@ export default function App() {
               <div style={{ padding: 16, flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gridAutoRows: "92px", gap: 10 }}>
                 {cats.map(cat => {
                   const c = ITEMS.filter(i => i.category === cat.id).length;
-                  return <div key={cat.id} onClick={() => nav("cat", cat.id)} title={cat.name} style={{ padding: "14px 16px", borderRadius: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "all .2s", border: "1px solid transparent", background: "#FAFAF9", height: "100%", width: "100%", minWidth: 0, boxSizing: "border-box" }}
+                  return <button key={cat.id} type="button" onClick={() => nav("cat", cat.id)} title={cat.name} style={{ padding: "14px 16px", borderRadius: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "all .2s", border: "1px solid transparent", background: "#FAFAF9", height: "100%", width: "100%", minWidth: 0, boxSizing: "border-box", textAlign: "left", font: "inherit" }}
                     onMouseEnter={e => { e.currentTarget.style.background = cardHoverBg; e.currentTarget.style.borderColor = cardHoverBorder; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,.06)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "#FAFAF9"; e.currentTarget.style.borderColor = "transparent"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
                     <span style={{ width: 40, height: 40, borderRadius: 10, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1690,9 +1717,9 @@ export default function App() {
                     </span>
                     <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
                       <div style={{ fontWeight: 600, fontSize: 13, color: "#111", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", ...(cat.id === "electromenager" ? { whiteSpace: "nowrap" } : { wordBreak: "break-word", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }) }}>{cat.name}</div>
-                      <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{c} produits</div>
+                      <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{c} produits</div>
                     </div>
-                  </div>;
+                  </button>;
                 })}
               </div>
             </div>;
@@ -1716,12 +1743,12 @@ export default function App() {
           <summary style={{ padding: "14px 18px", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "#111" }}>{f.q}</summary>
           <p style={{ padding: "0 18px 14px", fontSize: 13, color: "#6B7280", lineHeight: 1.7 }}>{f.a}</p>
         </details>)}
-        <div style={{ textAlign: "center", marginTop: 16, marginBottom: 28 }}><span style={{ fontSize: 13, fontWeight: 600, color: GREEN, cursor: "pointer" }} onClick={() => nav("faq")}>Toutes les questions →</span></div>
+        <div style={{ textAlign: "center", marginTop: 16, marginBottom: 28 }}><button type="button" onClick={() => nav("faq")} style={{ fontSize: 13, fontWeight: 600, color: GREEN, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit" }}>Voir toutes les questions fréquentes →</button></div>
         <div style={{ background: "#fff", border: "1px solid #E8E6E2", borderRadius: 14, padding: 28, marginTop: 24, boxShadow: "0 2px 12px rgba(0,0,0,.04)" }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: ACCENT, marginBottom: 12 }}>Qui sommes-nous ?</h2>
           <p style={{ fontSize: 14, color: "#555", lineHeight: 1.7, marginBottom: 10 }}>Basés à Paris, nous avons créé Compare. pour aider chaque personne à faire le meilleur choix entre réparer, acheter d'occasion ou racheter neuf.</p>
           <p style={{ fontSize: 14, color: "#555", lineHeight: 1.7, marginBottom: 0 }}>Chaque appareil réparé, c'est un appareil de moins en décharge, des ressources préservées et des émissions de CO₂ évitées.</p>
-          <span style={{ display: "inline-block", marginTop: 14, fontSize: 14, fontWeight: 600, color: GREEN, cursor: "pointer" }} onClick={() => nav("about")}>En savoir plus →</span>
+          <button type="button" onClick={() => nav("about")} style={{ display: "inline-block", marginTop: 14, fontSize: 14, fontWeight: 600, color: GREEN, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit" }}>En savoir plus sur Compare. →</button>
         </div>
       </section>
     </>}
@@ -1749,6 +1776,7 @@ export default function App() {
     {page.type === "repair-guide" && <RepairGuidePage onNav={nav} />}
     {page.type === "about" && <AboutPage onNav={nav} />}
     {page.type === "contact" && <ContactPage onNav={nav} />}
+    </main>
     <Footer onNav={nav} />
   </div>;
 }
