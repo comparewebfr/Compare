@@ -133,6 +133,22 @@ export function pathBrand(catId, productType, brand) {
   return `${base}/${slugify(brand)}`;
 }
 
+/** Liste des modèles par type (Occasion ou Neuf) — pages générales */
+export function pathModelsList(catId, productType, affType) {
+  const base = pathProductType(catId, productType);
+  if (!base || base === "/") return "/";
+  if (affType === "occ") return `${base}/occasion`;
+  if (affType === "neuf") return `${base}/acheter-neuf`;
+  return base;
+}
+
+/** Page Réparer — références pièces pour DIY (pages générales) */
+export function pathRepairPage(catId, productType) {
+  const base = pathProductType(catId, productType);
+  if (!base || base === "/") return "/";
+  return `${base}/reparer`;
+}
+
 export function pathProduct(item) {
   if (!item) return "/";
   return `/produits/${getProductSlug(item)}`;

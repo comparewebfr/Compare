@@ -3,7 +3,7 @@
  */
 
 import { CATS } from "./data";
-import { OCC_CATS, ISS_TPL, ITEMS, TECH_CATS, RET, CHIP_TO_PRODUCT } from "./data";
+import { OCC_CATS, ISS_TPL, ITEMS, TECH_CATS, RET, CHIP_TO_PRODUCT, PAGES_GENERALES, REPAIRABILITY_ELIGIBLE_CATS, QUALIREPAR_ELIGIBLE_CATS, REPAIRABILITY_INDEX_BY_TYPE, TUTORIAL_STEPS_BY_PRODUCT } from "./data";
 import * as R from "./routes";
 
 export { slugify } from "./routes";
@@ -148,7 +148,7 @@ export function getRet(cat, type) {
   const m = OCC_CATS.includes(cat);
   if (type === "neuf") return RET.neuf.filter(r => m ? ["Amazon", "Leroy Merlin", "ManoMano", "Cdiscount", "IKEA", "But"].includes(r.n) : ["Amazon", "Fnac", "Darty", "Boulanger", "Cdiscount"].includes(r.n));
   if (type === "occ") return RET.occ.filter(r => m ? ["Rakuten", "Cdiscount", "Amazon Renewed"].includes(r.n) : ["Back Market", "Amazon Renewed", "Certideal"].includes(r.n));
-  return RET.pcs.filter(r => m ? ["Spareka", "Leroy Merlin", "ManoMano", "Amazon"].includes(r.n) : ["Amazon", "SOSav", "Spareka"].includes(r.n));
+  return RET.pcs.filter(r => m ? ["Amazon", "But", "Leroy Merlin", "ManoMano"].includes(r.n) : ["Amazon", "SOSav", "Spareka"].includes(r.n));
 }
 
 export function buildRetailerUrl(r, item, affType) {
@@ -171,12 +171,55 @@ export function buildRetailerUrl(r, item, affType) {
   return `https://www.google.com/search?q=${q}+${r.n}`;
 }
 
+/** URL de recherche pièces détachées (par type de produit + panne) — pour pages générales sans item précis */
+export function buildRetailerUrlForParts(r, productType, panneName) {
+  const q = encodeURIComponent(`pièce ${panneName} ${productType}`.trim());
+  if (r.n === "Amazon") return `https://www.amazon.fr/s?k=${q}`;
+  if (r.n === "Leroy Merlin") return `https://www.leroymerlin.fr/recherche?q=${q}`;
+  if (r.n === "ManoMano") return `https://www.manomano.fr/recherche?q=${q}`;
+  if (r.n === "But") return `https://www.but.fr/recherche?q=${q}`;
+  if (r.n === "Spareka") return `https://www.spareka.fr/recherche?q=${q}`;
+  if (r.n === "SOSav") return `https://www.sosav.fr/recherche?q=${q}`;
+  return `https://www.google.com/search?q=${q}`;
+}
+
+export function isRepairabilityEligible(catId) {
+  return REPAIRABILITY_ELIGIBLE_CATS.includes(catId);
+}
+
+export function isQualiReparEligible(catId) {
+  return QUALIREPAR_ELIGIBLE_CATS.includes(catId);
+}
+
+export function getRepairabilityIndex(productType) {
+  return REPAIRABILITY_INDEX_BY_TYPE[productType] ?? null;
+}
+
+/** Étapes de tutoriel adaptées au type de produit */
+export function getTutorialSteps(productType) {
+  return TUTORIAL_STEPS_BY_PRODUCT[productType] ?? TUTORIAL_STEPS_BY_PRODUCT.default;
+}
+
+/** Requête YouTube ciblée : "réparer [produit] [problème]" */
+export function getYoutubeRepairQuery(productType, problemName) {
+  const p = (productType || "").toLowerCase().trim();
+  const prob = (problemName || "").trim();
+  return `réparer ${p} ${prob}`.replace(/\s+/g, " ").trim();
+}
+
 export function buildRepairerMapsUrl(item, place) {
   const where = (place || "").trim();
   if (!where) return "";
   const isTech = TECH_CATS.includes(item.category);
   const focus = isTech ? `${item.brand} ${item.name}` : `${item.productType} ${item.brand}`;
   const query = `réparateur ${focus} ${where}`.replace(/\s+/g, " ").trim();
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+export function buildRepairerMapsUrlForType(productType, place) {
+  const where = (place || "").trim();
+  if (!where) return "";
+  const query = `réparateur ${productType} ${where}`.replace(/\s+/g, " ").trim();
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
@@ -218,6 +261,14 @@ export function pathBrand(catId, productType, brand) {
   return R.pathBrand(catId, productType, brand);
 }
 
+export function pathModelsList(catId, productType, affType) {
+  return R.pathModelsList(catId, productType, affType);
+}
+
+export function pathRepairPage(catId, productType) {
+  return R.pathRepairPage(catId, productType);
+}
+
 export function findCategoryBySlug(slug) {
   return R.findCategoryBySlug(slug);
 }
@@ -235,8 +286,14 @@ export function buildSeo(page, data) {
   if (page === "home") return { title: `${siteName} — Réparer, occasion ou neuf ?`, description: "Comparez réparation, achat reconditionné et neuf pour faire le meilleur choix. Estimations de coût, verdict et alternatives.", canonicalPath: "/", breadcrumb: [{ label: "Accueil", path: "/" }] };
   if ((page === "cat" || page === "cat-type" || page === "cat-brand") && data?.cat) {
     const cat = typeof data.cat === "string" ? CATS.find(c => c.id === data.cat) : data.cat;
+    const catId = cat?.id || data.cat;
     const name = cat?.name || data.cat;
-    const path = pathCategory(cat?.id || data.cat);
+    const path = pathCategory(catId);
+    if (page === "cat-type" && data.productType && PAGES_GENERALES.includes(catId)) {
+      const typeLower = data.productType.toLowerCase();
+      const typePath = R.pathProductType(catId, data.productType);
+      return { title: `Réparer un ${typeLower} ou le remplacer ? | ${siteName}`, description: `Guide : quand réparer ou remplacer un ${typeLower} ? Coûts indicatifs, pannes typiques et références pour comparer.`, canonicalPath: typePath, breadcrumb: [{ label: "Accueil", path: "/" }, { label: name, path }, { label: data.productType, path: typePath }] };
+    }
     return { title: `${name} — Réparer ou remplacer ? | ${siteName}`, description: `Comparez réparation, occasion et neuf pour les ${name}. Trouvez le meilleur choix pour votre appareil.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: name, path }] };
   }
   if ((page === "compare" || page === "issue") && data?.item) {

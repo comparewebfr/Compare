@@ -27,6 +27,7 @@ table tr:hover td{background:rgba(0,0,0,.015)!important}
 .link-hover{transition:color .2s}@media(hover:hover){.link-hover:hover{color:#1B4332}}
 .show-mobile{display:none!important}
 @media(max-width:640px){.grid-4{grid-template-columns:repeat(2,1fr)!important}.grid-3{grid-template-columns:1fr!important}.grid-2{grid-template-columns:1fr!important}.hide-mobile{display:none!important}.show-mobile{display:flex!important}.hero-title{font-size:28px!important;letter-spacing:-.02em!important}.nav-links{display:none!important}.stat-grid{grid-template-columns:repeat(2,1fr)!important}nav{padding:0 12px!important}section{padding-left:14px!important;padding-right:14px!important}
+.table-compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.table-compare-scroll table{min-width:340px}.table-compare-scroll-hint{display:none}@media(max-width:640px){.table-compare-scroll-hint{display:block;font-size:11px;color:#9CA3AF;text-align:center;margin-top:6px}}
 button,select{min-height:44px}
 .btn-cta{padding:12px 22px!important;min-height:48px}}
 `;

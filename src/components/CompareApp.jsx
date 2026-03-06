@@ -1,13 +1,26 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(typeof window !== "undefined" && window.innerWidth <= 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
 import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { PRODUCT_IMAGES } from "../data/product-images";
+import { PRODUCT_TYPE_IMAGES } from "../data/product-type-images";
 import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
-import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, RET, TECH_CATS, WHEN_REPAIR_SPEC } from "../lib/data";
-import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRepairerMapsUrl, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime } from "../lib/helpers";
+import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
+import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
+import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
 
 // ─── LOGO ───
 function Logo({ s = 32 }) {
@@ -110,10 +123,32 @@ function ProductImg({ brand, item, size = 48 }) {
   );
 }
 
+/** Image par type de produit (maison) — PRODUCT_TYPE_IMAGES ou public/products-types/{slug}.jpg */
+function ProductTypeImg({ productType, size = 120, iconName = "washer", iconColor = "#B45309" }) {
+  const slug = slugify(productType || "");
+  const src = PRODUCT_TYPE_IMAGES[productType] || (slug ? `/products-types/${slug}.jpg` : null);
+  const [hasError, setHasError] = useState(false);
+  useEffect(() => setHasError(false), [productType]);
+  const placeholder = (
+    <div style={{ width: size, height: size, borderRadius: 14, background: "linear-gradient(135deg, #FEF3E2 0%, #FDE8CD 100%)", display: "flex", alignItems: "center", justifyContent: "center", border: "2px dashed #E5E7EB", flexShrink: 0 }}>
+      <Icon name={iconName} s={size * 0.4} color={iconColor} style={{ opacity: 0.6 }} />
+    </div>
+  );
+  if (!src || hasError) return placeholder;
+  return (
+    <Image src={src} alt={productType} onError={() => setHasError(true)} width={size} height={size} sizes={`${size}px`} style={{ width: size, height: size, borderRadius: 14, objectFit: "cover", border: "1px solid #E5E3DE", flexShrink: 0 }} />
+  );
+}
+
 // ─── AUTH MODAL ───
-function AuthModal({ onClose, onLogin }) {
+const FIREBASE_ENABLED = typeof window !== "undefined" && process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+function AuthModal({ onClose }) {
+  const [mode, setMode] = useState("signin"); // "signin" | "signup"
   const [email, setEmail] = useState("");
-  const dialogRef = useRef(null);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const closeBtnRef = useRef(null);
   useEffect(() => {
     closeBtnRef.current?.focus();
@@ -122,18 +157,65 @@ function AuthModal({ onClose, onLogin }) {
     document.body.style.overflow = "hidden";
     return () => { document.removeEventListener("keydown", onEsc); document.body.style.overflow = ""; };
   }, [onClose]);
+
+  const handleGoogle = async () => {
+    if (!FIREBASE_ENABLED) { setError("Connexion non configurée. Configurez Firebase."); return; }
+    setError(""); setLoading(true);
+    try {
+      await signInWithGoogle();
+      onClose();
+    } catch (e) {
+      setError(e?.message || "Erreur Google");
+    } finally { setLoading(false); }
+  };
+
+  const handleApple = async () => {
+    if (!FIREBASE_ENABLED) { setError("Connexion non configurée. Configurez Firebase."); return; }
+    setError(""); setLoading(true);
+    try {
+      await signInWithApple();
+      onClose();
+    } catch (e) {
+      setError(e?.message || "Erreur Apple");
+    } finally { setLoading(false); }
+  };
+
+  const handleEmail = async () => {
+    if (!FIREBASE_ENABLED) { setError("Connexion non configurée. Configurez Firebase."); return; }
+    if (!email.trim() || !password.trim()) { setError("Email et mot de passe requis"); return; }
+    if (password.length < 6) { setError("Le mot de passe doit faire au moins 6 caractères"); return; }
+    setError(""); setLoading(true);
+    try {
+      if (mode === "signup") {
+        await signUpWithEmail(email.trim(), password);
+      } else {
+        await signInWithEmail(email.trim(), password);
+      }
+      onClose();
+    } catch (e) {
+      const msg = e?.code === "auth/email-already-in-use" ? "Cet email est déjà utilisé" : e?.code === "auth/invalid-credential" ? "Email ou mot de passe incorrect" : e?.message || "Erreur";
+      setError(msg);
+    } finally { setLoading(false); }
+  };
+
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="auth-title" ref={dialogRef} style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" aria-labelledby="auth-title" style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 28, width: 370, maxWidth: "90vw" }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 18 }}>
-          <h2 id="auth-title" style={{ fontSize: 20, fontWeight: 800, color: "#111" }}>Se connecter</h2>
+          <h2 id="auth-title" style={{ fontSize: 20, fontWeight: 800, color: "#111" }}>{mode === "signup" ? "Créer un compte" : "Se connecter"}</h2>
           <button ref={closeBtnRef} onClick={onClose} aria-label="Fermer" style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#9CA3AF", minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
-        {["Google", "Apple"].map(p => <button key={p} onClick={() => onLogin(p)} style={{ width: "100%", padding: 11, borderRadius: 10, border: p === "Apple" ? "1.5px solid #111" : "1.5px solid #D1D5DB", background: p === "Apple" ? "#111" : "#fff", color: p === "Apple" ? "#fff" : "#374151", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: F, marginBottom: 8 }}>Continuer avec {p}</button>)}
+        {!FIREBASE_ENABLED && <p style={{ fontSize: 13, color: AMBER, marginBottom: 12 }}>Configurez les variables Firebase (NEXT_PUBLIC_FIREBASE_*) pour activer la connexion.</p>}
+        <button type="button" onClick={handleGoogle} disabled={!FIREBASE_ENABLED || loading} style={{ width: "100%", padding: 12, borderRadius: 10, border: "1.5px solid #D1D5DB", background: "#fff", color: "#374151", fontSize: 14, fontWeight: 600, cursor: FIREBASE_ENABLED && !loading ? "pointer" : "not-allowed", fontFamily: F, marginBottom: 8, opacity: FIREBASE_ENABLED && !loading ? 1 : 0.6 }}>Continuer avec Google</button>
+        <button type="button" onClick={handleApple} disabled={!FIREBASE_ENABLED || loading} style={{ width: "100%", padding: 12, borderRadius: 10, border: "1.5px solid #111", background: "#111", color: "#fff", fontSize: 14, fontWeight: 600, cursor: FIREBASE_ENABLED && !loading ? "pointer" : "not-allowed", fontFamily: F, marginBottom: 8, opacity: FIREBASE_ENABLED && !loading ? 1 : 0.6 }}>Continuer avec Apple</button>
         <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "12px 0" }}><div style={{ flex: 1, height: 1, background: "#E5E7EB" }} /><span style={{ fontSize: 12, color: "#9CA3AF" }}>ou</span><div style={{ flex: 1, height: 1, background: "#E5E7EB" }} /></div>
         <label htmlFor="auth-email" className="sr-only">Adresse email</label>
-        <input id="auth-email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemple.com" type="email" autoComplete="email" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #D1D5DB", fontSize: 14, fontFamily: F, marginBottom: 8, outline: "none" }} />
-        <button onClick={() => onLogin("email")} style={{ width: "100%", padding: 11, borderRadius: 10, border: "none", background: ACCENT, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: F }}>Se connecter</button>
+        <input id="auth-email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="email@exemple.com" type="email" autoComplete="email" disabled={!FIREBASE_ENABLED} style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #D1D5DB", fontSize: 14, fontFamily: F, marginBottom: 8, outline: "none" }} />
+        <label htmlFor="auth-password" className="sr-only">Mot de passe</label>
+        <input id="auth-password" value={password} onChange={e => { setPassword(e.target.value); setError(""); }} placeholder="Mot de passe (min. 6 caractères)" type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} disabled={!FIREBASE_ENABLED} style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #D1D5DB", fontSize: 14, fontFamily: F, marginBottom: 8, outline: "none" }} />
+        {error && <p style={{ fontSize: 13, color: "#DC2626", marginBottom: 8 }}>{error}</p>}
+        <button type="button" onClick={handleEmail} disabled={!FIREBASE_ENABLED || loading} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: ACCENT, color: "#fff", fontSize: 14, fontWeight: 600, cursor: FIREBASE_ENABLED && !loading ? "pointer" : "not-allowed", fontFamily: F, marginBottom: 8, opacity: FIREBASE_ENABLED && !loading ? 1 : 0.6 }}>{mode === "signup" ? "Créer mon compte" : "Se connecter"}</button>
+        <button type="button" onClick={() => { setMode(m => m === "signup" ? "signin" : "signup"); setError(""); }} style={{ background: "none", border: "none", fontSize: 13, color: "#6B7280", cursor: "pointer", fontFamily: F, padding: 0 }}>{mode === "signup" ? "Déjà un compte ? Se connecter" : "Pas de compte ? Créer un compte"}</button>
       </div>
     </div>
   );
@@ -177,7 +259,7 @@ function Sidebar({ open, onClose, onNav }) {
         <div style={{ paddingTop: 20, borderTop: "1px solid #E8E6E2", marginTop: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", marginBottom: 12, textTransform: "uppercase", letterSpacing: ".06em" }}>Infos</div>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-            {[{ l: "Comment ça marche", p: "guide", icon: "search" }, { l: "Guide réparation", p: "repair-guide", icon: "tool" }, { l: "À propos", p: "about", icon: "info" }, { l: "Contact", p: "contact", icon: "chat" }, { l: "FAQ", p: "faq", icon: "book" }].map(x =>
+            {[{ l: "Comment ça marche", p: "guide", icon: "search" }, { l: "Guide réparation", p: "repair-guide", icon: "tool" }, { l: "Avantages", p: "avantages", icon: "leaf" }, { l: "À propos", p: "about", icon: "info" }, { l: "Contact", p: "contact", icon: "chat" }, { l: "FAQ", p: "faq", icon: "book" }].map(x =>
               <li key={x.l}>
                 <button type="button" onClick={() => { onNav(x.p); onClose(); }} style={infoStyle({})} onMouseEnter={e => { e.currentTarget.style.background = ACCENT + "12"; e.currentTarget.style.borderColor = ACCENT + "40"; e.currentTarget.style.color = ACCENT; }} onMouseLeave={e => { e.currentTarget.style.background = "#F8FAF9"; e.currentTarget.style.borderColor = "#E8E6E2"; e.currentTarget.style.color = "#374151"; }}>
                   <Icon name={x.icon} s={20} color="currentColor" style={{ opacity: .85 }} />
@@ -204,10 +286,10 @@ function Navbar({ onNav, user, onAuth, onMenu }) {
         <span style={{ fontSize: 24, fontWeight: 800, color: W, letterSpacing: "-.03em" }}>Compare<span style={{ color: "#52B788" }}>.</span></span>
       </button>
     </div>
-    <div className="nav-links" style={{ display: "flex", gap: 2, alignItems: "center" }}>
-      {[{ l: "Comment ça marche", p: "guide" }, { l: "Guide", p: "repair-guide" }, { l: "À propos", p: "about" }, { l: "Contact", p: "contact" }].map(x =>
-        <button key={x.l} onClick={() => onNav(x.p)} style={{ background: "transparent", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 500, color: "#B7E4C7", fontFamily: F, padding: "6px 8px" }}
-          onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{x.l}</button>
+    <div className="nav-links" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      {[{ l: "Comment ça marche", p: "guide" }, { l: "Guide", p: "repair-guide" }, { l: "Avantages", p: "avantages" }, { l: "À propos", p: "about" }, { l: "Contact", p: "contact" }].map(x =>
+        <button key={x.l} onClick={() => onNav(x.p)} style={{ background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,.9)", fontFamily: F, padding: "10px 16px", transition: "color .2s, background .2s" }}
+          onMouseEnter={e => { e.target.style.color = "#fff"; e.target.style.background = "rgba(255,255,255,.12)"; }} onMouseLeave={e => { e.target.style.color = "rgba(255,255,255,.9)"; e.target.style.background = "transparent"; }}>{x.l}</button>
       )}
     </div>
     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -239,12 +321,21 @@ function BannerCarousel({ banners, onNav }) {
     </button>;
   };
   return <section aria-label="Bannières catégories" style={{ maxWidth: 860, margin: "0 auto", padding: "0 20px 24px", position: "relative" }}>
-    <button type="button" key={idx} onClick={() => onNav("cat", b.catId)} aria-label={`Voir les produits ${b.title}`} style={{
-      animation: "slideFadeIn 0.5s ease-out",
-      background: b.image ? undefined : b.bg,
-      borderRadius: 16, padding: b.image ? 0 : "36px 56px", cursor: "pointer", minHeight: b.image ? 320 : 200, display: "flex", alignItems: "center", gap: 28, position: "relative", overflow: "hidden", border: "1px solid rgba(0,0,0,.06)", boxShadow: "0 4px 24px rgba(0,0,0,.08)", transition: "transform .25s ease, box-shadow .25s ease", width: "100%", textAlign: "left", font: "inherit",
-    }}
-      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,.12)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,.08)"; }}>
+    <div
+      key={idx}
+      role="button"
+      tabIndex={0}
+      onClick={() => onNav("cat", b.catId)}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav("cat", b.catId); } }}
+      aria-label={`Voir les produits ${b.title}`}
+      style={{
+        animation: "slideFadeIn 0.5s ease-out",
+        background: b.image ? undefined : b.bg,
+        borderRadius: 16, padding: b.image ? 0 : "36px 56px", cursor: "pointer", minHeight: b.image ? 320 : 200, display: "flex", alignItems: "center", gap: 28, position: "relative", overflow: "hidden", border: "1px solid rgba(0,0,0,.06)", boxShadow: "0 4px 24px rgba(0,0,0,.08)", transition: "transform .25s ease, box-shadow .25s ease", width: "100%", textAlign: "left", font: "inherit",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,.12)"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,.08)"; }}
+    >
       {b.image && (
         <Image src={b.image} alt="" fill priority={idx === 0} loading={idx === 0 ? "eager" : "lazy"} sizes="(max-width: 640px) 100vw, 860px" style={{ objectFit: "cover", zIndex: 0 }} />
       )}
@@ -259,9 +350,9 @@ function BannerCarousel({ banners, onNav }) {
           <span style={{ display: "inline-block", marginTop: 12, fontSize: 14, fontWeight: 700, color: b.image ? "#52B788" : (b.dark ? "#52B788" : GREEN) }}>Voir les produits →</span>
         </div>
       </div>
-      {arrowBtn("prev")}
-      {arrowBtn("next")}
-    </button>
+    </div>
+    {arrowBtn("prev")}
+    {arrowBtn("next")}
   </section>;
 }
 
@@ -269,13 +360,13 @@ function BannerCarousel({ banners, onNav }) {
 const HERO_BANNERS = (W, ACCENT, GREEN) => [
   { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "/banner-hero.jpg", title: "Les meilleurs prix pour votre smartphone", sub: "Comparez, réparez ou rachetez un smartphone reconditionné", catId: "smartphones", icon: "smartphone", dark: false },
   { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=640&q=75", title: "Réparez votre console de jeux", sub: "Donnez une seconde vie à votre PS5", catId: "consoles", icon: "gamepad", dark: true },
-  { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=640&q=75", title: "Un problème dans votre cuisine ?", sub: "Réparez vos appareils à prix imbattables", catId: "cuisine", icon: "kitchen", dark: false },
+  { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=640&q=75", title: "Un problème dans votre cuisine ?", sub: "Réparez vos appareils à prix imbattables", catId: "electromenager", icon: "kitchen", dark: false },
 ];
-function Hero({ onSearch, onNav }) {
+function Hero({ onSearch, onNav, popularSearches = POPULAR_SEARCHES }) {
   const [q, setQ] = useState(""); const [show, setShow] = useState(false); const [noMatchMsg, setNoMatchMsg] = useState(false);
   const qNorm = (q || "").trim().toLowerCase();
-  const sug = useMemo(() => qNorm.length > 1 ? ITEMS.filter(i => `${i.brand} ${i.name} ${i.productType}`.toLowerCase().includes(qNorm)).slice(0, 6) : [], [qNorm]);
-  const exactMatch = useMemo(() => qNorm.length > 0 ? ITEMS.find(i => `${i.brand} ${i.name}`.toLowerCase() === qNorm) : null, [qNorm]);
+  const sug = useMemo(() => qNorm.length > 1 ? ITEMS.filter(i => !PAGES_GENERALES.includes(i.category) && `${i.brand} ${i.name} ${i.productType}`.toLowerCase().includes(qNorm)).slice(0, 6) : [], [qNorm]);
+  const exactMatch = useMemo(() => qNorm.length > 0 ? ITEMS.find(i => !PAGES_GENERALES.includes(i.category) && `${i.brand} ${i.name}`.toLowerCase() === qNorm) : null, [qNorm]);
   const banners = useMemo(() => HERO_BANNERS(W, ACCENT, GREEN), []);
   return <><div style={{ background: `linear-gradient(180deg, ${W} 0%, #F0EDE6 50%, #E8E6E0 100%)`, paddingBottom: 0 }}>
     <section style={{ padding: "40px 20px 32px", textAlign: "center" }}>
@@ -285,9 +376,9 @@ function Hero({ onSearch, onNav }) {
       <div style={{ position: "relative", maxWidth: 460, margin: "0 auto" }}>
         <div style={{ display: "flex", background: "#fff", borderRadius: 14, padding: "4px 4px 4px 18px", boxShadow: "0 2px 20px rgba(27,67,50,.12), 0 0 0 1px rgba(27,67,50,.06)" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" style={{ marginTop: 12, opacity: .6 }} aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-          <label htmlFor="hero-search" className="sr-only">Rechercher un produit (ex: iPhone 15, lave-linge Bosch, PS5)</label>
+          <label htmlFor="hero-search" className="sr-only">Rechercher un produit tech (ex: iPhone 15, MacBook, PS5)</label>
           <input id="hero-search" value={q} onChange={e => { setQ(e.target.value); setShow(true); setNoMatchMsg(false); }} onFocus={() => setShow(true)} onBlur={() => setTimeout(() => setShow(false), 200)}
-            placeholder="iPhone 15, lave-linge Bosch, PS5..." aria-label="Rechercher un produit" style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: F, fontSize: 15, color: "#111", padding: "14px 12px" }} />
+            placeholder="iPhone 15, MacBook Air, PS5..." aria-label="Rechercher un produit" style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: F, fontSize: 15, color: "#111", padding: "14px 12px" }} />
           <button onClick={() => {
             setNoMatchMsg(false);
             if (exactMatch) { onSearch(exactMatch.id); setQ(""); }
@@ -307,9 +398,12 @@ function Hero({ onSearch, onNav }) {
         </ul>}
       </div>
       <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
-        {["iPhone 13", "MacBook Air M3", "Galaxy S24", "Lave-linge Bosch", "PlayStation 5", "Dyson V15", "Thermomix TM6", "iPad Pro"].map(label => {
-          const it = findProductByChip(label);
-          return it ? <button key={it.id} type="button" onClick={() => onSearch(it.id)} className="pill-hover" style={{ background: "rgba(255,255,255,.9)", border: "1px solid rgba(45,106,79,.25)", borderRadius: 20, padding: "8px 16px", fontSize: 12, color: "#2D6A4F", cursor: "pointer", fontFamily: F, fontWeight: 500, backdropFilter: "blur(4px)", minHeight: 40 }}>{label}</button> : null;
+        {popularSearches.map((entry, idx) => {
+          if (entry.type === "general") {
+            return <button key={idx} type="button" onClick={() => onNav("cat-type", { catId: entry.catId, productType: entry.productType })} className="pill-hover" style={{ background: "rgba(255,255,255,.9)", border: "1px solid rgba(45,106,79,.25)", borderRadius: 20, padding: "8px 16px", fontSize: 12, color: "#2D6A4F", cursor: "pointer", fontFamily: F, fontWeight: 500, backdropFilter: "blur(4px)", minHeight: 40 }}>{entry.label}</button>;
+          }
+          const it = findProductByPopular({ brand: entry.brand, name: entry.name });
+          return it ? <button key={it.id} type="button" onClick={() => onSearch(it.id)} className="pill-hover" style={{ background: "rgba(255,255,255,.9)", border: "1px solid rgba(45,106,79,.25)", borderRadius: 20, padding: "8px 16px", fontSize: 12, color: "#2D6A4F", cursor: "pointer", fontFamily: F, fontWeight: 500, backdropFilter: "blur(4px)", minHeight: 40 }}>{entry.label}</button> : null;
         })}
       </div>
       <div style={{ display: "flex", gap: 20, justifyContent: "center", marginTop: 24, flexWrap: "wrap" }} className="stat-grid">
@@ -331,8 +425,616 @@ function Hero({ onSearch, onNav }) {
   </>;
 }
 
+// ─── TYPE PRODUCT GENERAL PAGE (pages générales : réparer ou racheter par type) ───
+function TypeProductGeneralPage({ catId, productType, onNav }) {
+  const cat = CATS.find(c => c.id === catId);
+  const items = ITEMS.filter(i => i.category === catId && i.productType === productType);
+  const spec = WHEN_REPAIR_SPEC[productType];
+  const tpl = ISS_TPL[productType] || ISS_TPL.default;
+  const sampleItem = items[0];
+  const refIssues = sampleItem ? getIssues(sampleItem) : [];
+  const avgPrice = items.length ? Math.round(items.reduce((s, i) => s + i.priceNew, 0) / items.length) : 0;
+  const fallbackIssues = refIssues.length ? refIssues : tpl.slice(0, 8).map((t, i) => ({
+    id: 1000 + i, name: t.n, repairMin: avgPrice ? Math.max(5, Math.round(avgPrice * t.rn)) : 50, repairMax: avgPrice ? Math.max(10, Math.round(avgPrice * t.rx)) : 150, diff: t.d, time: t.t, partPrice: avgPrice ? Math.round(avgPrice * t.rn * (t.pr || .3)) : 30, ytQuery: `${t.yt || "réparation"} ${productType}`,
+  }));
+
+  const [selPannes, setSelPannes] = useState([]);
+  const [cumul, setCumul] = useState(false);
+  const [place, setPlace] = useState("");
+  const isMobile = useIsMobile();
+  useEffect(() => {
+    if (fallbackIssues.length > 0) {
+      const first = fallbackIssues[0];
+      setSelPannes(p => p.length === 0 ? [first.id ?? first.name] : p);
+    }
+  }, [catId, productType]);
+  const togglePanne = (iss) => {
+    const id = iss.id ?? iss.name;
+    if (cumul) {
+      setSelPannes(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+    } else {
+      setSelPannes(p => (p.includes(id) && p.length === 1) ? [] : [id]);
+    }
+  };
+
+  const activeIssues = fallbackIssues.filter(iss => selPannes.includes(iss.id ?? iss.name));
+  const refItem = sampleItem || items[0] || { id: 0, category: catId, productType, priceNew: avgPrice || 250, year: new Date().getFullYear() - 3, brand: "Référence", name: "Moyenne" };
+  const repairEst = refItem && activeIssues.length ? getRepairEstimate(activeIssues, refItem) : null;
+  const tMin = repairEst?.min ?? activeIssues.reduce((s, i) => s + (i.repairMin || 0), 0);
+  const tMax = repairEst?.max ?? activeIssues.reduce((s, i) => s + (i.repairMax || 0), 0);
+  const tPart = activeIssues.reduce((s, i) => s + (i.partPrice || 0), 0);
+  const recon = refItem ? Math.round(refItem.priceNew * (OCC_CATS.includes(catId) ? .55 : .62)) : 0;
+  const v = refItem && activeIssues.length ? getVerdict(activeIssues, refItem) : null;
+  const timeInfo = activeIssues.length ? getCumulTimeInfo(activeIssues) : { diyLabel: "—", diyFeasible: false };
+  const sl = shLabel(catId);
+  const retPcs = getRet(catId, "pcs");
+  const retOcc = getRet(catId, "occ");
+  const retNeuf = getRet(catId, "neuf");
+
+  if (!cat || !productType) return null;
+
+  const typeLower = productType.toLowerCase();
+  const reparerBase = spec?.reparer || `Pour un ${typeLower}, les pannes courantes (pièces d'usure, joints, cartes électroniques) sont souvent réparables.`;
+  const remplacerBase = spec?.remplacer || `Remplacer si la réparation dépasse 40 % du prix neuf, si l'appareil a plus de 10 ans, ou si les pièces sont introuvables.`;
+  const panneNames = activeIssues.map(i => i.name).join(", ");
+  const reparerPersonalized = activeIssues.length
+    ? `${reparerBase} Pour la panne « ${panneNames} », le coût estimé est de ${tMin}–${tMax} € (soit ${Math.round((tMin + tMax) / 2 / (refItem?.priceNew || avgPrice || 1) * 100)} % du neuf). Un appareil récent (< 5 ans) avec cette panne mérite souvent la réparation.`
+    : `${reparerBase} Prenez en compte l'âge de l'appareil, la garantie restante et la disponibilité des pièces.`;
+  const remplacerPersonalized = activeIssues.length
+    ? `${remplacerBase} Pour « ${panneNames} », si le coût dépasse ${Math.round((refItem?.priceNew || avgPrice) * .4)} € ou si l'appareil a plus de 10 ans, le remplacement est souvent plus logique.`
+    : `${remplacerBase} Tenez compte de l'âge : au-delà de 10–12 ans, le remplacement est souvent plus logique.`;
+
+  return (
+    <div className="page-enter" style={{ fontFamily: F }}>
+      <nav aria-label="Fil d'Ariane" style={{ padding: "12px 20px", maxWidth: 960, margin: "0 auto", fontSize: 12, color: "#6B7280", display: "flex", gap: 5, alignItems: "center" }}>
+        <button type="button" onClick={() => onNav("home")} style={{ cursor: "pointer", color: "#111", fontWeight: 500, background: "none", border: "none", padding: 0, font: "inherit" }}>Accueil</button>
+        <Chev />
+        <button type="button" onClick={() => onNav("cat", catId)} style={{ cursor: "pointer", color: "#111", fontWeight: 500, background: "none", border: "none", padding: 0, font: "inherit" }}>{cat.name}</button>
+        <Chev />
+        <span>{productType}</span>
+      </nav>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 20px 80px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
+          {PAGES_GENERALES.includes(catId) ? (
+            <ProductTypeImg productType={productType} size={120} iconName={cat?.icon || "washer"} iconColor="#B45309" />
+          ) : (
+            <span style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #FEF3E2 0%, #FDE8CD 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="washer" s={24} color="#B45309" /></span>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: "#111", margin: 0, lineHeight: 1.2 }}>Réparer un {typeLower} ou le remplacer ?</h1>
+            <p style={{ fontSize: 14, color: "#6B7280", marginTop: 4 }}>Sélectionnez votre panne pour une recommandation personnalisée.</p>
+          </div>
+        </div>
+
+        {/* 1. Sélection des pannes */}
+        <div style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", border: "1px solid #E5E3DE", marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+            <label style={{ fontSize: 13, fontWeight: 700, color: "#334155", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT }} /> Quel est le problème ?
+            </label>
+            <button onClick={() => { setCumul(!cumul); if (!cumul && selPannes.length > 1) setSelPannes(selPannes.slice(0, 1)); }} style={{ fontSize: 11, fontWeight: 600, color: cumul ? ACCENT : "#64748B", background: cumul ? ACCENT + "12" : "#fff", border: cumul ? `1.5px solid ${ACCENT}50` : "1px solid #CBD5E1", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontFamily: F }}>
+              {cumul ? "Mode cumul actif" : "Plusieurs problèmes ?"}
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {fallbackIssues.map((iss, i) => {
+              const id = iss.id ?? iss.name;
+              const active = selPannes.includes(id);
+              return (
+                <Pill key={i} active={active} onClick={() => togglePanne(iss)}>
+                  {iss.name}
+                </Pill>
+              );
+            })}
+          </div>
+          {cumul && selPannes.length > 1 && <p style={{ fontSize: 12, color: ACCENT, fontWeight: 600, marginTop: 10 }}>{selPannes.length} pannes sélectionnées — coûts cumulés</p>}
+        </div>
+
+        {/* 2. Verdict (réparer / remplacer) — affiché après sélection */}
+        {v && activeIssues.length > 0 && (
+          <div style={{ background: `linear-gradient(135deg, #fff 0%, ${v.color}08 100%)`, border: `3px solid ${v.color}`, borderRadius: 16, padding: 24, marginBottom: 24, boxShadow: `0 8px 32px ${v.color}25` }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 12 }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: v.color + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name={v.icon} s={28} color={v.color} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: v.color, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 4 }}>Notre recommandation</div>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: "0 0 8px" }}>{v.label}</h2>
+                <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 8, background: v.color + "18", color: v.color, fontSize: 13, fontWeight: 800 }}>{v.pertinence}</div>
+              </div>
+            </div>
+            <p style={{ fontSize: 15, color: "#374151", lineHeight: 1.7, margin: 0 }}>{v.why}</p>
+          </div>
+        )}
+
+        {/* 3. Quand réparer / Quand remplacer — affiché directement */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }} className="grid-2">
+          <div style={{ background: "#ECFDF5", border: "1.5px solid #2D6A4F", borderRadius: 14, padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <Icon name="tool" s={20} color="#2D6A4F" />
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#2D6A4F" }}>Quand réparer</span>
+            </div>
+            <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, margin: 0 }}>{reparerPersonalized}</p>
+          </div>
+          <div style={{ background: "#FEF3E2", border: "1.5px solid #F59E0B", borderRadius: 14, padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <Icon name="swap" s={20} color="#F59E0B" />
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#B45309" }}>Quand remplacer</span>
+            </div>
+            <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, margin: 0 }}>{remplacerPersonalized}</p>
+          </div>
+        </div>
+
+        {/* 4. Tableau comparatif — repliable */}
+        <details style={{ background: "#fff", borderRadius: 14, border: "1px solid #E5E3DE", marginBottom: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+          <summary style={{ padding: "16px 20px", cursor: "pointer", fontWeight: 700, fontSize: 15, color: "#111", listStyle: "none", display: "flex", alignItems: "center", gap: 10 }}>
+            <Icon name="chart" s={18} color={ACCENT} /> Tableau comparatif — Réparer / {sl} / Neuf
+          </summary>
+          <div style={{ padding: "0 20px 20px" }}>
+          {(() => {
+            const tableRows = [
+              { l: "Coût total", r: activeIssues.length ? `${tMin}–${tMax} €` : "Variable", o: `~${recon} €`, n: `${refItem?.priceNew || avgPrice} €`, bold: true },
+              { l: "Pièce seule", r: `${tPart} €`, o: "—", n: "—" },
+              { l: "Économie vs neuf", r: activeIssues.length ? `${Math.max(0, (refItem?.priceNew || avgPrice) - tMax)} €` : "—", o: `${(refItem?.priceNew || avgPrice) - recon} €`, n: "—", hR: GREEN, hO: AMBER },
+              { l: "Temps (DIY)", r: activeIssues.length ? (timeInfo.diyFeasible ? timeInfo.diyLabel : "Professionnel requis") : "—", o: "—", n: "—" },
+              { l: "Temps (pro)", r: activeIssues.length ? (activeIssues.length === 1 ? "1-5 jours" : "3-7 jours") : "—", o: "2-5 jours", n: "1-3 jours" },
+              { l: "Difficulté", r: activeIssues.length ? (activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile") : "—", o: "Aucune", n: "Aucune", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : activeIssues.some(i => i.diff === "moyen") ? AMBER : GREEN },
+              { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
+              { l: "Impact écolo", r: "Minimal", o: "Modéré", n: "Important" },
+              { l: "Recommandation", r: v?.v === "reparer" ? "Recommandé" : "—", o: v?.v === "remplacer" ? "Recommandé" : "—", n: v?.v === "remplacer" ? "Recommandé" : "—", hR: v?.v === "reparer" ? GREEN : null, hO: v?.v === "remplacer" ? AMBER : null, hN: v?.v === "remplacer" ? "#DC2626" : null },
+            ];
+            if (isMobile) {
+              return <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {tableRows.map((row, i) => (
+                  <div key={i} style={{ background: "#F8FAFC", borderRadius: 10, padding: 12, border: "1px solid #E2E8F0" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10 }}>{row.l}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
+                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
+                        <div style={{ fontSize: 10, color: GREEN, fontWeight: 600, marginBottom: 2 }}>Réparer</div>
+                        <div style={{ color: row.hR || "#374151", fontWeight: row.bold || row.hR ? 700 : 400 }}>{row.r}</div>
+                      </div>
+                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
+                        <div style={{ fontSize: 10, color: AMBER, fontWeight: 600, marginBottom: 2 }}>{sl}</div>
+                        <div style={{ color: row.hO || "#374151", fontWeight: row.bold || row.hO ? 700 : 400 }}>{row.o}</div>
+                      </div>
+                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
+                        <div style={{ fontSize: 10, color: "#DC2626", fontWeight: 600, marginBottom: 2 }}>Neuf</div>
+                        <div style={{ color: row.hN || "#374151", fontWeight: row.bold || row.hN ? 700 : 400 }}>{row.n}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>;
+            }
+            return <>
+              <div className="table-compare-scroll" style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <thead><tr style={{ background: W }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#9CA3AF", fontSize: 11, width: "28%" }}></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: GREEN, fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color={GREEN} /> Réparer</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: AMBER, fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="recycle" s={14} color={AMBER} /> {sl}</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#DC2626", fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="cart" s={14} color="#DC2626" /> Neuf</span></th>
+                  </tr></thead>
+                  <tbody>
+                    {tableRows.map((row, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid #F3F4F6" }}>
+                        <td style={{ padding: "9px 14px", fontWeight: 600, color: "#374151", fontSize: 12 }}>{row.l}</td>
+                        <td style={{ padding: "9px 14px", textAlign: "center", color: row.hR || "#6B7280", fontWeight: row.bold || row.hR ? 700 : 400, background: v?.v === "reparer" ? GREEN + "06" : "transparent" }}>{row.r}</td>
+                        <td style={{ padding: "9px 14px", textAlign: "center", color: row.hO || "#6B7280", fontWeight: row.bold || row.hO ? 700 : 400, background: v?.v === "remplacer" ? AMBER + "06" : "transparent" }}>{row.o}</td>
+                        <td style={{ padding: "9px 14px", textAlign: "center", color: row.hN || "#6B7280", fontWeight: row.bold || row.hN ? 700 : 400, background: v?.v === "remplacer" ? "#DC262606" : "transparent" }}>{row.n}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="table-compare-scroll-hint">← Glissez pour voir toutes les colonnes →</div>
+            </>;
+          })()}
+          </div>
+        </details>
+
+        {/* 5. Vos options — 3 cartes directes vers pages */}
+        <div style={{ marginBottom: 28 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 14 }}>Vos options</h2>
+          <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 16 }}>Cliquez sur une option pour voir les pièces, modèles et offres chez les prestataires.</p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="grid-3">
+            {[
+              { key: "reparer", color: GREEN, label: "Réparer", price: activeIssues.length ? `${tMin}–${tMax} €` : "Variable", sub: "pièces + tutoriels", icon: "tool", top: v?.v === "reparer", action: () => onNav("repair", { catId, productType }) },
+              { key: "occ", color: AMBER, label: sl, price: `~${recon} €`, sub: "garanti 12–24 mois", icon: "recycle", top: v?.v === "remplacer", action: () => onNav("models-list", { catId, productType, affType: "occ" }) },
+              { key: "neuf", color: "#DC2626", label: "Neuf", price: avgPrice ? `~${avgPrice} €` : "Variable", sub: "Amazon, Leroy Merlin, Darty…", icon: "cart", top: v?.v === "remplacer", action: () => onNav("models-list", { catId, productType, affType: "neuf" }) },
+            ].map(o => (
+              <div key={o.key} onClick={o.action} className="card-hover" style={{
+                background: "#fff", border: o.top ? `2px solid ${o.color}` : "1px solid #E5E3DE",
+                borderRadius: 12, padding: 16, cursor: "pointer", textAlign: "center",
+                boxShadow: o.top ? `0 3px 14px ${o.color}18` : "0 1px 4px rgba(0,0,0,.05)",
+              }}>
+                {o.top && <div style={{ fontSize: 8, fontWeight: 700, color: o.color, marginBottom: 4 }}>RECOMMANDÉ</div>}
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: o.color + "18", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}><Icon name={o.icon} s={22} color={o.color} /></div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{o.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: o.color }}>{o.price}</div>
+                <div style={{ fontSize: 11, color: "#9CA3AF" }}>{o.sub}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: o.color, marginTop: 8 }}>Voir →</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tutoriel pour réparer — repliable, sans prix prestataires (réservés à la page Réparer) */}
+        {activeIssues.length > 0 && (
+          <details style={{ background: "#fff", borderRadius: 14, border: "1px solid #E5E3DE", marginBottom: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+            <summary style={{ padding: "16px 20px", cursor: "pointer", fontWeight: 700, fontSize: 15, color: "#111", listStyle: "none", display: "flex", alignItems: "center", gap: 10 }}>
+              <Icon name="tool" s={18} color={GREEN} /> Tutoriel pour réparer
+            </summary>
+            <div style={{ padding: "0 20px 20px" }}>
+              {activeIssues.map((iss, i) => {
+                const timeLabel = iss.time ? formatSingleTime(iss.time) : "Variable";
+                const tutoSteps = getTutorialSteps(productType);
+                const ytQuery = getYoutubeRepairQuery(productType, iss.name);
+                const partBase = iss.partPrice || 30;
+                return (
+                  <div key={i} style={{ marginBottom: i < activeIssues.length - 1 ? 24 : 0 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111", margin: "0 0 12px" }}>{iss.name}</h3>
+                    <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6B7280", marginBottom: 14, flexWrap: "wrap" }}>
+                      <span><Icon name="money" s={14} color="#9CA3AF" /> Pièce : ~{partBase} €</span>
+                      <span><Icon name="tool" s={14} color="#9CA3AF" /> Difficulté : {iss.diff === "facile" ? "Facile" : iss.diff === "moyen" ? "Moyen" : "Difficile"}</span>
+                      <span><Icon name="clock" s={14} color="#9CA3AF" /> Durée : {timeLabel}</span>
+                    </div>
+                    <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 16, marginBottom: 14, borderLeft: `4px solid ${GREEN}` }}>
+                      <p style={{ fontSize: 14, color: "#374151", margin: "0 0 10px", fontWeight: 700 }}>Étapes principales :</p>
+                      <ol style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: "#374151", lineHeight: 1.8 }}>{tutoSteps.map((s, si) => <li key={si}>{s}</li>)}</ol>
+                    </div>
+                    <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 8, background: "#FF0000", color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+                      <Icon name="play" s={16} color="#fff" /> Tutoriel vidéo
+                    </a>
+                    <p style={{ fontSize: 12, color: "#9CA3AF", marginTop: 12 }}>Pour comparer les prix des pièces chez les prestataires, cliquez sur « Réparer » ci-dessus.</p>
+                  </div>
+                );
+              })}
+            </div>
+          </details>
+        )}
+
+        {/* Indice réparabilité & QualiRépar — affichés uniquement si éligible */}
+        {(isRepairabilityEligible(catId) || isQualiReparEligible(catId)) && (
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
+            {isRepairabilityEligible(catId) && (
+              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.08)", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                  {(() => {
+                    const idx = getRepairabilityIndex(productType);
+                    if (idx != null) {
+                      const hue = Math.round((idx / 10) * 120);
+                      const color = `hsl(${hue}, 55%, 42%)`;
+                      return (
+                        <div style={{ width: 64, height: 64, borderRadius: 16, background: color + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <span style={{ fontSize: 24, fontWeight: 800, color, lineHeight: 1 }}>{idx}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color, opacity: 0.9 }}>/10</span>
+                        </div>
+                      );
+                    }
+                    return <div style={{ width: 64, height: 64, borderRadius: 16, background: GREEN + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="tool" s={28} color={GREEN} /></div>;
+                  })()}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#2D6A4F", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Indice de réparabilité</div>
+                    <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
+                      Note obligatoire sur 10 affichée sur les appareils. Plus elle est élevée, plus l'appareil est conçu pour être réparable. Consultez la fiche produit pour la note de votre modèle.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {isQualiReparEligible(catId) && (
+              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>10–45 €</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Bonus QualiRépar</div>
+                    <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
+                      Aide de l'État déduite automatiquement chez un réparateur labellisé. Si votre {typeLower} est éligible, la réduction s'applique sans démarche.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Google Maps */}
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E0DDD5", padding: 18, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="pin" s={18} color={ACCENT} /> Trouver un réparateur près de chez vous
+          </h3>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input type="text" value={place} onChange={e => setPlace(e.target.value)} placeholder="Ville ou code postal" style={{ flex: 1, minWidth: 140, padding: "10px 14px", borderRadius: 8, border: "1px solid #D1D5DB", fontSize: 13, fontFamily: F }} />
+            <a href={buildRepairerMapsUrlForType(productType, place) || "#"} target="_blank" rel="noopener noreferrer" style={{ padding: "10px 18px", borderRadius: 8, background: place.trim() ? ACCENT : "#E5E7EB", color: place.trim() ? "#fff" : "#9CA3AF", fontSize: 13, fontWeight: 700, textDecoration: "none", pointerEvents: place.trim() ? "auto" : "none" }}>
+              Voir sur Google Maps
+            </a>
+          </div>
+        </div>
+
+        {/* 8. FAQ */}
+        <div style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111", marginBottom: 10 }}>Questions fréquentes — {productType}</h3>
+          {[
+            { q: `Combien coûte la réparation d'un ${typeLower} ?`, a: `Selon la panne, le coût varie de ${fallbackIssues.reduce((m,i) => Math.min(m,i.repairMin),999)}€ à ${fallbackIssues.reduce((m,i) => Math.max(m,i.repairMax),0)}€ (pièces + main d'œuvre). La panne la plus courante est "${fallbackIssues[0]?.name}" à environ ${fallbackIssues[0]?.repairMin}–${fallbackIssues[0]?.repairMax}€.` },
+            { q: `Vaut-il mieux réparer ou remplacer un ${typeLower} ?`, a: `Cela dépend de la panne et de l'âge de l'appareil. Pour les réparations simples (coût < 30 % du neuf), la réparation est généralement plus rentable. Au-delà de 40% du prix neuf ou si l'appareil a plus de 10 ans, le remplacement peut être préférable.` },
+            { q: `Peut-on réparer un ${typeLower} soi-même ?`, a: `Les réparations notées "Facile" sont accessibles avec un tutoriel vidéo YouTube. Les réparations "Difficile" ou nécessitant un pro sont à confier à un réparateur agréé. Pensez au bonus QualiRépar (10 à 45€).` },
+            { q: `Où trouver les pièces détachées ?`, a: "Les pièces sont disponibles chez Amazon, But, Leroy Merlin et ManoMano. Comparez les prix et ajoutez vos références de pièces pour cette panne." },
+          ].map((f, i) => (
+            <details key={i} style={{ background: "#fff", borderRadius: 6, marginBottom: 4, border: "1px solid #E0DDD5" }}>
+              <summary style={{ padding: "10px 14px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#111" }}>{f.q}</summary>
+              <p style={{ padding: "0 14px 10px", fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MODELS LIST PAGE (Occasion / Neuf par type — pages générales) ───
+function ModelsListPage({ catId, productType, affType, onNav }) {
+  const cat = CATS.find(c => c.id === catId);
+  const items = ITEMS.filter(i => i.category === catId && i.productType === productType);
+  const [selBrand, setSelBrand] = useState(null);
+  const [sort, setSort] = useState("price-asc");
+
+  const brands = useMemo(() => {
+    const m = {};
+    items.forEach(i => { m[i.brand] = (m[i.brand] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    let f = items;
+    if (selBrand) f = f.filter(i => i.brand === selBrand);
+    if (sort === "price-asc") f = [...f].sort((a, b) => (affType === "neuf" ? a.priceNew - b.priceNew : Math.round(a.priceNew * .55) - Math.round(b.priceNew * .55)));
+    else if (sort === "price-desc") f = [...f].sort((a, b) => (affType === "neuf" ? b.priceNew - a.priceNew : Math.round(b.priceNew * .55) - Math.round(a.priceNew * .55)));
+    else if (sort === "year") f = [...f].sort((a, b) => b.year - a.year);
+    return f;
+  }, [items, selBrand, sort, affType]);
+
+  const isNeuf = affType === "neuf";
+  const modeColor = isNeuf ? "#DC2626" : AMBER;
+  const sl = shLabel(catId);
+
+  if (!cat || !productType) return null;
+
+  return (
+    <div className="page-enter" style={{ fontFamily: F }}>
+      <nav aria-label="Fil d'Ariane" style={{ padding: "12px 20px", maxWidth: 860, margin: "0 auto", fontSize: 12, color: "#6B7280", display: "flex", gap: 5, alignItems: "center" }}>
+        <button type="button" onClick={() => onNav("home")} style={{ cursor: "pointer", color: "#111", fontWeight: 500, background: "none", border: "none", padding: 0, font: "inherit" }}>Accueil</button>
+        <Chev />
+        <button type="button" onClick={() => onNav("cat", catId)} style={{ cursor: "pointer", color: "#111", fontWeight: 500, background: "none", border: "none", padding: 0, font: "inherit" }}>{cat.name}</button>
+        <Chev />
+        <button type="button" onClick={() => onNav("cat-type", { catId, productType })} style={{ cursor: "pointer", color: "#111", fontWeight: 500, background: "none", border: "none", padding: 0, font: "inherit" }}>{productType}</button>
+        <Chev />
+        <span>{isNeuf ? "Neuf" : sl}</span>
+      </nav>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 20px 80px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: "#111", margin: "0 0 4px", display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 40, height: 40, borderRadius: 12, background: modeColor + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name={isNeuf ? "cart" : "recycle"} s={20} color={modeColor} />
+              </span>
+              {productType} — {isNeuf ? "Acheter neuf" : sl}
+            </h1>
+            <p style={{ fontSize: 13, color: "#6B7280" }}>{filtered.length} modèle{filtered.length > 1 ? "s" : ""} disponible{filtered.length > 1 ? "s" : ""}</p>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            {brands.length > 1 && (
+              <select value={selBrand || ""} onChange={e => setSelBrand(e.target.value || null)} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #E0DDD5", fontSize: 13, fontFamily: F, color: "#374151", background: "#fff", cursor: "pointer" }}>
+                <option value="">Toutes les marques</option>
+                {brands.map(b => <option key={b.name} value={b.name}>{b.name} ({b.count})</option>)}
+              </select>
+            )}
+            <select value={sort} onChange={e => setSort(e.target.value)} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #E0DDD5", fontSize: 13, fontFamily: F, color: "#374151", background: "#fff", cursor: "pointer" }}>
+              <option value="price-asc">Prix croissant</option>
+              <option value="price-desc">Prix décroissant</option>
+              <option value="year">Plus récent</option>
+            </select>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14 }}>
+          {filtered.map(item => (
+            <Card key={item.id} onClick={() => onNav("aff", { item, issues: getIssues(item).slice(0, 1), affType, alts: getAlternatives(item) })} style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <ProductImg brand={item.brand} item={item} size={56} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{item.brand} {item.name}</div>
+                  <div style={{ fontSize: 12, color: "#6B7280" }}>{item.productType} · {item.year}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "1px solid #F3F4F6" }}>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: modeColor }}>{isNeuf ? `${item.priceNew} €` : `~${Math.round(item.priceNew * .55)} €`}</div>
+                  <div style={{ fontSize: 11, color: "#9CA3AF" }}>{isNeuf ? "neuf" : sl.toLowerCase()}</div>
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: ACCENT }}>Voir les offres →</span>
+              </div>
+            </Card>
+          ))}
+        </div>
+        {filtered.length === 0 && <p style={{ textAlign: "center", padding: 40, color: "#6B7280", fontSize: 14 }}>Aucun modèle ne correspond à ces filtres.</p>}
+      </div>
+    </div>
+  );
+}
+
+// ─── REPAIR PAGE (Réparer — références pièces, tutos génériques) ───
+function RepairPage({ catId, productType, onNav }) {
+  const cat = CATS.find(c => c.id === catId);
+  const items = ITEMS.filter(i => i.category === catId && i.productType === productType);
+  const tpl = ISS_TPL[productType] || ISS_TPL.default;
+  const avgPrice = items.length ? Math.round(items.reduce((s, i) => s + i.priceNew, 0) / items.length) : 0;
+  const fallbackIssues = tpl.slice(0, 8).map((t, i) => ({
+    id: 2000 + i, name: t.n, repairMin: avgPrice ? Math.max(5, Math.round(avgPrice * t.rn)) : 50, repairMax: avgPrice ? Math.max(10, Math.round(avgPrice * t.rx)) : 150, diff: t.d, time: t.t, partPrice: avgPrice ? Math.round(avgPrice * t.rn * (t.pr || .3)) : 30,
+    ytQuery: `réparation ${t.n} ${productType}`,
+  }));
+  const [selPannes, setSelPannes] = useState(() => fallbackIssues.length ? [fallbackIssues[0].id ?? fallbackIssues[0].name] : []);
+  const [place, setPlace] = useState("");
+  const typeLower = productType.toLowerCase();
+  const retPcs = getRet(catId, "pcs");
+
+  const activeIssues = fallbackIssues.filter(iss => selPannes.includes(iss.id ?? iss.name));
+  const togglePanne = (iss) => {
+    const id = iss.id ?? iss.name;
+    setSelPannes(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+  };
+
+  if (!cat || !productType) return null;
+
+  return (
+    <div className="page-enter" style={{ fontFamily: F }}>
+      <nav aria-label="Fil d'Ariane" style={{ padding: "12px 20px", maxWidth: 960, margin: "0 auto", fontSize: 12, color: "#6B7280", display: "flex", gap: 5, alignItems: "center" }}>
+        <button type="button" onClick={() => onNav("home")} style={{ cursor: "pointer", color: "#111", fontWeight: 500, background: "none", border: "none", padding: 0, font: "inherit" }}>Accueil</button>
+        <Chev />
+        <button type="button" onClick={() => onNav("cat", catId)} style={{ cursor: "pointer", color: "#111", fontWeight: 500, background: "none", border: "none", padding: 0, font: "inherit" }}>{cat.name}</button>
+        <Chev />
+        <button type="button" onClick={() => onNav("cat-type", { catId, productType })} style={{ cursor: "pointer", color: "#111", fontWeight: 500, background: "none", border: "none", padding: 0, font: "inherit" }}>{productType}</button>
+        <Chev />
+        <span>Réparer</span>
+      </nav>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 20px 80px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+          <span style={{ width: 48, height: 48, borderRadius: 14, background: GREEN + "18", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="tool" s={24} color={GREEN} /></span>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: "#111", margin: 0 }}>Réparer un {typeLower} — pièces et tutoriels</h1>
+            <p style={{ fontSize: 14, color: "#6B7280", marginTop: 4 }}>Sélectionnez la panne pour voir les références de pièces et tutoriels vidéo.</p>
+          </div>
+        </div>
+
+        <div style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", border: "1px solid #E5E3DE", marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+          <label style={{ fontSize: 13, fontWeight: 700, color: "#334155", marginBottom: 10, display: "block" }}>Quelle panne ?</label>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {fallbackIssues.map((iss, i) => {
+              const id = iss.id ?? iss.name;
+              const active = selPannes.includes(id);
+              return <Pill key={i} active={active} onClick={() => togglePanne(iss)}>{iss.name}</Pill>;
+            })}
+          </div>
+        </div>
+
+        {activeIssues.length > 0 && activeIssues.map((iss, i) => {
+          const ytQuery = getYoutubeRepairQuery(productType, iss.name);
+          const timeLabel = iss.time ? formatSingleTime(iss.time) : "Variable";
+          const tutoSteps = getTutorialSteps(productType);
+          const partBase = iss.partPrice || 30;
+          const partOff = [-0.05, 0, 0.08, 0.12];
+          const retsWithPrice = retPcs.map((r, idx) => ({ r, price: Math.round(partBase * (1 + (partOff[idx] ?? 0))) }));
+          const sortedRets = [...retsWithPrice].sort((a, b) => a.price - b.price);
+          return (
+            <div key={i} style={{ background: "#fff", border: "1px solid #E5E3DE", borderRadius: 14, padding: 24, marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", margin: "0 0 16px" }}>{iss.name}</h2>
+              <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6B7280", marginBottom: 16, flexWrap: "wrap" }}>
+                <span><Icon name="money" s={14} color="#9CA3AF" /> Pièce : ~{partBase} €</span>
+                <span><Icon name="tool" s={14} color="#9CA3AF" /> Difficulté : {iss.diff === "facile" ? "Facile" : iss.diff === "moyen" ? "Moyen" : "Difficile"}</span>
+                <span><Icon name="clock" s={14} color="#9CA3AF" /> Durée : {timeLabel}</span>
+              </div>
+              <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 16, marginBottom: 16, borderLeft: `4px solid ${GREEN}` }}>
+                <p style={{ fontSize: 14, color: "#374151", margin: "0 0 10px", fontWeight: 700 }}>Étapes principales :</p>
+                <ol style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: "#374151", lineHeight: 1.8 }}>{tutoSteps.map((s, si) => <li key={si}>{s}</li>)}</ol>
+              </div>
+              <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 8, background: "#FF0000", color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", marginBottom: 20 }}>
+                <Icon name="play" s={16} color="#fff" /> Tutoriel vidéo
+              </a>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 12 }}>Pièces à acheter</div>
+                <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 14 }}>Comparez les prix chez les prestataires.</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {sortedRets.map(({ r, price }, rank) => {
+                    const isBest = rank === 0;
+                    return (
+                      <a key={r.n} href={buildRetailerUrlForParts(r, productType, iss.name)} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
+                        background: "#fff", border: isBest ? "2px solid #111" : "1px solid #E5E3DE", borderRadius: 12, padding: "16px 18px",
+                        display: "flex", alignItems: "center", gap: 16, cursor: "pointer", boxShadow: isBest ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)",
+                        textDecoration: "none", color: "inherit",
+                      }}>
+                        <div style={{ width: 48, height: 48, borderRadius: 12, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#374151", flexShrink: 0 }}>{(r.logo || r.n[0])}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
+                            {isBest && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: "#111", color: "#fff" }}>Meilleur prix</span>}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{r.t}</div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{price} €</div>
+                          <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>Voir l'offre</div>
+                        </div>
+                        <div style={{ padding: "10px 18px", borderRadius: 8, background: "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}>Voir l'offre →</div>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        <div style={{ background: "#fff", borderRadius: 14, padding: 20, border: "1px solid #E5E3DE", marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}><Icon name="pin" s={18} color={ACCENT} /> Trouver un réparateur</h3>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input type="text" value={place} onChange={e => setPlace(e.target.value)} placeholder="Ville ou code postal" style={{ flex: 1, minWidth: 140, padding: "10px 14px", borderRadius: 8, border: "1px solid #D1D5DB", fontSize: 13, fontFamily: F }} />
+            <a href={buildRepairerMapsUrlForType(productType, place) || "#"} target="_blank" rel="noopener noreferrer" style={{ padding: "10px 18px", borderRadius: 8, background: place.trim() ? ACCENT : "#E5E7EB", color: place.trim() ? "#fff" : "#9CA3AF", fontSize: 13, fontWeight: 700, textDecoration: "none", pointerEvents: place.trim() ? "auto" : "none" }}>Voir sur Google Maps</a>
+          </div>
+        </div>
+
+        {(isRepairabilityEligible(catId) || isQualiReparEligible(catId)) && (
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {isRepairabilityEligible(catId) && (
+              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.08)", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                  {(() => {
+                    const idx = getRepairabilityIndex(productType);
+                    if (idx != null) {
+                      const hue = Math.round((idx / 10) * 120);
+                      const color = `hsl(${hue}, 55%, 42%)`;
+                      return (
+                        <div style={{ width: 64, height: 64, borderRadius: 16, background: color + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <span style={{ fontSize: 24, fontWeight: 800, color, lineHeight: 1 }}>{idx}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color, opacity: 0.9 }}>/10</span>
+                        </div>
+                      );
+                    }
+                    return <div style={{ width: 64, height: 64, borderRadius: 16, background: GREEN + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="tool" s={28} color={GREEN} /></div>;
+                  })()}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#2D6A4F", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Indice de réparabilité</div>
+                    <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
+                      Note obligatoire sur 10 affichée sur les appareils. Plus elle est élevée, plus l'appareil est conçu pour être réparable. Consultez la fiche produit pour la note de votre modèle.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {isQualiReparEligible(catId) && (
+              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>10–45 €</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Bonus QualiRépar</div>
+                    <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
+                      Aide de l'État déduite automatiquement chez un réparateur labellisé. Si votre {typeLower} est éligible, la réduction s'applique sans démarche.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── CATEGORY PAGE ───
-const BRAND_CATS = ["smartphones","tablettes","ordinateurs","tv","consoles","audio","photo","montres","velo"];
 function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
   const cat = CATS.find(c => c.id === catId);
   const items = ITEMS.filter(i => i.category === catId);
@@ -340,7 +1042,7 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
   const [selType, setSelType] = useState(null);
   const [selBrand, setSelBrand] = useState(null);
   const [sort, setSort] = useState("pop");
-  const isBrandFirst = BRAND_CATS.includes(catId);
+  const isBrandFirst = PAGES_PRECISES.includes(catId);
 
   useEffect(() => {
     setSelType(initialProductType || null);
@@ -398,18 +1100,16 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
         </select>
       </div>
 
-      {/* Filter bar */}
+      {/* Filter bar — uniquement pour pages précises (tech) */}
+      {isBrandFirst && (
       <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E0DDD5", padding: "14px 16px", marginBottom: 18, transition: "all .25s ease", boxShadow: "0 1px 3px rgba(0,0,0,.03)" }}>
-        {/* Type filter */}
-        {types.length > 1 && <div style={{ marginBottom: isBrandFirst && brands.length > 1 ? 12 : 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".04em" }}>{isBrandFirst ? "Type de produit" : "Type d'appareil"}</div>
+        {types.length > 1 && <div style={{ marginBottom: brands.length > 1 ? 12 : 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".04em" }}>Type de produit</div>
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
             <Pill active={!selType} onClick={() => onNav("cat", catId)}>Tous</Pill>
             {types.map(t => { const c = typesFiltered.filter(i => i.productType === t).length; return c > 0 && <Pill key={t} active={selType === t} onClick={() => onNav("cat-type", { catId, productType: t })}>{t} ({c})</Pill>; })}
           </div>
         </div>}
-
-        {/* Brand filter */}
         {brands.length > 1 && <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".04em" }}>Marque</div>
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
@@ -418,12 +1118,11 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
             {brands.length > 12 && !selBrand && <span style={{ fontSize: 11, color: "#9CA3AF", alignSelf: "center" }}>+{brands.length - 12} marques</span>}
           </div>
         </div>}
-
-        {/* Reset */}
         {hasFilters && <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #F3F4F6" }}>
           <button onClick={() => onNav("cat", catId)} style={{ fontSize: 12, color: ACCENT, fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontFamily: F, padding: 0 }}>✕ Réinitialiser les filtres</button>
         </div>}
       </div>
+      )}
 
       {/* Brand grid — shown when NO brand is selected on brand-first categories */}
       {isBrandFirst && !selBrand && !selType && brands.length > 3 && <div style={{ marginBottom: 20 }}>
@@ -449,9 +1148,14 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
           {types.map(t => {
             const c = items.filter(i => i.productType === t).length;
             if (c === 0) return null;
-            return <div key={t} onClick={() => onNav("cat-type", { catId, productType: t })} style={{ background: "#fff", border: "1px solid #E0DDD5", borderRadius: 8, padding: "16px 14px", cursor: "pointer", transition: "all .2s" }}
+            return <div key={t} onClick={() => onNav("cat-type", { catId, productType: t })} style={{ background: "#fff", border: "1px solid #E0DDD5", borderRadius: 8, padding: "16px 14px", cursor: "pointer", transition: "all .2s", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0DDD5"; e.currentTarget.style.transform = "none"; }}>
+              {PAGES_GENERALES.includes(catId) && (
+                <div style={{ marginBottom: 10 }}>
+                  <ProductTypeImg productType={t} size={80} iconName={cat?.icon || "washer"} iconColor="#B45309" />
+                </div>
+              )}
               <div style={{ fontWeight: 700, fontSize: 13, color: "#111" }}>{t}</div>
               <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{c} produit{c > 1 ? "s" : ""}</div>
             </div>;
@@ -497,6 +1201,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const [selIssue, setSelIssue] = useState(initialIssueId ?? issues[0]?.id);
   const [cumul, setCumul] = useState(false);
   const [selMulti, setSelMulti] = useState([]);
+  const isMobile = useIsMobile();
   const [place, setPlace] = useState("");
   const [showWriteReview, setShowWriteReview] = useState(false);
   const [reviewText, setReviewText] = useState("");
@@ -613,49 +1318,52 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           })()}
         </div>
 
-        {/* Réparer / Remplacer / DIY — détaillé, spécialisé par produit (maison) ou générique (tech) */}
+        {/* Réparer / Remplacer / DIY — détaillé, personnalisé par produit (maison + tech) */}
         <details style={{ marginBottom: 16, background: "#FAFBFC", borderRadius: 10, border: "1px solid #E8E6E1", overflow: "hidden" }}>
           <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#374151", listStyle: "none" }}>Quand réparer, remplacer ou faire soi-même ?</summary>
           <div style={{ padding: "0 16px 16px" }}>
             {(() => {
-              const spec = OCC_CATS.includes(item.category) && WHEN_REPAIR_SPEC[item.productType];
+              const hasSpec = (OCC_CATS.includes(item.category) || TECH_CATS.includes(item.category)) && WHEN_REPAIR_SPEC[item.productType];
+              const spec = hasSpec ? WHEN_REPAIR_SPEC[item.productType] : null;
+              const age = new Date().getFullYear() - item.year;
+              const multiProbs = activeIssues.length > 1;
+              const panneNames = activeIssues.map(i => i.name).join(", ");
+              const reparerBase = spec ? spec.reparer : `Pour votre ${item.brand} ${item.name} (${item.productType}), la réparation est pertinente quand le coût reste sous 30 % du prix neuf, que la pièce est disponible et que vous pouvez le faire vous-même ou via un pro à tarif raisonnable.`;
+              const reparerPerso = `${reparerBase} Pour ${multiProbs ? `les pannes « ${panneNames} »` : `la panne « ${panneNames} »`}, ${age <= 4 ? `votre ${item.productType.toLowerCase()} de ${item.year} est encore récent — la réparation mérite souvent d'être envisagée si le coût reste sous 30 % du neuf.` : age <= 7 ? `avec ${age} ans, l'appareil peut encore valoir la réparation si le coût reste raisonnable.` : `à ${age} ans, l'appareil est âgé — la réparation n'est pertinente que si le coût reste très bas (< 25 % du neuf).`}`;
+              const remplacerBase = spec ? spec.remplacer : `Quand la réparation dépasse 40–45 % du prix neuf, quand l'intervention nécessite un pro (coût élevé) ou quand l'appareil est déjà ancien.`;
+              const remplacerPerso = `${remplacerBase} ${multiProbs ? `Avec plusieurs pannes cumulées (${panneNames}), le remplacement est souvent plus logique. ` : ""}${age >= 8 ? `Votre appareil a ${age} ans — le remplacement (${sl.toLowerCase()} ou neuf) offre généralement un meilleur rapport qualité/prix.` : ""}`;
               return <>
             <div style={{ borderLeft: `4px solid ${GREEN}`, paddingLeft: 14, marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: GREEN, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
                 <Icon name="check" s={16} color={GREEN} /> Quand réparer reste pertinent
               </div>
-              <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.7, margin: 0 }}>
-                {spec ? spec.reparer : `Pour votre ${item.brand} ${item.name} (${item.productType}), la réparation est pertinente quand le coût reste sous 30 % du prix neuf (${Math.round(item.priceNew * .3)} €), que la pièce est disponible et que vous pouvez le faire vous-même ou via un pro à tarif raisonnable. Pour la panne « ${activeIssues.map(i => i.name).join(", ")} », le coût estimé est de ${tMin}–${tMax} € (soit ${Math.round((tMin + tMax) / 2 / item.priceNew * 100)} % du neuf). En bon état général, votre ${item.productType.toLowerCase()} ${item.year} mérite souvent la réparation — c'est le choix le plus économique et durable.`}
-              </p>
-              {spec && <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.6, marginTop: 8, marginBottom: 0 }}>Pour « {activeIssues.map(i => i.name).join(", ")} » sur ce {item.brand} {item.name}, coût estimé : {tMin}–{tMax} € (soit {Math.round((tMin + tMax) / 2 / item.priceNew * 100)} % du neuf {item.priceNew} €).</p>}
+              <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.7, margin: 0 }}>{reparerPerso}</p>
             </div>
             <div style={{ borderLeft: "4px solid #DC2626", paddingLeft: 14, marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#DC2626", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
                 <Icon name="swap" s={16} color="#DC2626" /> Quand remplacer devient préférable
               </div>
-              <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.7, margin: 0 }}>
-                {spec ? spec.remplacer : `Quand la réparation dépasse 40–45 % du prix neuf (${Math.round(item.priceNew * .45)} €), quand l'intervention nécessite un pro (coût élevé) ou quand l'appareil est déjà ancien (${item.year}). Le remplacement (reconditionné ou neuf) offre alors souvent un meilleur rapport qualité/prix.`}
-              </p>
+              <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.7, margin: 0 }}>{remplacerPerso}</p>
               <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.6, marginTop: 8, padding: "8px 10px", background: "#F8FAFC", borderRadius: 6, border: "1px solid #E2E8F0" }}>
-                <strong>Par catégorie :</strong> pour les smartphones et l'électronique, le reconditionné est très en vogue (~{recon} €, garanti). Pour une plaque de cuisson ou l'électroménager, c'est moins courant — le neuf ({item.priceNew} €) reste souvent la référence.
+                <strong>Par catégorie :</strong> {TECH_CATS.includes(item.category) ? `pour les ${item.productType.toLowerCase()}s, le reconditionné est très en vogue (garanti 12 à 24 mois).` : `pour l'électroménager et la plomberie, le neuf reste souvent la référence.`}
               </p>
             </div>
-            </>;
-            })()}
             <div style={{ borderLeft: `4px solid ${ACCENT}`, paddingLeft: 14, marginBottom: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
                 <Icon name="tool" s={16} color={ACCENT} /> Peut-on réparer soi-même ?
               </div>
               <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.7, margin: 0 }}>
                 {timeInfo.needsPro
-                  ? `Non. Pour « ${activeIssues.map(i => i.name).join(", ")} » sur un ${item.brand} ${item.name}, l'intervention relève du professionnel : outillage spécialisé, soudure ou risque élevé de casse. Tenter la réparation soi-même peut rendre l'appareil définitivement inutilisable. À confier à un réparateur agréé ou à remplacer.`
+                  ? `Non — c'est vraiment impossible seul. Pour « ${panneNames} » sur un ${item.brand} ${item.name}, l'intervention relève exclusivement du professionnel : outillage spécialisé, soudure ou risque élevé de casse. Tenter la réparation soi-même peut rendre l'appareil définitivement inutilisable. À confier à un réparateur agréé ou à remplacer.`
                   : v?.repairFeasibility === "facile"
-                  ? `Possible, sous conditions. La réparation « ${activeIssues.map(i => i.name).join(", ")} » est indiquée comme facile avec un tutoriel vidéo (durée estimée : ${timeInfo.diyLabel}). Une erreur peut toutefois aggraver la panne. À tenter uniquement si vous êtes à l'aise ; sinon, un pro ou le ${sl.toLowerCase()} reste plus sûr.`
+                  ? `Possible, sous conditions. La réparation « ${panneNames} » est indiquée comme facile — un tutoriel vidéo peut vous guider. ${multiProbs ? `Avec plusieurs pannes, le cumul des interventions augmente le risque d'erreur. ` : ""}À tenter uniquement si vous êtes à l'aise ; sinon, un pro ou le ${sl.toLowerCase()} reste plus sûr.`
                   : v?.repairFeasibility === "technique"
-                  ? `Déconseillé sans expérience. La réparation « ${activeIssues.map(i => i.name).join(", ")} » sur ce ${item.brand} ${item.name} est technique : démontage délicat, outillage spécifique, risque de casser des connecteurs. Beaucoup de particuliers échouent. En pratique, passer par un réparateur ou remplacer est souvent plus rentable.`
+                  ? `Déconseillé sans expérience. La réparation « ${panneNames} » sur ce ${item.brand} ${item.name} est technique : démontage délicat, outillage spécifique, risque de casser des connecteurs. Beaucoup de particuliers échouent. En pratique, passer par un réparateur ou remplacer est souvent plus rentable.`
                   : `Non, pas de façon réaliste. Sans outillage et compétences pro, vous risquez d'endommager définitivement votre ${item.brand} ${item.name}. Ne tentez pas le DIY : privilégiez un réparateur agréé ou le remplacement (${sl.toLowerCase()} / neuf).`}
               </p>
             </div>
+          </>;
+            })()}
           </div>
         </details>
 
@@ -688,40 +1396,65 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 700, fontSize: 15, color: "#111", display: "flex", alignItems: "center", gap: 8, listStyle: "none" }}>
             <Icon name="chart" s={16} color={ACCENT} /> Tableau comparatif détaillé
           </summary>
-          <div>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-            <thead><tr style={{ background: W }}>
-              <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#9CA3AF", fontSize: 11, width: "28%" }}></th>
-              <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: GREEN, fontSize: 12 }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color={GREEN} /> Réparer</span>
-              </th>
-              <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: AMBER, fontSize: 12 }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="recycle" s={14} color={AMBER} /> {sl}</span>
-              </th>
-              <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#DC2626", fontSize: 12 }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="cart" s={14} color="#DC2626" /> Neuf</span>
-              </th>
-            </tr></thead>
-            <tbody>
-              {[
-                { l: "Coût total", r: `${tMin}–${tMax} €`, o: `~${recon} €`, n: `${item.priceNew} €`, bold: true },
-                { l: "Pièce seule", r: `${tPart} €`, o: "—", n: "—" },
-                { l: "Économie vs neuf", r: `${Math.max(0, item.priceNew - tMax)} €`, o: `${item.priceNew - recon} €`, n: "—", hR: GREEN, hO: AMBER },
-                { l: "Temps (DIY)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Professionnel requis", o: "—", n: "—" },
-                { l: "Temps (pro)", r: activeIssues.length === 1 ? "1-5 jours" : "3-7 jours", o: "2-5 jours", n: "1-3 jours" },
-                { l: "Difficulté", r: activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile", o: "Aucune", n: "Aucune", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : activeIssues.some(i => i.diff === "moyen") ? AMBER : GREEN },
-                { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
-                { l: "Impact écolo", r: "Minimal", o: "Modéré", n: "Important" },
-                { l: "Recommandation", r: v.v === "reparer" ? "Recommandé" : "—", o: v.v === "remplacer" ? "Recommandé" : "—", n: v.v === "remplacer" ? "Recommandé" : "—", hR: v.v === "reparer" ? GREEN : null, hO: v.v === "remplacer" ? AMBER : null, hN: v.v === "remplacer" ? "#DC2626" : null },
-                ...(bestNewer ? [{ l: "Alternative récente", r: "—", o: `${bestNewer.item.brand} ${bestNewer.item.name} ~${bestNewer.reconPrice} €`, n: `${bestNewer.item.brand} ${bestNewer.item.name} ${bestNewer.neufPrice} €`, hO: AMBER, hN: "#DC2626" }] : []),
-              ].map((row, i) => <tr key={i} style={{ borderBottom: "1px solid #F3F4F6" }}>
-                <td style={{ padding: "9px 14px", fontWeight: 600, color: "#374151", fontSize: 12 }}>{row.l}</td>
-                <td style={{ padding: "9px 14px", textAlign: "center", color: row.hR || "#6B7280", fontWeight: row.bold || row.hR ? 700 : 400, background: v.v === "reparer" ? GREEN + "06" : "transparent" }}>{row.r}</td>
-                <td style={{ padding: "9px 14px", textAlign: "center", color: row.hO || "#6B7280", fontWeight: row.bold || row.hO ? 700 : 400, background: v.v === "remplacer" ? AMBER + "06" : "transparent" }}>{row.o}</td>
-                <td style={{ padding: "9px 14px", textAlign: "center", color: row.hN || "#6B7280", fontWeight: row.bold || row.hN ? 700 : 400, background: v.v === "remplacer" ? "#DC262606" : "transparent" }}>{row.n}</td>
-              </tr>)}
-            </tbody>
-          </table>
+          <div style={{ padding: "0 16px 16px" }}>
+          {(() => {
+            const tableRows = [
+              { l: "Coût total", r: `${tMin}–${tMax} €`, o: `~${recon} €`, n: `${item.priceNew} €`, bold: true },
+              { l: "Pièce seule", r: `${tPart} €`, o: "—", n: "—" },
+              { l: "Économie vs neuf", r: `${Math.max(0, item.priceNew - tMax)} €`, o: `${item.priceNew - recon} €`, n: "—", hR: GREEN, hO: AMBER },
+              { l: "Temps (DIY)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Professionnel requis", o: "—", n: "—" },
+              { l: "Temps (pro)", r: activeIssues.length === 1 ? "1-5 jours" : "3-7 jours", o: "2-5 jours", n: "1-3 jours" },
+              { l: "Difficulté", r: activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile", o: "Aucune", n: "Aucune", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : activeIssues.some(i => i.diff === "moyen") ? AMBER : GREEN },
+              { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
+              { l: "Impact écolo", r: "Minimal", o: "Modéré", n: "Important" },
+              { l: "Recommandation", r: v.v === "reparer" ? "Recommandé" : "—", o: v.v === "remplacer" ? "Recommandé" : "—", n: v.v === "remplacer" ? "Recommandé" : "—", hR: v.v === "reparer" ? GREEN : null, hO: v.v === "remplacer" ? AMBER : null, hN: v.v === "remplacer" ? "#DC2626" : null },
+              ...(bestNewer ? [{ l: "Alternative récente", r: "—", o: `${bestNewer.item.brand} ${bestNewer.item.name} ~${bestNewer.reconPrice} €`, n: `${bestNewer.item.brand} ${bestNewer.item.name} ${bestNewer.neufPrice} €`, hO: AMBER, hN: "#DC2626" }] : []),
+            ];
+            if (isMobile) {
+              return <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {tableRows.map((row, i) => (
+                  <div key={i} style={{ background: "#F8FAFC", borderRadius: 10, padding: 12, border: "1px solid #E2E8F0" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10 }}>{row.l}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
+                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
+                        <div style={{ fontSize: 10, color: GREEN, fontWeight: 600, marginBottom: 2 }}>Réparer</div>
+                        <div style={{ color: row.hR || "#374151", fontWeight: row.bold || row.hR ? 700 : 400 }}>{row.r}</div>
+                      </div>
+                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
+                        <div style={{ fontSize: 10, color: AMBER, fontWeight: 600, marginBottom: 2 }}>{sl}</div>
+                        <div style={{ color: row.hO || "#374151", fontWeight: row.bold || row.hO ? 700 : 400 }}>{row.o}</div>
+                      </div>
+                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
+                        <div style={{ fontSize: 10, color: "#DC2626", fontWeight: 600, marginBottom: 2 }}>Neuf</div>
+                        <div style={{ color: row.hN || "#374151", fontWeight: row.bold || row.hN ? 700 : 400 }}>{row.n}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>;
+            }
+            return <>
+              <div className="table-compare-scroll" style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <thead><tr style={{ background: W }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#9CA3AF", fontSize: 11, width: "28%" }}></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: GREEN, fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color={GREEN} /> Réparer</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: AMBER, fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="recycle" s={14} color={AMBER} /> {sl}</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#DC2626", fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="cart" s={14} color="#DC2626" /> Neuf</span></th>
+                  </tr></thead>
+                  <tbody>
+                    {tableRows.map((row, i) => <tr key={i} style={{ borderBottom: "1px solid #F3F4F6" }}>
+                      <td style={{ padding: "9px 14px", fontWeight: 600, color: "#374151", fontSize: 12 }}>{row.l}</td>
+                      <td style={{ padding: "9px 14px", textAlign: "center", color: row.hR || "#6B7280", fontWeight: row.bold || row.hR ? 700 : 400, background: v.v === "reparer" ? GREEN + "06" : "transparent" }}>{row.r}</td>
+                      <td style={{ padding: "9px 14px", textAlign: "center", color: row.hO || "#6B7280", fontWeight: row.bold || row.hO ? 700 : 400, background: v.v === "remplacer" ? AMBER + "06" : "transparent" }}>{row.o}</td>
+                      <td style={{ padding: "9px 14px", textAlign: "center", color: row.hN || "#6B7280", fontWeight: row.bold || row.hN ? 700 : 400, background: v.v === "remplacer" ? "#DC262606" : "transparent" }}>{row.n}</td>
+                    </tr>)}
+                  </tbody>
+                </table>
+              </div>
+              <div className="table-compare-scroll-hint">← Glissez pour voir toutes les colonnes →</div>
+            </>;
+          })()}
           </div>
         </details>
 
@@ -818,57 +1551,77 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           </div>
         </details>}
 
-        {/* REPAIR DETAIL section — repliable */}
+        {/* REPAIR DETAIL section — repliable, inspiré maison : étapes personnalisées, difficulté mise en avant */}
         <details style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", marginBottom: 18, overflow: "hidden" }}>
           <summary style={{ padding: "14px 18px", cursor: "pointer", fontWeight: 700, fontSize: 14, color: "#111", listStyle: "none", display: "flex", alignItems: "center", gap: 8 }}>
             <Icon name="tool" s={16} color={ACCENT} /> Détail de la réparation — {item.brand} {item.name}
           </summary>
           <div style={{ padding: "0 18px 18px" }}>
+          {activeIssues.length > 1 && v.v === "remplacer" && (
+            <div style={{ padding: "14px 16px", marginBottom: 16, background: "#FEF2F2", border: "2px solid #DC2626", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <Icon name="warn" s={22} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#991B1B", marginBottom: 4 }}>Réparation vraiment pas conseillée</div>
+                <p style={{ fontSize: 13, color: "#7F1D1D", lineHeight: 1.6, margin: 0 }}>
+                  Avec {activeIssues.length} pannes cumulées ({activeIssues.map(i => i.name).join(", ")}), la réparation serait trop compliquée et coûteuse. Le remplacement ({sl.toLowerCase()} ou neuf) est la meilleure option dans votre cas.
+                </p>
+              </div>
+            </div>
+          )}
           <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, marginBottom: 16 }}>
-            Pour la panne « {activeIssues.map(i => i.name).join(", ")} » sur votre {item.brand} {item.name} : coût estimé, difficulté, temps et tutoriels adaptés à votre modèle.
-            {OCC_CATS.includes(item.category)
-              ? " Des tutoriels vidéo et guides Spareka sont disponibles pour ce type d'appareil."
-              : " Des tutoriels vidéo ciblés sont disponibles pour vous accompagner."}
+            Pour la panne « {activeIssues.map(i => i.name).join(", ")} » sur votre {item.brand} {item.name} : tutoriel adapté à votre modèle, niveau de difficulté et coût estimé.
             {v.v === "reparer" ? " La réparation est l'option la plus économique et écologique dans votre cas." : ""}
           </p>
           {activeIssues.map(iss => {
             const diffColor = iss.diff === "facile" ? GREEN : iss.diff === "moyen" ? AMBER : "#DC2626";
             const diffStars = iss.diff === "facile" ? 1 : iss.diff === "moyen" ? 2 : 3;
+            const diffLabel = iss.diff === "facile" ? "Facile" : iss.diff === "moyen" ? "Moyen" : "Difficile";
             const timeLabel = formatSingleTime(iss.time);
+            const impossibleSeul = iss.time === "pro";
+            const tutoSteps = getTutorialSteps(item.productType);
             return <div key={iss.id} style={{ padding: "14px 0", borderBottom: "1px solid #F3F4F6" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
                 <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{iss.name}</span>
-                <span style={{ display: "inline-flex", gap: 3, alignItems: "center" }}>
-                  {[1,2,3].map(s => <span key={s} style={{ width: 12, height: 12, borderRadius: 2, background: s <= diffStars ? diffColor : "#E5E7EB", display: "inline-block" }} />)}
-                  <span style={{ fontSize: 11, color: diffColor, fontWeight: 600, marginLeft: 4 }}>{iss.diff === "facile" ? "Facile" : iss.diff === "moyen" ? "Moyen" : "Difficile"}</span>
+                <span style={{ display: "inline-flex", gap: 3, alignItems: "center", padding: "4px 10px", borderRadius: 8, background: diffColor + "18", color: diffColor, fontWeight: 700 }}>
+                  {[1,2,3].map(s => <span key={s} style={{ width: 10, height: 10, borderRadius: 2, background: s <= diffStars ? diffColor : "#E5E7EB", display: "inline-block" }} />)}
+                  <span style={{ fontSize: 12, marginLeft: 4 }}>{diffLabel}</span>
+                  {impossibleSeul && (
+                    <span style={{ marginLeft: 8, display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 6, background: "#DC262618", color: "#DC2626", fontWeight: 700, fontSize: 11 }}>
+                      <Icon name="warn" s={12} color="#DC2626" /> Impossible seul — pro requis
+                    </span>
+                  )}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6B7280", marginBottom: 8, flexWrap: "wrap" }}>
+              {/* Étapes principales — tutoriel personnalisé par type de produit */}
+              <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 14, marginBottom: 12, borderLeft: `4px solid ${GREEN}` }}>
+                <p style={{ fontSize: 13, color: "#374151", margin: "0 0 8px", fontWeight: 700 }}>Étapes principales :</p>
+                <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#374151", lineHeight: 1.7 }}>{tutoSteps.map((s, si) => <li key={si}>{s}</li>)}</ol>
+              </div>
+              <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6B7280", marginBottom: 10, flexWrap: "wrap" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="money" s={14} color="#9CA3AF" /> <strong>{iss.repairMin}–{iss.repairMax} €</strong> tout compris</span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color="#9CA3AF" /> Pièce : <strong>{iss.partPrice} €</strong></span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="clock" s={14} color="#9CA3AF" /> Durée : <strong>{timeLabel}</strong></span>
               </div>
               <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.65, marginBottom: 10 }}>
-                {iss.diff === "facile" 
-                  ? `Pour « ${iss.name} » sur votre ${item.brand} ${item.name} : réparation accessible avec un tutoriel vidéo. Comptez ${timeLabel} de travail + 1 à 3 jours de livraison pour la pièce (${iss.partPrice} €). Recherchez « ${iss.ytQuery} » sur YouTube pour des démonstrations adaptées à votre modèle.`
+                {impossibleSeul
+                  ? `Pour « ${iss.name} » sur ce ${item.brand} ${item.name}, l'intervention relève exclusivement du professionnel : outillage spécialisé, soudure ou risque élevé de casse. Ne tentez pas seul — confiez à un réparateur agréé. Pensez au bonus QualiRépar (jusqu'à 45 €).`
+                  : iss.diff === "facile"
+                  ? `Réparation accessible avec un tutoriel vidéo. Comptez ${timeLabel} de travail + 1 à 3 jours de livraison pour la pièce (${iss.partPrice} €). Recherchez « ${iss.ytQuery} » sur YouTube pour des démonstrations adaptées à votre modèle.`
                   : iss.diff === "moyen"
-                  ? `Pour « ${iss.name} » sur ce ${item.brand} ${item.name} : réparation de niveau intermédiaire. Un tutoriel vidéo détaillé vous guidera ; un professionnel sera plus rapide si vous hésitez (délai pro : 2 à 5 jours). Pièce : ${iss.partPrice} €.`
-                  : `Pour « ${iss.name} » sur votre ${item.brand} ${item.name} : intervention complexe, outillage pro requis. Nous recommandons un réparateur agréé. ${iss.time === "pro" ? "Ne tentez pas sans expérience." : ""} Pensez au bonus QualiRépar (jusqu'à 45 €).`
+                  ? `Réparation de niveau intermédiaire : démontage délicat, outillage spécifique. Un tutoriel vidéo détaillé vous guidera ; si vous hésitez, un pro sera plus rapide (délai : 2 à 5 jours). Pièce : ${iss.partPrice} €.`
+                  : `Intervention complexe, outillage pro recommandé. Beaucoup de particuliers échouent. En pratique, passer par un réparateur agréé ou remplacer est souvent plus rentable. Pensez au bonus QualiRépar (jusqu'à 45 €).`
                 }
               </p>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(iss.ytQuery)}`} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 8, background: "#FF0000", color: "#fff", fontSize: 12, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>
                   <Icon name="play" s={14} color="#fff" /> Tutoriel YouTube
                 </a>
-                {iss.altResource && <a href={iss.altResource.url} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 8, background: iss.altResource.color, color: "#fff", fontSize: 12, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <Icon name={iss.altResource.icon} s={14} color="#fff" /> {iss.altResource.label}
-                </a>}
                 <button onClick={() => onNav("aff", { item, issues: [iss], affType: "pcs", alts })} style={{ padding: "8px 14px", borderRadius: 8, background: ACCENT, color: "#fff", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer", fontFamily: F, display: "inline-flex", alignItems: "center", gap: 8 }}>
                   <Icon name="cart" s={14} color="#fff" /> Acheter la pièce
                 </button>
               </div>
               <div style={{ marginTop: 8, fontSize: 11, color: "#9CA3AF", lineHeight: 1.4 }}>
-                {iss.diff === "difficile" ? "Réparation pro recommandée — les tutoriels sont indicatifs." : `Recherche YouTube : « ${iss.ytQuery.substring(0, 60)}… »`}
+                Recherche YouTube : « {iss.ytQuery.length > 55 ? iss.ytQuery.substring(0, 55) + "…" : iss.ytQuery} »
               </div>
             </div>;
           })}
@@ -953,7 +1706,11 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                 {[
                   { icon: "money", label: "Économie vs neuf", value: v.v === "reparer" ? `${Math.max(0, item.priceNew - tMax)} €` : v.v === "remplacer" ? `${item.priceNew - recon} € (${sl})` : "—", color: v.v === "reparer" ? GREEN : v.v === "remplacer" ? AMBER : "#999" },
                   { icon: "tool", label: "Difficulté", value: activeIssues.some(i => i.diff === "difficile") ? "Difficile" : activeIssues.some(i => i.diff === "moyen") ? "Moyenne" : "Facile", color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : activeIssues.some(i => i.diff === "moyen") ? AMBER : GREEN },
-                  { icon: "clock", label: "Temps estimé", value: timeInfo.diyLabel, color: ACCENT },
+                  (() => {
+                    const idx = isRepairabilityEligible(item.category) ? getRepairabilityIndex(item.productType) : null;
+                    const idxColor = idx != null ? (idx >= 7 ? GREEN : idx >= 5 ? AMBER : "#DC2626") : "#9CA3AF";
+                    return { icon: "shield", label: "Indice de réparabilité", value: idx != null ? `${idx}/10` : "—", color: idxColor };
+                  })(),
                   { icon: "leaf", label: "Impact écologique", value: v.v === "reparer" ? "Minimal" : v.v === "remplacer" ? "Variable" : "Important", color: v.v === "reparer" ? GREEN : v.v === "remplacer" ? AMBER : "#DC2626" },
                 ].map((s, i) => <div key={i} style={{ background: "#fff", borderRadius: 10, border: "1.5px solid #E0DDD5", padding: "14px 12px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
@@ -985,6 +1742,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
 
 // ─── AFFILIATE PAGE ───
 function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
+  const [place, setPlace] = useState("");
   const cat = CATS.find(c => c.id === item.category);
   const rets = getRet(item.category, affType);
   const sl = shLabel(item.category);
@@ -1102,13 +1860,16 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
       <span>{titles[affType]}</span>
     </div>
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 20px 80px" }}>
-      {/* Header */}
+      {/* Header + description */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: "0 0 4px" }}>{titles[affType]} — {item.brand} {item.name}</h1>
-          <p style={{ fontSize: 13, color: "#6B7280" }}>
+          <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 8 }}>
           {isPcs ? `Coût total estimé (pièces + main d'œuvre pro) : ${repairTotalMin}–${repairTotalMax} €` : issues?.map(i => i.name).join(", ")}
         </p>
+          <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, maxWidth: 560 }}>
+            Le {item.brand} {item.name} est un {item.productType.toLowerCase()} de {item.year}. Prix neuf indicatif : {item.priceNew} €. Comparez les offres des prestataires ci-dessous.
+          </p>
         </div>
         {!isPcs && <div style={{ padding: "4px 10px", borderRadius: 4, background: modeColor + "12", color: modeColor, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -1118,28 +1879,186 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
         </div>}
       </div>
 
-      {/* Model comparison section (neuf/occ only) */}
+      {/* 1. Détail réparation — EN PREMIER (sans prestataires) : étapes, puis prix */}
+      {isPcs && issues?.length > 0 && (
+        <details open style={{ background: "#fff", borderRadius: 14, border: "1px solid #E5E3DE", marginBottom: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+          <summary style={{ padding: "16px 20px", cursor: "pointer", fontWeight: 700, fontSize: 15, color: "#111", listStyle: "none", display: "flex", alignItems: "center", gap: 10 }}>
+            <Icon name="tool" s={18} color={GREEN} /> Détail de la réparation
+          </summary>
+          <div style={{ padding: "0 20px 20px" }}>
+            {issues.length > 1 && (() => { const vPcs = getVerdict(issues, item); return vPcs?.v === "remplacer"; })() && (
+              <div style={{ padding: "14px 16px", marginBottom: 16, background: "#FEF2F2", border: "2px solid #DC2626", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <Icon name="warn" s={22} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#991B1B", marginBottom: 4 }}>Réparation vraiment pas conseillée</div>
+                  <p style={{ fontSize: 13, color: "#7F1D1D", lineHeight: 1.6, margin: 0 }}>
+                    Avec {issues.length} pannes cumulées ({issues.map(i => i.name).join(", ")}), la réparation serait trop compliquée et coûteuse. Le remplacement ({sl.toLowerCase()} ou neuf) est la meilleure option dans votre cas.
+                  </p>
+                </div>
+              </div>
+            )}
+            {issues.map((iss, i) => {
+              const timeLabel = iss.time ? formatSingleTime(iss.time) : "Variable";
+              const tutoSteps = getTutorialSteps(item.productType);
+              const ytQuery = getYoutubeRepairQuery(item.productType, iss.name);
+              const partBase = iss.partPrice || 30;
+              const diffLabel = iss.diff === "facile" ? "Facile" : iss.diff === "moyen" ? "Moyen" : "Difficile";
+              const diffColor = iss.diff === "facile" ? GREEN : iss.diff === "moyen" ? AMBER : "#DC2626";
+              const impossibleSeul = iss.time === "pro";
+              return (
+                <div key={i} style={{ marginBottom: i < issues.length - 1 ? 24 : 0 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111", margin: "0 0 12px" }}>{iss.name}</h3>
+                  {/* 1. Étapes principales — en premier */}
+                  <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 16, marginBottom: 14, borderLeft: `4px solid ${GREEN}` }}>
+                    <p style={{ fontSize: 14, color: "#374151", margin: "0 0 10px", fontWeight: 700 }}>Étapes principales :</p>
+                    <ol style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: "#374151", lineHeight: 1.8 }}>{tutoSteps.map((s, si) => <li key={si}>{s}</li>)}</ol>
+                  </div>
+                  {/* 2. Prix et infos — ensuite */}
+                  <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6B7280", marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
+                    <span><Icon name="money" s={14} color="#9CA3AF" /> Pièce : ~{partBase} €</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, background: diffColor + "18", color: diffColor, fontWeight: 700 }}>
+                      <Icon name="tool" s={14} color={diffColor} /> Niveau : {diffLabel}
+                    </span>
+                    <span><Icon name="clock" s={14} color="#9CA3AF" /> Durée : {timeLabel}</span>
+                    {impossibleSeul && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, background: "#DC262618", color: "#DC2626", fontWeight: 700 }}>
+                        <Icon name="warn" s={14} color="#DC2626" /> Réparation impossible seul — pro requis
+                      </span>
+                    )}
+                    {!impossibleSeul && iss.diff === "difficile" && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, background: AMBER + "18", color: AMBER, fontWeight: 700 }}>
+                        Pro recommandé
+                      </span>
+                    )}
+                  </div>
+                  <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 8, background: "#FF0000", color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+                    <Icon name="play" s={16} color="#fff" /> Tutoriel vidéo
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      )}
+
+      {/* 2. Prix — comparer les offres prestataires */}
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+          <Icon name={isPcs ? "tool" : isNeuf ? "cart" : "recycle"} s={18} color={ACCENT} />
+          {isPcs ? "Comparer les offres pièces & réparation" : isNeuf ? "Comparer les prix neuf" : `Comparer les offres ${sl.toLowerCase()}`}
+        </h2>
+        <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 14 }}>
+          {isPcs
+            ? `Comparez les prix pour réparer votre ${item.brand} ${item.name}. Cliquez sur une offre pour accéder directement au site partenaire.`
+            : isNeuf
+            ? `Les meilleures offres pour acheter ${item.brand} ${item.name} neuf. Livraison rapide, garantie fabricant.`
+            : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {sortedRets.map(({ r, price }, rank) => {
+            const isBestPrice = rank === 0;
+            const url = buildRetailerUrl(r, item, affType);
+            return <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
+              background: "#fff",
+              border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
+              borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit",
+            }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#374151", flexShrink: 0 }}>{(r.logo || r.n[0])}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
+                  {isBestPrice && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: "#111", color: "#fff" }}>Meilleur prix</span>}
+                </div>
+                <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{r.t}</div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{price} €</div>
+                <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>Voir l'offre</div>
+              </div>
+              <div style={{ padding: "10px 18px", borderRadius: 8, background: "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", justifyContent: "center", transition: "transform .2s" }}>Voir l'offre →</div>
+            </a>;
+          })}
+        </div>
+      </div>
+
+      {/* 3. Indice réparabilité & QualiRépar — après les prix */}
+      {isPcs && (isRepairabilityEligible(item.category) || isQualiReparEligible(item.category)) && (
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
+          {isRepairabilityEligible(item.category) && (
+            <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.08)", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                {(() => {
+                  const idx = getRepairabilityIndex(item.productType);
+                  if (idx != null) {
+                    const hue = Math.round((idx / 10) * 120);
+                    const color = `hsl(${hue}, 55%, 42%)`;
+                    return (
+                      <div style={{ width: 64, height: 64, borderRadius: 16, background: color + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: 24, fontWeight: 800, color, lineHeight: 1 }}>{idx}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color, opacity: 0.9 }}>/10</span>
+                      </div>
+                    );
+                  }
+                  return <div style={{ width: 64, height: 64, borderRadius: 16, background: GREEN + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="tool" s={28} color={GREEN} /></div>;
+                })()}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#2D6A4F", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Indice de réparabilité</div>
+                  <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
+                    Note obligatoire sur 10 affichée sur les appareils. Plus elle est élevée, plus l'appareil est conçu pour être réparable. Consultez la fiche produit pour la note de votre modèle.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          {isQualiReparEligible(item.category) && (
+            <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>10–45 €</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Bonus QualiRépar</div>
+                  <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
+                    Aide de l'État déduite automatiquement chez un réparateur labellisé. Si votre {item.productType.toLowerCase()} est éligible, la réduction s'applique sans démarche.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Trouver un réparateur — pour page pcs */}
+      {isPcs && (
+        <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", padding: "18px 20px", marginBottom: 24, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700, color: "#111" }}>
+              <Icon name="pin" s={16} color={ACCENT} /> Trouver un réparateur près de chez moi
+            </div>
+            <div style={{ fontSize: 11, color: "#9CA3AF" }}>Ouverture dans Google Maps</div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input value={place} onChange={e => setPlace(e.target.value)} placeholder="Ville ou code postal" style={{ flex: 1, minWidth: 220, padding: "10px 12px", borderRadius: 8, border: "1.5px solid #D1D5DB", fontSize: 13, fontFamily: F, outline: "none" }} />
+            <a href={buildRepairerMapsUrl(item, place) || undefined} target="_blank" rel="noopener noreferrer"
+              style={{
+                padding: "10px 14px", borderRadius: 8, background: place.trim() ? ACCENT : "#E5E7EB",
+                color: place.trim() ? "#fff" : "#9CA3AF", fontSize: 13, fontWeight: 700, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 8, pointerEvents: place.trim() ? "auto" : "none"
+              }}>
+              Voir les réparateurs à proximité <Chev />
+            </a>
+          </div>
+          <div style={{ fontSize: 11, color: "#6B7280", marginTop: 8, lineHeight: 1.5 }}>
+            Suggestion : <strong style={{ color: "#111" }}>{`réparateur ${TECH_CATS.includes(item.category) ? `${item.brand} ${item.name}` : item.productType}`}</strong>
+          </div>
+        </div>
+      )}
+
+      {/* Model comparison section (neuf/occ only) — APRÈS les prix */}
       {showAlts && <>
         {/* Section title */}
         <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>
           {isTech ? "Comparer les modèles" : "Modèles équivalents"} — {modeLabel}
-        </div>
-
-        {/* YOUR MODEL — reference */}
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 6 }}>Votre modèle</div>
-        <div style={{ background: "#fff", border: "1px solid #E5E3DE", borderRadius: 10, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
-          <ProductImg brand={item.brand} item={item} size={40} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>
-              {item.brand} {item.name}
-              <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3, background: "#E0DDD5", color: "#6B7280" }}>VOTRE MODÈLE</span>
-            </div>
-            <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{item.productType} · {item.year}</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: modeColor }}>{myPrice} €</div>
-            <div style={{ fontSize: 10, color: "#9CA3AF" }}>{modeLabel}</div>
-          </div>
         </div>
 
         {/* BEST ALTERNATIVE — clic = page achat même mode, secondaire = comparatif */}
@@ -1224,48 +2143,6 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
         <div style={{ height: 1, background: "#E0DDD5", margin: "18px 0 16px" }} />
       </>}
 
-      {/* WHERE TO BUY — titre + accroche pour donner envie */}
-      <div style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <Icon name={isPcs ? "tool" : isNeuf ? "cart" : "recycle"} s={18} color={ACCENT} />
-          {isPcs ? "Comparer les offres pièces & réparation" : isNeuf ? "Comparer les prix neuf" : `Comparer les offres ${sl.toLowerCase()}`}
-        </h2>
-        <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6 }}>
-          {isPcs
-            ? `Comparez les prix pour réparer votre ${item.brand} ${item.name}. Cliquez sur une offre pour accéder directement au site partenaire.`
-            : isNeuf
-            ? `Les meilleures offres pour acheter ${item.brand} ${item.name} neuf. Livraison rapide, garantie fabricant.`
-            : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
-        </p>
-      </div>
-
-      {/* Retailers — design comparateur : logo, nom, prix, CTA clair pour donner envie d'acheter */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {sortedRets.map(({ r, price }, rank) => {
-          const isBestPrice = rank === 0;
-          const url = buildRetailerUrl(r, item, affType);
-          return <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
-            background: "#fff",
-            border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
-            borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit",
-          }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#374151", flexShrink: 0 }}>{(r.logo || r.n[0])}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
-                {isBestPrice && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: "#111", color: "#fff" }}>Meilleur prix</span>}
-              </div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{r.t}</div>
-            </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{price} €</div>
-              <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>Voir l'offre</div>
-            </div>
-            <div style={{ padding: "10px 18px", borderRadius: 8, background: "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", justifyContent: "center", transition: "transform .2s" }}>Voir l'offre →</div>
-          </a>;
-        })}
-      </div>
-
       {/* Disclaimer */}
       <div style={{ marginTop: 14, padding: "12px 16px", background: "#F8FAFC", borderRadius: 8, fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>
         {isPcs ? "Prix indicatifs (pièces + main d'œuvre). " : ""}Prix indicatifs {isNeuf ? "neufs" : isOcc ? `en ${sl.toLowerCase()}` : ""}. Compare. reçoit une commission sur les achats via ces liens, sans surcoût pour vous.
@@ -1319,6 +2196,52 @@ function LegalPage({ onNav }) {
   </div>;
 }
 
+// ─── AVANTAGES PAGE ───
+function AdvantagesPage({ onNav }) {
+  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
+    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Avantages</span></div>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Les avantages de la réparation</h1></div>
+    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>Réparer plutôt que remplacer, c'est souvent le meilleur choix. Voici pourquoi.</p>
+
+    {/* Avantages principaux */}
+    <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 14 }}>Pourquoi réparer ?</h2>
+    <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
+      {[
+        { icon: "money", title: "Économies réelles", desc: "Jusqu'à 80% d'économies par rapport au prix neuf. Une réparation coûte souvent 50 à 200 € contre 400 à 1000 € pour un remplacement." },
+        { icon: "clock", title: "Durée de vie prolongée", desc: "Un appareil bien réparé peut durer encore plusieurs années. Vous maximisez votre investissement initial." },
+        { icon: "shield", title: "Bonus QualiRépar", desc: "L'État vous aide : 10 à 45 € déduits automatiquement chez un réparateur labellisé QualiRépar." },
+        { icon: "tool", title: "Apprendre en faisant", desc: "Beaucoup de pannes sont réparables soi-même avec un tutoriel. Une compétence utile pour la suite." },
+      ].map((a, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
+        <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
+          <Icon name={a.icon} s={18} color={ACCENT} />
+        </div>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 6 }}>{a.title}</h3>
+        <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>{a.desc}</p>
+      </div>)}
+    </div>
+
+    {/* Section écologie — mise en avant sans exagérer */}
+    <div style={{ background: GREEN + "10", borderRadius: 10, border: `1px solid ${GREEN}30`, padding: "20px 22px", marginBottom: 28 }}>
+      <h2 style={{ fontSize: 17, fontWeight: 800, color: GREEN, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+        <Icon name="leaf" s={20} color={GREEN} /> Bon pour la planète ?
+      </h2>
+      <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.8, marginBottom: 10 }}>
+        Oui. Réparer réduit les déchets et les émissions de CO₂. Chaque appareil réparé, c'est un appareil de moins à produire et à recycler.
+      </p>
+      <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>
+        Exemples : réparer un smartphone évite environ 70 kg de CO₂ ; un lave-linge, ~200 kg. L'impact est concret, sans être miraculeux — c'est une contribution parmi d'autres gestes du quotidien.
+      </p>
+    </div>
+
+    {/* CTA */}
+    <div style={{ textAlign: "center", padding: "24px 20px", background: `linear-gradient(135deg, ${ACCENT}, ${GREEN})`, borderRadius: 10 }}>
+      <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Comparez pour votre appareil</h3>
+      <p style={{ fontSize: 13, color: "#B7E4C7", marginBottom: 14 }}>Découvrez si la réparation est le meilleur choix pour vous.</p>
+      <button onClick={() => onNav("home")} className="btn-cta" style={{ padding: "12px 28px", borderRadius: 10, border: "2px solid #fff", background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Comparer maintenant →</button>
+    </div>
+  </div>;
+}
+
 // ─── GUIDE PAGE ───
 function GuidePage({ onNav }) {
   return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
@@ -1329,7 +2252,7 @@ function GuidePage({ onNav }) {
     {/* 3 steps */}
     <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 32 }}>
       {[
-        { n: "1", icon: "search", title: "Recherchez votre appareil", desc: `Tapez le nom exact de votre produit parmi nos ${ITEMS.length} références : smartphones, électroménager, consoles, plomberie, mobilier… Si votre produit n'existe pas, contactez-nous pour le suggérer.`, color: GREEN },
+        { n: "1", icon: "search", title: "Recherchez votre appareil", desc: `Tapez le nom exact de votre produit parmi nos ${ITEMS.length} références : smartphones, électroménager, consoles, plomberie, jardin… Si votre produit n'existe pas, contactez-nous pour le suggérer.`, color: GREEN },
         { n: "2", icon: "chart", title: "Comparez les 3 options", desc: "Sélectionnez votre panne (ou cumulez-en plusieurs). Notre algorithme calcule instantanément le coût de réparation, le prix en occasion/reconditionné et le prix neuf. Un verdict clair vous guide.", color: AMBER },
         { n: "3", icon: "check", title: "Choisissez la meilleure solution", desc: "Accédez directement aux tutoriels YouTube, aux pièces détachées ou aux meilleures offres. Vous savez exactement combien vous économisez et quel impact vous avez sur la planète.", color: ACCENT },
       ].map((s, i) => <div key={i} style={{ display: "flex", gap: 18, padding: "24px 0", borderBottom: i < 2 ? "1px solid #E0DDD5" : "none", alignItems: "flex-start" }}>
@@ -1430,7 +2353,7 @@ function RepairGuidePage({ onNav }) {
       </h2>
       <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
         <p style={{ marginBottom: 6 }}>Le reconditionné est un excellent compromis. Garanti 12 à 24 mois, testé et remis à neuf, il offre un appareil quasi-neuf à prix réduit (-30 à -50%).</p>
-        <p>Compare. référence les meilleurs vendeurs : Back Market, Amazon Renewed, Certideal pour l'électronique, Rakuten et Cdiscount pour le mobilier et l'électroménager.</p>
+        <p>Compare. référence les meilleurs vendeurs : Back Market, Amazon Renewed, Certideal pour l'électronique, Rakuten et Cdiscount pour l'électroménager et l'occasion.</p>
       </div>
     </div>
 
@@ -1510,7 +2433,7 @@ function Footer({ onNav }) {
         <div><div style={{ color: "#52B788", fontWeight: 600, marginBottom: 5, fontSize: 10, textTransform: "uppercase", letterSpacing: ".04em" }}>Technologies</div>{SIDEBAR_GROUPS[0].ids.map(id => CATS.find(c => c.id === id)).filter(Boolean).map(c => <button key={c.id} type="button" onClick={() => onNav("cat", c.id)} style={{ marginBottom: 2, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{c.name}</button>)}</div>
         <div><div style={{ color: "#52B788", fontWeight: 600, marginBottom: 5, fontSize: 10, textTransform: "uppercase", letterSpacing: ".04em" }}>Maison</div>{SIDEBAR_GROUPS[1].ids.map(id => CATS.find(c => c.id === id)).filter(Boolean).map(c => <button key={c.id} type="button" onClick={() => onNav("cat", c.id)} style={{ marginBottom: 2, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{c.name}</button>)}</div>
         <div><div style={{ color: "#52B788", fontWeight: 600, marginBottom: 5, fontSize: 10, textTransform: "uppercase", letterSpacing: ".04em" }}>Compare.</div>
-          {[{ l: "Comment ça marche", p: "guide" }, { l: "À propos", p: "about" }, { l: "Contact", p: "contact" }, { l: "FAQ", p: "faq" }, { l: "Mentions légales", p: "legal" }].map(x => <button key={x.l} type="button" onClick={() => onNav(x.p)} style={{ marginBottom: 2, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{x.l}</button>)}
+          {[{ l: "Comment ça marche", p: "guide" }, { l: "Avantages", p: "avantages" }, { l: "À propos", p: "about" }, { l: "Contact", p: "contact" }, { l: "FAQ", p: "faq" }, { l: "Mentions légales", p: "legal" }].map(x => <button key={x.l} type="button" onClick={() => onNav(x.p)} style={{ marginBottom: 2, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#B7E4C7"}>{x.l}</button>)}
         </div>
       </div>
     </div>
@@ -1527,6 +2450,21 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [sidebar, setSidebar] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    setIsIOS(typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent));
+  }, []);
+  const popularSearches = isIOS ? POPULAR_SEARCHES_IPHONE : POPULAR_SEARCHES;
+
+  useEffect(() => {
+    const unsub = subscribeToAuth((fbUser) => {
+      if (fbUser) setUser({ name: fbUser.displayName || fbUser.email?.split("@")[0] || "Utilisateur" });
+      else setUser(null);
+    });
+    return unsub;
+  }, []);
+
   // Params SEO (nouvelles routes)
   const categorySlug = params?.categorySlug;
   const productTypeSlug = params?.productTypeSlug;
@@ -1546,6 +2484,7 @@ export default function App() {
   let affType = "neuf";
 
   if (pathname === "/") pageType = "home";
+  else if (pathname === "/avantages") pageType = "avantages";
   else if (pathname === "/comment-ca-marche") pageType = "guide";
   else if (pathname === "/guide/reparer-ou-racheter") pageType = "repair-guide";
   else if (pathname === "/faq") pageType = "faq";
@@ -1553,7 +2492,12 @@ export default function App() {
   else if (pathname === "/a-propos") pageType = "about";
   else if (pathname === "/contact") pageType = "contact";
   else   if (pathname?.startsWith("/categories/")) {
-    if (brandSlug) pageType = "cat-brand";
+    if (brandSlug === "occasion" || brandSlug === "acheter-neuf") {
+      pageType = "models-list";
+      affType = brandSlug === "occasion" ? "occ" : "neuf";
+    } else if (brandSlug === "reparer") {
+      pageType = "repair";
+    } else if (brandSlug) pageType = "cat-brand";
     else if (productTypeSlug) {
       const catForResolve = categorySlug ? findCategoryBySlug(categorySlug) : null;
       const ptype = catForResolve ? findProductTypeBySlug(catForResolve.id, productTypeSlug) : null;
@@ -1585,15 +2529,16 @@ export default function App() {
 
   const page = { type: pageType, catId: undefined, productType: undefined, brandSlug: undefined, itemId: null, item: null, issue: null, issues: [], affType, alts: null };
 
-  if (pageType === "cat" || pageType === "cat-type" || pageType === "cat-brand") {
+  if (pageType === "cat" || pageType === "cat-type" || pageType === "cat-brand" || pageType === "models-list" || pageType === "repair") {
     const slug = categorySlug || legacyCatSlug;
     const cat = slug ? findCategoryBySlug(slug) : null;
     page.catId = cat?.id || slug;
-    if (pageType === "cat-type" || pageType === "cat-brand") {
+    if (pageType === "cat-type" || pageType === "cat-brand" || pageType === "models-list" || pageType === "repair") {
       const ptype = findProductTypeBySlug(page.catId, productTypeSlug);
       page.productType = ptype || undefined;
       page.brandSlug = pageType === "cat-brand" ? (brandSlug || productTypeSlug) : undefined;
     }
+    if (pageType === "models-list") page.affType = affType;
   }
 
   if ((pageType === "compare" || pageType === "issue" || pageType === "aff") && (productSlug || legacyItemId)) {
@@ -1615,12 +2560,28 @@ export default function App() {
 
 
   useEffect(() => {
-    const data = page.type === "cat" || page.type === "cat-type" || page.type === "cat-brand" ? { cat: page.catId } : page.type === "compare" || page.type === "issue" ? { item: page.item, issue: page.issue } : page.type === "aff" ? { item: page.item, affType: page.affType } : null;
+    let data = null;
+    if (page.type === "cat" || page.type === "cat-type" || page.type === "cat-brand") {
+      data = { cat: page.catId };
+      if (page.type === "cat-type" && page.productType) data.productType = page.productType;
+    } else if (page.type === "compare" || page.type === "issue") {
+      data = { item: page.item, issue: page.issue };
+    } else if (page.type === "aff") {
+      data = { item: page.item, affType: page.affType };
+    }
     const seo = buildSeo(page.type, data);
     document.title = seo.title;
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", seo.description);
-  }, [page.type, page.itemId, page.catId, page.item, page.issue, page.affType]);
+  }, [page.type, page.itemId, page.catId, page.productType, page.item, page.issue, page.affType]);
+
+  // Redirection produits maison vers pages type (compare/issue uniquement — pas aff : l'utilisateur doit voir les prestataires Occasion/Neuf/Pièces)
+  useEffect(() => {
+    if (!router || !page.item) return;
+    if (PAGES_GENERALES.includes(page.item.category) && (page.type === "compare" || page.type === "issue")) {
+      router.replace(pathProductType(page.item.category, page.item.productType));
+    }
+  }, [router, page.item, page.type]);
 
   // Redirection des anciennes routes /c/ et /p/ vers les URLs SEO
   useEffect(() => {
@@ -1645,8 +2606,11 @@ export default function App() {
     else if (type === "compare") { const item = typeof data === "number" ? ITEMS.find(i => i.id === data) : data; if (item) router.push(pathProduct(item)); }
     else if (type === "issue") { if (data?.item && data?.issue) router.push(pathProductIssue(data.item, data.issue)); }
     else if (type === "aff") router.push(pathAff(data.item, data.affType || "neuf", data.issues));
+    else if (type === "models-list") router.push(pathModelsList(data.catId, data.productType, data.affType));
+    else if (type === "repair") router.push(pathRepairPage(data.catId, data.productType));
     else if (type === "faq") router.push("/faq");
     else if (type === "legal") router.push("/mentions-legales");
+    else if (type === "avantages") router.push("/avantages");
     else if (type === "guide") router.push("/comment-ca-marche");
     else if (type === "repair-guide") router.push("/guide/reparer-ou-racheter");
     else if (type === "about") router.push("/a-propos");
@@ -1657,20 +2621,30 @@ export default function App() {
   return <div style={{ minHeight: "100vh", background: W }}>
     <style>{CSS}</style>
     <a href="#main" className="skip-link">Aller au contenu</a>
-    {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={m => { setUser({ name: m === "email" ? "Utilisateur" : `Utilisateur ${m}`, method: m }); setShowAuth(false); }} />}
+    {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     <Sidebar open={sidebar} onClose={() => setSidebar(false)} onNav={nav} />
-    <Navbar onNav={nav} user={user} onAuth={() => user ? setUser(null) : setShowAuth(true)} onMenu={() => setSidebar(true)} />
+    <Navbar onNav={nav} user={user} onAuth={() => user ? logout() : setShowAuth(true)} onMenu={() => setSidebar(true)} />
     <main id="main">
     {page.type === "home" && <>
-      <Hero onSearch={id => nav("compare", id)} onNav={nav} />
+      <Hero onSearch={id => nav("compare", id)} onNav={nav} popularSearches={popularSearches} />
       {/* Populaires — FIRST */}
       <section style={{ padding: "36px 20px", background: "#fff", borderBottom: "1px solid #E0DDD5", transition: "all .25s ease" }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111", textAlign: "center", marginBottom: 4 }}>Recherches populaires</h2>
           <p style={{ fontSize: 12, color: "#9CA3AF", textAlign: "center", marginBottom: 16 }}>Les diagnostics et produits les plus consultés</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8 }} className="grid-2">
-            {POPULAR_SEARCHES.map(({ label, intent, brand, name }) => {
-              const item = findProductByPopular({ brand, name });
+            {popularSearches.map((entry, idx) => {
+              if (entry.type === "general") {
+                return <Card key={idx} onClick={() => nav("cat-type", { catId: entry.catId, productType: entry.productType })} style={{ padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ width: 34, height: 34, borderRadius: 8, background: "#FEF3E2", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="washer" s={18} color="#B45309" /></span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 12, color: "#111" }}>{entry.label}</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>Réparer ou remplacer ?</div>
+                  </div>
+                  <Badge color={AMBER}>Comparer</Badge>
+                </Card>;
+              }
+              const item = findProductByPopular({ brand: entry.brand, name: entry.name });
               if (!item) return null;
               const iss = getIssues(item);
               const v = getVerdict([iss[0]], item);
@@ -1678,7 +2652,7 @@ export default function App() {
                 <ProductImg brand={item.brand} item={item} size={34} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: 12, color: "#111" }}>{item.brand} {item.name}</div>
-                  <div style={{ fontSize: 11, color: "#6B7280" }}>{intent} · {iss[0].repairMin}–{iss[0].repairMax} €</div>
+                  <div style={{ fontSize: 11, color: "#6B7280" }}>{entry.intent} · {iss[0].repairMin}–{iss[0].repairMax} €</div>
                 </div>
                 <Badge color={v.color}>{v.label}</Badge>
               </Card>;
@@ -1717,7 +2691,7 @@ export default function App() {
                       <Icon name={cat.icon} s={20} color={iconColor} />
                     </span>
                     <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: "#111", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", ...(cat.id === "electromenager" ? { whiteSpace: "nowrap" } : { wordBreak: "break-word", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }) }}>{cat.name}</div>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: "#111", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={cat.name}>{cat.name}</div>
                       <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{c} produits</div>
                     </div>
                   </button>;
@@ -1753,7 +2727,16 @@ export default function App() {
         </div>
       </section>
     </>}
-    {(page.type === "cat" || page.type === "cat-type" || page.type === "cat-brand") && (
+    {page.type === "cat-type" && PAGES_GENERALES.includes(page.catId) && page.productType && (
+      <TypeProductGeneralPage catId={page.catId} productType={page.productType} onNav={nav} />
+    )}
+    {page.type === "models-list" && page.catId && page.productType && (
+      <ModelsListPage catId={page.catId} productType={page.productType} affType={page.affType || "neuf"} onNav={nav} />
+    )}
+    {page.type === "repair" && page.catId && page.productType && (
+      <RepairPage catId={page.catId} productType={page.productType} onNav={nav} />
+    )}
+    {(page.type === "cat" || page.type === "cat-brand" || (page.type === "cat-type" && !PAGES_GENERALES.includes(page.catId))) && (
       <CategoryPage
         catId={page.catId}
         onNav={nav}
@@ -1773,6 +2756,7 @@ export default function App() {
     {page.type === "aff" && <AffPage item={page.item} issues={page.issues} affType={page.affType} alts={page.alts} onNav={nav} />}
     {page.type === "faq" && <FaqPage onNav={nav} />}
     {page.type === "legal" && <LegalPage onNav={nav} />}
+    {page.type === "avantages" && <AdvantagesPage onNav={nav} />}
     {page.type === "guide" && <GuidePage onNav={nav} />}
     {page.type === "repair-guide" && <RepairGuidePage onNav={nav} />}
     {page.type === "about" && <AboutPage onNav={nav} />}

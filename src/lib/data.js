@@ -14,26 +14,31 @@ export const CATS = [
   { id: "photo", name: "Photo & Vidéo", c: "#2D6A4F", icon: "camera" },
   { id: "plomberie", name: "Plomberie & Sanitaire", c: "#2D6A4F", icon: "shower" },
   { id: "chauffage", name: "Chauffage & Clim", c: "#2D6A4F", icon: "flame" },
-  { id: "cuisine", name: "Cuisine & Cuisson", c: "#2D6A4F", icon: "kitchen" },
-  { id: "mobilier", name: "Mobilier & Déco", c: "#2D6A4F", icon: "sofa" },
   { id: "jardin", name: "Jardin & Extérieur", c: "#2D6A4F", icon: "leaf" },
   { id: "velo", name: "Vélos & Trottinettes", c: "#2D6A4F", icon: "bike" },
   { id: "montres", name: "Montres & Connectés", c: "#2D6A4F", icon: "watch" },
 ];
 
+/** Catégories avec pages précises (modèle par modèle) — tech / high-tech */
+export const PAGES_PRECISES = ["smartphones", "tablettes", "ordinateurs", "tv", "consoles", "audio", "photo", "montres", "velo"];
+
+/** Catégories avec pages générales (type ou panne) — maison / habitat */
+export const PAGES_GENERALES = ["electromenager", "plomberie", "chauffage", "jardin"];
+
+/** Catégories exclues (faible valeur décisionnelle) */
+export const EXCLUDED_CATS = ["cuisine", "mobilier"];
+
 export const PTYPES = {
   smartphones: ["Smartphone"],
   tablettes: ["Tablette"],
   ordinateurs: ["PC Portable", "PC Bureau", "All-in-One"],
-  electromenager: ["Lave-linge", "Lave-vaisselle", "Sèche-linge", "Réfrigérateur", "Congélateur", "Four", "Micro-ondes", "Aspirateur balai", "Aspirateur robot", "Robot cuisine", "Cafetière expresso", "Machine à café", "Plaque induction", "Plaque vitrocéramique", "Plaque gaz", "Hotte aspirante"],
+  electromenager: ["Lave-linge", "Lave-vaisselle", "Sèche-linge", "Réfrigérateur", "Congélateur", "Four", "Four encastrable", "Micro-ondes", "Aspirateur balai", "Aspirateur robot", "Robot cuisine", "Cafetière expresso", "Machine à café", "Plaque induction", "Plaque vitrocéramique", "Plaque gaz", "Hotte aspirante", "Cuisinière mixte"],
   tv: ["Téléviseur", "Moniteur PC", "Vidéoprojecteur", "Barre de son"],
   consoles: ["Console de salon", "Console portable", "Manette", "Casque gaming"],
   audio: ["Écouteurs sans fil", "Casque audio", "Enceinte Bluetooth", "Enceinte connectée", "Platine vinyle"],
   photo: ["Appareil photo hybride", "Appareil photo compact", "Caméra action", "Drone"],
   plomberie: ["Robinet / Mitigeur", "WC / Toilettes", "Chauffe-eau", "Ballon thermodynamique", "Colonne de douche"],
   chauffage: ["Chaudière gaz", "Pompe à chaleur", "Radiateur électrique", "Climatiseur", "Thermostat connecté"],
-  cuisine: ["Plaque vitrocéramique", "Plaque induction", "Plaque gaz", "Hotte aspirante", "Four encastrable", "Cuisinière mixte"],
-  mobilier: ["Canapé", "Lit", "Table", "Bureau", "Cuisine aménagée", "Dressing", "Meuble TV", "Étagère", "Porte intérieure", "Volet roulant"],
   jardin: ["Tondeuse", "Tondeuse robot", "Taille-haie", "Nettoyeur haute pression"],
   velo: ["Vélo électrique", "VTT", "Trottinette électrique"],
   montres: ["Montre connectée", "Bracelet connecté"],
@@ -170,6 +175,14 @@ export const RAW = {
       "Bosch|DWB97FM50|2023|399","Siemens|LC97BHM50|2023|449",
       "Falmec|DERA 90cm|2023|549","Elica|Hidden 60cm|2023|399","Whirlpool|WHBS 93 F LE X|2023|349",
     ],
+    "Four encastrable": [
+      "Bosch|HBA5570S0|2023|549","Bosch|HBG676ES6|2023|799","Siemens|HB578A0S6|2023|649",
+      "Samsung|NV75N5671RS|2023|599","Whirlpool|W7 OM4 4S1 P|2023|499","Miele|H 7164 BP|2023|1199",
+    ],
+    "Cuisinière mixte": [
+      "De Dietrich|DCI 399 XE1|2023|799","Electrolux|EKM66980OK|2023|699",
+      "Beko|FSE63310DW|2023|449","Faure|FCM6560PW|2023|399",
+    ],
   },
   tv: {
     "Téléviseur": [
@@ -305,26 +318,6 @@ export const RAW = {
       "Tado°|Smart Thermostat V3+|2023|199","Google|Nest Learning 3|2023|249","Honeywell|T6R|2023|149",
     ],
   },
-  cuisine: {
-    "Plaque vitrocéramique": ["Bosch|PKE611D17E|2023|349","Bosch|PKN645BA2E|2023|399","Whirlpool|AKT 8090 NE|2023|279","Candy|CH64CCB|2023|199","Beko|HIC64502T|2023|249","Sauter|SPV2464B|2023|299"],
-    "Plaque induction": ["Bosch|PXE651FC1E|2023|599","Siemens|EX675LYC1E|2023|699","Sauter|SPI4664B|2023|549","Samsung|NZ64T3706AK|2023|499","De Dietrich|DPI7686XS|2023|799","Whirlpool|WB S2560 NE|2023|449","Brandt|BPI6420BL|2023|399"],
-    "Plaque gaz": ["Bosch|PBP6B5B80|2023|199","Whirlpool|AKR 350 IX|2023|179","Beko|HILW64222S|2023|149","De Dietrich|DPE7620XF|2023|349","Brandt|BPG6413B|2023|169"],
-    "Hotte aspirante": ["Bosch|DWB97FM50|2023|399","Siemens|LC97BHM50|2023|449","Falmec|DERA 90cm|2023|549","Elica|Hidden 60cm|2023|399"],
-    "Four encastrable": ["Bosch|HBA5570S0|2023|549","Bosch|HBG676ES6|2023|799","Siemens|HB578A0S6|2023|649","Samsung|NV75N5671RS|2023|599","Whirlpool|W7 OM4 4S1 P|2023|499","Miele|H 7164 BP|2023|1199"],
-    "Cuisinière mixte": ["De Dietrich|DCI 399 XE1|2023|799","Electrolux|EKM66980OK|2023|699","Beko|FSE63310DW|2023|449","Faure|FCM6560PW|2023|399"],
-  },
-  mobilier: {
-    "Canapé": ["IKEA|KIVIK 3 places|2023|699","IKEA|EKTORP 2 places|2023|549","IKEA|SÖDERHAMN|2023|899","IKEA|FRIHETEN convertible|2023|549","But|Canapé d'angle LENA|2023|799","Conforama|LOFT 3 places|2023|599","Maisons du Monde|JULIAN|2023|899"],
-    "Lit": ["IKEA|MALM 160x200|2023|299","IKEA|HEMNES 140x200|2023|349","IKEA|BRIMNES 160x200|2023|279","But|Lit LENA 160x200|2023|349","Conforama|Lit OSLO|2023|299"],
-    "Table": ["IKEA|EKEDALEN extensible|2023|349","IKEA|LISABO|2023|249","IKEA|BJURSTA|2023|299","But|Table CAMDEN|2023|299","Conforama|Table OSLO|2023|249"],
-    "Bureau": ["IKEA|BEKANT 160x80|2023|349","IKEA|MICKE|2023|129","IKEA|MALM|2023|179","IKEA|TROTTEN assis-debout|2023|399","But|Bureau INDUS|2023|249"],
-    "Cuisine aménagée": ["IKEA|METOD complète|2023|2999","IKEA|KNOXHULT|2023|449","Leroy Merlin|Cuisine Delinia|2023|1999"],
-    "Dressing": ["IKEA|PAX 200cm|2023|599","IKEA|PAX 150cm|2023|449","Leroy Merlin|Spaceo Home|2023|499"],
-    "Meuble TV": ["IKEA|BESTÅ 180cm|2023|249","IKEA|HEMNES TV|2023|279","IKEA|LACK TV|2023|49"],
-    "Étagère": ["IKEA|KALLAX 4x4|2023|129","IKEA|KALLAX 2x4|2023|79","IKEA|BILLY|2023|69","IKEA|FJÄLKINGE|2023|149"],
-    "Porte intérieure": ["Leroy Merlin|Porte Artens|2023|99","Leroy Merlin|Porte Vienna|2023|179","Castorama|Porte Ticino|2023|149"],
-    "Volet roulant": ["Somfy|Volet IO|2023|349","Bubendorff|ID2|2023|449","Leroy Merlin|Volet PVC|2023|199"],
-  },
   jardin: {
     "Tondeuse": ["Bosch|AdvancedRotak 750|2023|349","Husqvarna|LC 140|2023|449","Stihl|RMA 248|2023|399","Einhell|GE-CM 36/37|2023|279"],
     "Tondeuse robot": ["Husqvarna|Automower 305|2023|999","Husqvarna|Automower 415X|2023|1999","Worx|Landroid M500|2023|649","Gardena|Sileno City 500|2023|799"],
@@ -429,55 +422,138 @@ export const ISS_TPL = {
     { n: "Pièce d'usure", rn: .06, rx: .15, d: "facile", t: "1h", pr: .3, td: 2, yt: "remplacement pièce usure", ix: "" },
     { n: "Usure normale", rn: .05, rx: .12, d: "facile", t: "variable", pr: .25, td: 2, yt: "réparation entretien", ix: "" },
   ],
-  // Mobilier (éviter "carte électronique" et "panne générale" inadaptés)
-  Canapé: [
-    { n: "Tissu déchiré", rn: .06, rx: .15, d: "moyen", t: "1-2h", pr: .35, td: 2, yt: "réparer tissu canapé", ix: "" },
-    { n: "Assise affaissée", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .3, td: 2, yt: "remplacement mousse canapé", ix: "" },
-    { n: "Mécanisme convertible", rn: .05, rx: .12, d: "moyen", t: "1-2h", pr: .35, td: 3, yt: "réparation mécanisme canapé convertible", ix: "" },
-    { n: "Pied cassé", rn: .04, rx: .10, d: "facile", t: "30min", pr: .25, td: 1, yt: "remplacement pied canapé", ix: "" },
+  "Sèche-linge": [
+    { n: "Résistance HS", rn: .08, rx: .18, d: "moyen", t: "1-2h", pr: .35, td: 3, yt: "résistance sèche-linge", ix: "" },
+    { n: "Courroie", rn: .04, rx: .10, d: "facile", t: "30min", pr: .2, td: 1, yt: "courroie sèche-linge", ix: "" },
+    { n: "Joint de porte", rn: .04, rx: .10, d: "facile", t: "20min", pr: .25, td: 1, yt: "joint porte sèche-linge", ix: "" },
+    { n: "Carte électronique", rn: .15, rx: .30, d: "difficile", t: "pro", pr: .5, td: 5, yt: "carte sèche-linge", ix: "" },
+    { n: "Pompe de vidange", rn: .06, rx: .14, d: "moyen", t: "1h", pr: .3, td: 3, yt: "pompe vidange sèche-linge", ix: "" },
   ],
-  Lit: [
-    { n: "Lattes cassées", rn: .06, rx: .14, d: "facile", t: "30min", pr: .25, td: 1, yt: "remplacement lattes sommier", ix: "" },
-    { n: "Sommier abîmé", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .35, td: 2, yt: "réparation sommier lit", ix: "" },
-    { n: "Tête de lit cassée", rn: .04, rx: .10, d: "facile", t: "45min", pr: .3, td: 1, yt: "réparer tête de lit", ix: "" },
+  "Congélateur": [
+    { n: "Compresseur HS", rn: .25, rx: .50, d: "difficile", t: "pro", pr: .5, td: 5, yt: "compresseur congélateur", ix: "" },
+    { n: "Joint de porte", rn: .04, rx: .10, d: "facile", t: "20min", pr: .2, td: 1, yt: "joint congélateur", ix: "" },
+    { n: "Thermostat", rn: .06, rx: .15, d: "moyen", t: "1h", pr: .3, td: 3, yt: "thermostat congélateur", ix: "" },
+    { n: "Ventilateur", rn: .06, rx: .14, d: "moyen", t: "1h", pr: .3, td: 3, yt: "ventilateur congélateur", ix: "" },
   ],
-  Table: [
-    { n: "Pied cassé / instable", rn: .06, rx: .14, d: "moyen", t: "1h", pr: .3, td: 2, yt: "réparer pied table", ix: "" },
-    { n: "Plateau abîmé", rn: .05, rx: .12, d: "moyen", t: "1h", pr: .35, td: 2, yt: "réparer plateau table", ix: "" },
-    { n: "Rallonge défectueuse", rn: .04, rx: .10, d: "moyen", t: "45min", pr: .3, td: 2, yt: "réparation rallonge table", ix: "" },
+  "Four": [
+    { n: "Résistance HS", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .35, td: 3, yt: "résistance four", ix: "" },
+    { n: "Joint de porte", rn: .04, rx: .10, d: "facile", t: "20min", pr: .2, td: 1, yt: "joint four", ix: "" },
+    { n: "Ventilateur", rn: .06, rx: .14, d: "moyen", t: "1h", pr: .3, td: 3, yt: "ventilateur four", ix: "" },
+    { n: "Carte électronique", rn: .15, rx: .30, d: "difficile", t: "pro", pr: .5, td: 5, yt: "carte four", ix: "" },
+    { n: "Thermostat", rn: .05, rx: .12, d: "moyen", t: "1h", pr: .25, td: 2, yt: "thermostat four", ix: "" },
   ],
-  Bureau: [
-    { n: "Tiroir cassé", rn: .06, rx: .14, d: "facile", t: "45min", pr: .3, td: 1, yt: "réparer tiroir bureau", ix: "" },
-    { n: "Crémaillère / glissière", rn: .05, rx: .12, d: "facile", t: "30min", pr: .25, td: 1, yt: "remplacement crémaillère tiroir", ix: "" },
-    { n: "Plateau abîmé", rn: .04, rx: .10, d: "moyen", t: "1h", pr: .35, td: 2, yt: "réparer plateau bureau", ix: "" },
+  "Four encastrable": [
+    { n: "Résistance HS", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .35, td: 3, yt: "résistance four encastrable", ix: "" },
+    { n: "Joint de porte", rn: .04, rx: .10, d: "facile", t: "20min", pr: .2, td: 1, yt: "joint four encastrable", ix: "" },
+    { n: "Ventilateur", rn: .06, rx: .14, d: "moyen", t: "1h", pr: .3, td: 3, yt: "ventilateur four encastrable", ix: "" },
+    { n: "Carte électronique", rn: .15, rx: .30, d: "difficile", t: "pro", pr: .5, td: 5, yt: "carte four encastrable", ix: "" },
   ],
-  "Cuisine aménagée": [
-    { n: "Porte de meuble", rn: .05, rx: .12, d: "facile", t: "30min", pr: .3, td: 1, yt: "remplacement porte meuble cuisine", ix: "" },
-    { n: "Tiroir / crémaillère", rn: .06, rx: .14, d: "facile", t: "45min", pr: .3, td: 1, yt: "réparer tiroir cuisine", ix: "" },
-    { n: "Charnière", rn: .04, rx: .10, d: "facile", t: "20min", pr: .2, td: 1, yt: "remplacement charnière meuble", ix: "" },
+  "Micro-ondes": [
+    { n: "Magnétron HS", rn: .15, rx: .35, d: "difficile", t: "1-2h", pr: .5, td: 4, yt: "magnétron micro-ondes", ix: "" },
+    { n: "Plaque vitrocéramique", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .35, td: 3, yt: "plaque micro-ondes", ix: "" },
+    { n: "Porte / charnière", rn: .06, rx: .14, d: "moyen", t: "1h", pr: .3, td: 3, yt: "porte micro-ondes", ix: "" },
+    { n: "Carte électronique", rn: .12, rx: .25, d: "difficile", t: "pro", pr: .45, td: 5, yt: "carte micro-ondes", ix: "" },
   ],
-  Dressing: [
-    { n: "Rail coulissant", rn: .06, rx: .14, d: "facile", t: "30min", pr: .28, td: 1, yt: "remplacement rail dressing", ix: "" },
-    { n: "Porte défaillante", rn: .05, rx: .12, d: "facile", t: "30min", pr: .3, td: 1, yt: "réparer porte dressing", ix: "" },
-    { n: "Étagère cassée", rn: .04, rx: .10, d: "facile", t: "20min", pr: .25, td: 1, yt: "remplacement étagère dressing", ix: "" },
+  "Plaque gaz": [
+    { n: "Bruleur encrassé", rn: .04, rx: .10, d: "facile", t: "30min", pr: .2, td: 1, yt: "nettoyage bruleur plaque gaz", ix: "" },
+    { n: "Injecteur bouché", rn: .05, rx: .12, d: "facile", t: "30min", pr: .15, td: 1, yt: "injecteur plaque gaz", ix: "" },
+    { n: "Thermocouple", rn: .06, rx: .14, d: "moyen", t: "1h", pr: .25, td: 2, yt: "thermocouple plaque gaz", ix: "" },
+    { n: "Robinet gaz", rn: .08, rx: .18, d: "difficile", t: "pro", pr: .35, td: 4, yt: "robinet plaque gaz", ix: "" },
   ],
-  "Meuble TV": [
-    { n: "Porte / tiroir", rn: .05, rx: .12, d: "facile", t: "30min", pr: .3, td: 1, yt: "réparer meuble tv", ix: "" },
-    { n: "Crémaillère", rn: .04, rx: .10, d: "facile", t: "20min", pr: .25, td: 1, yt: "crémaillère meuble tv", ix: "" },
+  "Hotte aspirante": [
+    { n: "Moteur HS", rn: .12, rx: .28, d: "moyen", t: "1-2h", pr: .4, td: 4, yt: "moteur hotte aspirante", ix: "" },
+    { n: "Filtre encrassé", rn: .02, rx: .06, d: "facile", t: "10min", pr: .15, td: 1, yt: "filtre hotte", ix: "" },
+    { n: "Interrupteur", rn: .05, rx: .12, d: "moyen", t: "1h", pr: .25, td: 2, yt: "interrupteur hotte", ix: "" },
+    { n: "Carte électronique", rn: .15, rx: .30, d: "difficile", t: "pro", pr: .5, td: 5, yt: "carte hotte aspirante", ix: "" },
   ],
-  Étagère: [
-    { n: "Étagère cassée", rn: .05, rx: .12, d: "facile", t: "20min", pr: .25, td: 1, yt: "remplacement étagère", ix: "" },
-    { n: "Montant / fixation", rn: .04, rx: .10, d: "facile", t: "30min", pr: .28, td: 1, yt: "réparer étagère ikea", ix: "" },
+  "Cuisinière mixte": [
+    { n: "Résistance four HS", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .35, td: 3, yt: "résistance four cuisinière", ix: "" },
+    { n: "Plaque induction / gaz", rn: .10, rx: .25, d: "difficile", t: "pro", pr: .45, td: 5, yt: "plaque cuisinière mixte", ix: "" },
+    { n: "Thermostat", rn: .05, rx: .12, d: "moyen", t: "1h", pr: .25, td: 2, yt: "thermostat cuisinière", ix: "" },
+    { n: "Carte électronique", rn: .15, rx: .30, d: "difficile", t: "pro", pr: .5, td: 5, yt: "carte cuisinière", ix: "" },
   ],
-  "Porte intérieure": [
-    { n: "Charnière", rn: .06, rx: .14, d: "facile", t: "20min", pr: .25, td: 1, yt: "remplacement charnière porte", ix: "" },
-    { n: "Serrure / poignée", rn: .05, rx: .12, d: "facile", t: "30min", pr: .3, td: 1, yt: "réparer serrure porte", ix: "" },
-    { n: "Cadre abîmé", rn: .04, rx: .10, d: "moyen", t: "1h", pr: .35, td: 2, yt: "réparer cadre porte", ix: "" },
+  "Robot cuisine": [
+    { n: "Moteur / coupe HS", rn: .15, rx: .35, d: "difficile", t: "pro", pr: .5, td: 5, yt: "moteur robot cuisine", ix: "" },
+    { n: "Joint bol", rn: .04, rx: .10, d: "facile", t: "15min", pr: .2, td: 1, yt: "joint robot cuisine", ix: "" },
+    { n: "Carte électronique", rn: .20, rx: .40, d: "difficile", t: "pro", pr: .55, td: 5, yt: "carte thermomix", ix: "" },
   ],
-  "Volet roulant": [
-    { n: "Moteur HS", rn: .12, rx: .28, d: "difficile", t: "pro", pr: .45, td: 4, yt: "remplacement moteur volet roulant", ix: "" },
-    { n: "Lame cassée", rn: .05, rx: .12, d: "moyen", t: "45min", pr: .3, td: 2, yt: "remplacement lame volet", ix: "" },
-    { n: "Coffre / enroulement", rn: .06, rx: .14, d: "moyen", t: "1h", pr: .35, td: 2, yt: "réparation volet roulant", ix: "" },
+  "Cafetière expresso": [
+    { n: "Pompe HS", rn: .10, rx: .22, d: "moyen", t: "1-2h", pr: .4, td: 4, yt: "pompe cafetière expresso", ix: "" },
+    { n: "Joint / calcaire", rn: .04, rx: .10, d: "facile", t: "30min", pr: .2, td: 1, yt: "détartrage cafetière", ix: "" },
+    { n: "Buse vapeur", rn: .05, rx: .12, d: "facile", t: "20min", pr: .25, td: 1, yt: "buse cafetière expresso", ix: "" },
+    { n: "Carte électronique", rn: .15, rx: .30, d: "difficile", t: "pro", pr: .5, td: 5, yt: "carte cafetière", ix: "" },
+  ],
+  "Machine à café": [
+    { n: "Pompe / percolateur", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .35, td: 3, yt: "pompe machine café", ix: "" },
+    { n: "Calcaire", rn: .02, rx: .06, d: "facile", t: "15min", pr: .1, td: 1, yt: "détartrage nespresso", ix: "" },
+    { n: "Réservoir / bac", rn: .03, rx: .08, d: "facile", t: "5min", pr: .15, td: 1, yt: "réservoir machine café", ix: "" },
+  ],
+  "WC / Toilettes": [
+    { n: "Mécanisme chasse", rn: .08, rx: .18, d: "facile", t: "30min", pr: .25, td: 1, yt: "mécanisme chasse d'eau", ix: "" },
+    { n: "Joint cuvette", rn: .05, rx: .12, d: "moyen", t: "1h", pr: .2, td: 2, yt: "joint wc", ix: "" },
+    { n: "Fuite", rn: .06, rx: .15, d: "moyen", t: "1h", pr: .25, td: 2, yt: "fuite wc réparation", ix: "" },
+  ],
+  "Ballon thermodynamique": [
+    { n: "Résistance HS", rn: .08, rx: .18, d: "difficile", t: "pro", pr: .4, td: 5, yt: "résistance ballon thermodynamique", ix: "" },
+    { n: "Anode", rn: .05, rx: .12, d: "moyen", t: "1h", pr: .25, td: 2, yt: "anode ballon", ix: "" },
+    { n: "Groupe de sécurité", rn: .05, rx: .12, d: "moyen", t: "1h", pr: .25, td: 2, yt: "groupe sécurité ballon", ix: "" },
+  ],
+  "Colonne de douche": [
+    { n: "Cartouche", rn: .10, rx: .25, d: "moyen", t: "1h", pr: .3, td: 2, yt: "cartouche colonne douche", ix: "" },
+    { n: "Fuite", rn: .06, rx: .15, d: "moyen", t: "1h", pr: .25, td: 2, yt: "fuite colonne douche", ix: "" },
+    { n: "Buse / pommeau", rn: .04, rx: .10, d: "facile", t: "20min", pr: .2, td: 1, yt: "pommeau douche", ix: "" },
+  ],
+  "Moniteur PC": [
+    { n: "Rétroéclairage HS", rn: .10, rx: .22, d: "moyen", t: "2-3h", pr: .35, td: 4, yt: "rétroéclairage moniteur", ix: "" },
+    { n: "Carte alimentation", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .4, td: 3, yt: "carte alimentation moniteur", ix: "" },
+    { n: "Port HDMI / DisplayPort", rn: .06, rx: .14, d: "difficile", t: "pro", pr: .3, td: 5, yt: "port moniteur", ix: "" },
+  ],
+  "Enceinte Bluetooth": [
+    { n: "Batterie usée", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .4, td: 3, yt: "batterie enceinte bluetooth", ix: "" },
+    { n: "Haut-parleur HS", rn: .12, rx: .28, d: "difficile", t: "pro", pr: .5, td: 5, yt: "haut-parleur enceinte", ix: "" },
+    { n: "Carte électronique", rn: .15, rx: .35, d: "difficile", t: "pro", pr: .5, td: 5, yt: "carte enceinte", ix: "" },
+  ],
+  "Pompe à chaleur": [
+    { n: "Carte électronique", rn: .08, rx: .18, d: "difficile", t: "pro", pr: .5, td: 5, yt: "carte pompe à chaleur", ix: "" },
+    { n: "Compresseur", rn: .15, rx: .35, d: "difficile", t: "pro", pr: .55, td: 5, yt: "compresseur pac", ix: "" },
+    { n: "Détendeur", rn: .06, rx: .14, d: "difficile", t: "pro", pr: .4, td: 5, yt: "détendeur pac", ix: "" },
+  ],
+  "Radiateur électrique": [
+    { n: "Résistance HS", rn: .08, rx: .18, d: "moyen", t: "1h", pr: .35, td: 3, yt: "résistance radiateur électrique", ix: "" },
+    { n: "Thermostat", rn: .05, rx: .12, d: "facile", t: "30min", pr: .25, td: 1, yt: "thermostat radiateur", ix: "" },
+    { n: "Carte électronique", rn: .12, rx: .25, d: "difficile", t: "pro", pr: .45, td: 5, yt: "carte radiateur", ix: "" },
+  ],
+  "Climatiseur": [
+    { n: "Compresseur HS", rn: .20, rx: .45, d: "difficile", t: "pro", pr: .55, td: 5, yt: "compresseur climatiseur", ix: "" },
+    { n: "Ventilateur", rn: .08, rx: .18, d: "moyen", t: "1-2h", pr: .35, td: 4, yt: "ventilateur climatiseur", ix: "" },
+    { n: "Carte électronique", rn: .15, rx: .30, d: "difficile", t: "pro", pr: .5, td: 5, yt: "carte climatiseur", ix: "" },
+    { n: "Filtre encrassé", rn: .02, rx: .06, d: "facile", t: "10min", pr: .1, td: 1, yt: "filtre climatiseur", ix: "" },
+  ],
+  "Thermostat connecté": [
+    { n: "Pile / alimentation", rn: .02, rx: .06, d: "facile", t: "5min", pr: .1, td: 1, yt: "pile thermostat", ix: "" },
+    { n: "Carte électronique", rn: .15, rx: .35, d: "difficile", t: "pro", pr: .5, td: 5, yt: "thermostat connecté", ix: "" },
+    { n: "Connexion WiFi", rn: .05, rx: .12, d: "moyen", t: "30min", pr: .2, td: 2, yt: "wifi thermostat", ix: "" },
+  ],
+  "Tondeuse": [
+    { n: "Lame usée", rn: .04, rx: .10, d: "facile", t: "20min", pr: .25, td: 1, yt: "lame tondeuse", ix: "" },
+    { n: "Filtre à air", rn: .02, rx: .06, d: "facile", t: "10min", pr: .15, td: 1, yt: "filtre tondeuse", ix: "" },
+    { n: "Bougie", rn: .03, rx: .08, d: "facile", t: "15min", pr: .2, td: 1, yt: "bougie tondeuse", ix: "" },
+    { n: "Moteur HS", rn: .15, rx: .35, d: "difficile", t: "pro", pr: .5, td: 5, yt: "moteur tondeuse", ix: "" },
+  ],
+  "Tondeuse robot": [
+    { n: "Batterie usée", rn: .12, rx: .28, d: "moyen", t: "1h", pr: .45, td: 3, yt: "batterie tondeuse robot", ix: "" },
+    { n: "Lames", rn: .05, rx: .12, d: "facile", t: "20min", pr: .25, td: 1, yt: "lames tondeuse robot", ix: "" },
+    { n: "Carte électronique", rn: .18, rx: .38, d: "difficile", t: "pro", pr: .55, td: 5, yt: "carte tondeuse robot", ix: "" },
+  ],
+  "Taille-haie": [
+    { n: "Lames", rn: .06, rx: .14, d: "facile", t: "20min", pr: .3, td: 1, yt: "lames taille-haie", ix: "" },
+    { n: "Câble", rn: .04, rx: .10, d: "moyen", t: "30min", pr: .2, td: 2, yt: "câble taille-haie", ix: "" },
+    { n: "Moteur HS", rn: .12, rx: .28, d: "difficile", t: "pro", pr: .5, td: 5, yt: "moteur taille-haie", ix: "" },
+  ],
+  "Nettoyeur haute pression": [
+    { n: "Lance / pistolet", rn: .05, rx: .12, d: "facile", t: "10min", pr: .25, td: 1, yt: "lance nettoyeur pression", ix: "" },
+    { n: "Pompe HS", rn: .15, rx: .35, d: "difficile", t: "pro", pr: .5, td: 5, yt: "pompe nettoyeur haute pression", ix: "" },
+    { n: "Moteur", rn: .10, rx: .22, d: "moyen", t: "1-2h", pr: .4, td: 4, yt: "moteur nettoyeur pression", ix: "" },
   ],
   "Réfrigérateur": [
     { n: "Compresseur HS", rn: .25, rx: .50, d: "difficile", t: "pro", pr: .5, td: 5, yt: "diagnostic compresseur réfrigérateur", ix: "" },
@@ -588,11 +664,11 @@ for (const [catId, types] of Object.entries(RAW)) {
   }
 }
 
-export const OCC_CATS = ["electromenager", "plomberie", "chauffage", "cuisine", "mobilier", "jardin"];
+export const OCC_CATS = ["electromenager", "plomberie", "chauffage", "jardin"];
 
 export const SIDEBAR_GROUPS = [
   { label: "Technologies", ids: ["smartphones", "tablettes", "ordinateurs", "tv", "consoles", "audio", "photo", "montres", "velo"] },
-  { label: "Maison", ids: ["electromenager", "plomberie", "chauffage", "cuisine", "mobilier", "jardin"] },
+  { label: "Maison", ids: ["electromenager", "plomberie", "chauffage", "jardin"] },
 ];
 
 export const CHIP_TO_PRODUCT = {
@@ -610,14 +686,28 @@ export const POPULAR_SEARCHES = [
   { label: "iPhone 13", intent: "Écran cassé", brand: "Apple", name: "iPhone 13" },
   { label: "Galaxy S24", intent: "Batterie HS", brand: "Samsung", name: "Galaxy S24" },
   { label: "PlayStation 5 Slim", intent: "Ne s'allume plus", brand: "Sony", name: "PlayStation 5 Slim" },
-  { label: "Lave-linge Bosch", intent: "Panne vidange", brand: "Bosch", name: "Série 6 WGG24400" },
+  { label: "Lave-linge : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Lave-linge" },
   { label: "MacBook Air M3", intent: "Batterie usée", brand: "Apple", name: "MacBook Air M3 13\"" },
-  { label: "Dyson V15", intent: "Perte d'aspiration", brand: "Dyson", name: "V15 Detect Absolute" },
-  { label: "Thermomix TM6", intent: "Erreur moteur", brand: "Vorwerk", name: "Thermomix TM6" },
-  { label: "Plaque induction Bosch", intent: "Ne chauffe plus", brand: "Bosch", name: "PXE651FC1E" },
+  { label: "Lave-vaisselle : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Lave-vaisselle" },
+  { label: "Réfrigérateur : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Réfrigérateur" },
+  { label: "Plaque induction : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Plaque induction" },
   { label: "OLED C4", intent: "Dalle abîmée", brand: "LG", name: "OLED 55\" C4" },
   { label: "AirPods Pro", intent: "Son défaillant", brand: "Apple", name: "AirPods Pro 2" },
-]
+];
+
+/** Recommandations pour utilisateurs sur iPhone/iPad — écosystème Apple en priorité */
+export const POPULAR_SEARCHES_IPHONE = [
+  { label: "iPhone 15", intent: "Écran cassé", brand: "Apple", name: "iPhone 15" },
+  { label: "iPhone 14", intent: "Batterie HS", brand: "Apple", name: "iPhone 14" },
+  { label: "iPhone 13", intent: "Écran cassé", brand: "Apple", name: "iPhone 13" },
+  { label: "iPhone 16", intent: "Batterie usée", brand: "Apple", name: "iPhone 16" },
+  { label: "MacBook Air M3", intent: "Batterie usée", brand: "Apple", name: "MacBook Air M3 13\"" },
+  { label: "iPad Pro", intent: "Écran cassé", brand: "Apple", name: "iPad Pro M4 13\"" },
+  { label: "AirPods Pro", intent: "Son défaillant", brand: "Apple", name: "AirPods Pro 2" },
+  { label: "Lave-linge : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Lave-linge" },
+  { label: "Apple Watch", intent: "Batterie usée", brand: "Apple", name: "Apple Watch Series 10" },
+  { label: "Lave-vaisselle : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Lave-vaisselle" },
+];
 
 export const RET = {
   neuf: [
@@ -640,22 +730,91 @@ export const RET = {
   ],
   pcs: [
     { n: "Amazon", t: "Pièces détachées", c: "#FF9900", logo: "A" },
-    { n: "SOSav", t: "Pièces France", c: "#EF4444", logo: "S" },
-    { n: "Spareka", t: "Électroménager", c: "#00B8D9", logo: "S" },
+    { n: "But", t: "Électroménager & pièces", c: "#E30613", logo: "B" },
     { n: "Leroy Merlin", t: "Plomberie & bricolage", c: "#78BE20", logo: "L" },
     { n: "ManoMano", t: "Pièces & outillage", c: "#00B2A9", logo: "M" },
+    { n: "SOSav", t: "Pièces France", c: "#EF4444", logo: "S" },
+    { n: "Spareka", t: "Électroménager", c: "#00B8D9", logo: "S" },
   ],
 }
 
 export const TECH_CATS = ["smartphones", "tablettes", "ordinateurs", "tv", "consoles", "audio", "photo", "montres", "velo"];
 
+/** Catégories éligibles à l'indice de réparabilité (note sur 10, obligatoire sur les appareils électriques/électroniques) */
+export const REPAIRABILITY_ELIGIBLE_CATS = ["electromenager", "chauffage", "jardin", "smartphones", "tablettes", "ordinateurs", "tv", "consoles", "audio", "photo", "montres", "velo"];
+
+/** Catégories éligibles au bonus QualiRépar (10–45 € chez réparateur labellisé) */
+export const QUALIREPAR_ELIGIBLE_CATS = ["electromenager", "chauffage", "jardin", "plomberie", "smartphones", "tablettes", "ordinateurs", "tv", "consoles", "audio", "photo", "montres", "velo"];
+
+/** Indice de réparabilité indicatif par type de produit (moyenne, pour affichage vignette) — variable selon modèle */
+export const REPAIRABILITY_INDEX_BY_TYPE = {
+  "Lave-linge": 7.2, "Lave-vaisselle": 7.0, "Sèche-linge": 6.8, "Réfrigérateur": 6.5, "Congélateur": 6.2,
+  "Four": 6.5, "Four encastrable": 6.5, "Micro-ondes": 6.8, "Plaque induction": 6.0, "Plaque vitrocéramique": 6.2, "Plaque gaz": 6.0,
+  "Hotte aspirante": 6.5, "Cuisinière mixte": 5.8, "Aspirateur balai": 6.8, "Aspirateur robot": 5.5,
+  "Robot cuisine": 5.5, "Cafetière expresso": 6.5, "Machine à café": 6.0,
+  "Tondeuse": 6.5, "Tondeuse robot": 5.5, "Taille-haie": 6.2, "Nettoyeur haute pression": 6.8,
+  "Climatiseur": 6.0, "Radiateur électrique": 6.5, "Thermostat connecté": 7.0, "Chauffe-eau": 5.5,
+  "Robinet / Mitigeur": 7.0, "WC / Toilettes": 5.5, "Ballon thermodynamique": 5.5, "Colonne de douche": 6.0,
+  // Tech
+  Smartphone: 6.5, Tablette: 5.8, "PC Portable": 6.2, "PC Bureau": 7.5, "All-in-One": 5.0,
+  Téléviseur: 5.5, "Console de salon": 6.0, "Console portable": 5.5, Manette: 7.0,
+  "Écouteurs sans fil": 4.5, "Casque audio": 6.5, "Vélo électrique": 6.0, "Montre connectée": 4.0,
+};
+
+/** Étapes de tutoriel adaptées par type de produit (eau = couper eau si applicable) */
+export const TUTORIAL_STEPS_BY_PRODUCT = {
+  "Lave-linge": ["Débrancher l'appareil et couper l'alimentation électrique et l'eau.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester l'étanchéité."],
+  "Lave-vaisselle": ["Débrancher l'appareil et couper l'alimentation électrique et l'eau.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Sèche-linge": ["Débrancher l'appareil et couper l'alimentation. Vidanger le condensat si applicable.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Réfrigérateur": ["Débrancher l'appareil et vider le contenu.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et laisser reposer avant de rebrancher."],
+  "Congélateur": ["Débrancher l'appareil et vider le contenu.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et laisser reposer avant de rebrancher."],
+  "Four": ["Débrancher l'appareil et couper l'alimentation électrique.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Four encastrable": ["Débrancher l'appareil et couper l'alimentation électrique.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Micro-ondes": ["Débrancher l'appareil. Décharger le condensateur (risque électrique).", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Plaque induction": ["Débrancher l'appareil et couper l'alimentation électrique.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Plaque vitrocéramique": ["Débrancher l'appareil et couper l'alimentation électrique.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Plaque gaz": ["Couper le gaz au robinet d'arrivée.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et vérifier l'étanchéité au gaz."],
+  "Hotte aspirante": ["Débrancher l'appareil et couper l'alimentation électrique.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Cuisinière mixte": ["Débrancher l'appareil. Couper le gaz si applicable.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Aspirateur balai": ["Débrancher ou retirer la batterie.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Aspirateur robot": ["Éteindre et retirer la batterie si possible.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Robot cuisine": ["Débrancher l'appareil.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Cafetière expresso": ["Débrancher et vider le réservoir d'eau.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Machine à café": ["Débrancher et vider le réservoir.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Chauffe-eau": ["Couper l'alimentation électrique et l'eau.", "Vidanger le ballon avant toute intervention.", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter, remplir et tester l'étanchéité."],
+  "Robinet / Mitigeur": ["Couper l'eau au robinet d'arrivée général ou sous l'évier.", "Démonter le robinet pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester l'étanchéité."],
+  "WC / Toilettes": ["Couper l'eau au robinet d'arrivée des toilettes.", "Vider la chasse. Démonter pour accéder au composant (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Ballon thermodynamique": ["Couper l'alimentation électrique et l'eau.", "Vidanger le ballon avant toute intervention.", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter, remplir et tester."],
+  "Colonne de douche": ["Couper l'eau au robinet d'arrivée.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester l'étanchéité."],
+  "Chaudière gaz": ["Couper le gaz au robinet d'arrivée et l'alimentation électrique. Intervention réservée au professionnel agréé.", "Diagnostiquer le composant défaillant (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter, purger et tester."],
+  "Pompe à chaleur": ["Couper l'alimentation électrique. Vidanger si nécessaire.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter, mettre sous vide et recharger (pro)."],
+  "Climatiseur": ["Débrancher l'appareil et couper l'alimentation électrique.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Tondeuse": ["Couper l'alimentation (débrancher ou retirer la bougie pour thermique).", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "Nettoyeur haute pression": ["Débrancher et purger la pression restante.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  // Tech
+  Smartphone: ["Éteindre et retirer la batterie si possible.", "Démonter l'appareil (outils de précision, chauffage pour adhésif écran).", "Remplacer le composant défectueux (voir le tutoriel vidéo ci-dessous).", "Remonter et tester."],
+  Tablette: ["Éteindre l'appareil.", "Démonter en suivant le tutoriel vidéo (adhésif, connecteurs fragiles).", "Remplacer le composant défectueux.", "Remonter et tester."],
+  "PC Portable": ["Débrancher et retirer la batterie.", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "PC Bureau": ["Débrancher l'alimentation et tous les câbles.", "Ouvrir le boîtier et accéder au composant concerné.", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+  "All-in-One": ["Débrancher l'appareil.", "Démonter avec précaution (écran collé, câbles fragiles).", "Remplacer le composant défectueux.", "Remonter et tester."],
+  Téléviseur: ["Débrancher et attendre 24 h (condensateurs).", "Démonter le dos de la TV pour accéder aux cartes.", "Remplacer la carte ou le composant défectueux.", "Remonter et tester."],
+  "Console de salon": ["Débrancher et retirer les vis de sécurité.", "Démonter pour accéder au composant concerné.", "Remplacer la pièce défectueuse.", "Remonter et tester."],
+  "Console portable": ["Éteindre et retirer la batterie si possible.", "Démonter en suivant le tutoriel vidéo.", "Remplacer le composant défectueux.", "Remonter et tester."],
+  Manette: ["Retirer les vis de sécurité (souvent sous les poignées).", "Ouvrir et accéder au composant concerné.", "Remplacer (stick, bouton, câble).", "Remonter et tester."],
+  "Écouteurs sans fil": ["Ouvrir le boîtier (souvent collé).", "Accéder à la batterie ou au composant.", "Remplacer si possible (soudure délicate).", "Remonter et tester."],
+  "Casque audio": ["Démonter les coussinets si nécessaire.", "Accéder au câble ou au driver.", "Remplacer le composant défectueux.", "Remonter et tester."],
+  "Vélo électrique": ["Couper l'alimentation (batterie débranchée).", "Démonter pour accéder au composant concerné.", "Remplacer la pièce défectueuse.", "Remonter et tester."],
+  "Montre connectée": ["Retirer la batterie si possible (modèles réparables).", "Démonter avec outils de précision.", "Remplacer le composant (souvent réservé au pro).", "Remonter et tester l'étanchéité."],
+  default: ["Débrancher l'appareil et couper l'alimentation (eau si applicable).", "Démonter pour accéder au composant concerné (voir le tutoriel vidéo ci-dessous).", "Remplacer la pièce défectueuse par une pièce compatible.", "Remonter et tester."],
+};
+
 export const WHEN_REPAIR_SPEC = {
   "Lave-linge": {
-    reparer: "Pour un lave-linge, la réparation est pertinente quand la panne concerne une pièce d'usure classique : joint de hublot, pompe de vidange, courroie ou charbon moteur. Ces pièces sont disponibles chez Spareka et le coût reste souvent sous 30 % du neuf. Les roulements sont plus délicats (démontage du tambour) mais réparables par un pro.",
+    reparer: "Pour un lave-linge, la réparation est pertinente quand la panne concerne une pièce d'usure classique : joint de hublot, pompe de vidange, courroie ou charbon moteur. Le coût reste souvent sous 30 % du neuf. Les roulements sont plus délicats (démontage du tambour) mais réparables par un pro.",
     remplacer: "Remplacer si la carte électronique est HS (coût prohibitif), si les roulements ont endommagé le bloc tambour, ou si l'appareil a plus de 10 ans. L'occasion/reconditionné est rare pour le gros électroménager — le neuf avec garantie reste la référence.",
   },
   "Lave-vaisselle": {
-    reparer: "Pour un lave-vaisselle, les pannes courantes (pompe de cyclage, joint de porte, bras de lavage) sont souvent réparables à moindre coût. La résistance et la pompe de vidange sont accessibles. Vérifier la disponibilité des pièces sur Spareka avant de décider.",
+    reparer: "Pour un lave-vaisselle, les pannes courantes (pompe de cyclage, joint de porte, bras de lavage) sont souvent réparables à moindre coût. La résistance et la pompe de vidange sont accessibles. Vérifier la disponibilité des pièces avant de décider.",
     remplacer: "Remplacer si la carte électronique est HS ou si la cuve fuit. Un lave-vaisselle de plus de 8 ans avec une panne majeure justifie souvent le remplacement par du neuf.",
   },
   "Réfrigérateur": {
@@ -682,18 +841,6 @@ export const WHEN_REPAIR_SPEC = {
     reparer: "Pour un robinet ou mitigeur, la cartouche, le joint et le flexible sont des pièces standard facilement remplaçables. La réparation est presque toujours rentable — évitez de remplacer tout le robinet pour une fuite au bec.",
     remplacer: "Remplacer si le corps du robinet est fêlé, si les filetages sont usés, ou si le modèle n'existe plus (pièces introuvables).",
   },
-  "Canapé": {
-    reparer: "Pour un canapé, le remplacement du tissu, de la mousse d'assise ou du mécanisme convertible est souvent rentable. Un pied cassé se change facilement. Les pièces IKEA sont disponibles en spare parts.",
-    remplacer: "Remplacer si la structure en bois est cassée, si le canapé convertible est irréparable, ou si l'état général est trop dégradé. L'occasion (Leboncoin, Emmaüs) peut être une option.",
-  },
-  "Lit": {
-    reparer: "Pour un lit, les lattes du sommier, les roulettes et la tête de lit se réparent ou se remplacent. IKEA vend des pièces détachées. Un sommier abîmé peut souvent être réparé.",
-    remplacer: "Remplacer si le cadre est cassé ou si le sommier à lattes est irrécupérable. Le matelas se change séparément.",
-  },
-  "Volet roulant": {
-    reparer: "Pour un volet roulant, une lame cassée se remplace. Le moteur HS peut être changé par un pro — coût variable selon le modèle. Un enrouleur défaillant est plus délicat.",
-    remplacer: "Remplacer si le coffre est rouillé, si plusieurs lames sont cassées, ou si le moteur coûte plus de 40 % du prix d'un volet neuf. Faire deviser par un professionnel.",
-  },
   "Tondeuse": {
     reparer: "Pour une tondeuse thermique, la lame, le filtre à air, la bougie et le câble de débrayage sont des pièces d'usure courantes. Une tondeuse électrique : câble, interrupteur, moteur (si disponible).",
     remplacer: "Remplacer si le bloc moteur est HS (thermique) ou si la tondeuse a plus de 10 ans avec une panne coûteuse. L'occasion est courante pour le jardin.",
@@ -701,5 +848,58 @@ export const WHEN_REPAIR_SPEC = {
   "Tondeuse robot": {
     reparer: "Pour une tondeuse robot, la batterie et les lames sont remplaçables. Les capteurs et la carte électronique relèvent du SAV constructeur — vérifier la garantie et les pièces disponibles.",
     remplacer: "Remplacer si la carte est HS ou si le modèle n'est plus supporté (pièces introuvables). Le reconditionné existe peu — le neuf reste la référence.",
+  },
+  // Tech — personnalisés par produit
+  Smartphone: {
+    reparer: "Pour un smartphone, la réparation est pertinente quand la panne est courante (écran, batterie, connecteur) et que le coût reste sous 30 % du neuf. Les pièces sont disponibles et de nombreux tutoriels existent.",
+    remplacer: "Remplacer si le coût dépasse 40 % du neuf, si plusieurs pannes s'accumulent, ou si l'appareil a plus de 5 ans. Le reconditionné est très en vogue : même marque, garantie, prix réduit.",
+  },
+  Tablette: {
+    reparer: "Pour une tablette, l'écran et la batterie sont les pannes les plus réparables. Le coût doit rester sous 35 % du neuf. Les tutoriels vidéo aident pour les modèles populaires.",
+    remplacer: "Remplacer si l'écran est trop cher à remplacer (souvent 40–50 % du neuf) ou si la tablette a plus de 6 ans. Le reconditionné existe pour iPad et Galaxy Tab.",
+  },
+  "PC Portable": {
+    reparer: "Pour un PC portable, batterie, clavier, SSD et ventilateur sont souvent réparables en DIY. La réparation est pertinente si le coût reste sous 30 % du neuf et que l'appareil a moins de 6 ans.",
+    remplacer: "Remplacer si la carte mère est HS, si l'écran coûte trop cher, ou si le portable a plus de 7 ans. Le reconditionné professionnel (ThinkPad, Latitude) offre un bon rapport qualité/prix.",
+  },
+  "PC Bureau": {
+    reparer: "Pour un PC fixe, la réparation est souvent simple : alimentation, RAM, disque. Les composants sont modulaires et facilement remplaçables.",
+    remplacer: "Remplacer si la carte mère ou le processeur est HS, ou si l'âge dépasse 8 ans. L'occasion est courante pour les PC bureaux.",
+  },
+  "All-in-One": {
+    reparer: "Pour un All-in-One, la réparation est plus délicate : composants intégrés, écran collé. Pertinent uniquement pour des pannes simples (RAM, disque) à coût raisonnable.",
+    remplacer: "Remplacer si l'écran ou la carte mère est HS — le coût dépasse souvent 50 % du neuf. Le reconditionné existe pour iMac et équivalents.",
+  },
+  Téléviseur: {
+    reparer: "Pour une TV, seules les pannes mineures (carte alimentation, rétroéclairage) sont parfois réparables. La dalle cassée impose le remplacement.",
+    remplacer: "Remplacer si la dalle est endommagée (coût prohibitif) ou si la TV a plus de 8 ans. Les TV se déprécient vite — le neuf offre souvent un meilleur rapport qualité/prix.",
+  },
+  "Console de salon": {
+    reparer: "Pour une console, ventilateur, lecteur disque et alimentation sont réparables. Pertinent si le coût reste sous 35 % du neuf et que la console est récente.",
+    remplacer: "Remplacer si la carte mère est HS ou si la console a plus de 6 ans. Le reconditionné est très courant pour les consoles de jeu.",
+  },
+  "Console portable": {
+    reparer: "Pour une console portable (Switch, Steam Deck), écran et batterie sont les pannes les plus réparables. Les tutoriels existent pour les modèles populaires.",
+    remplacer: "Remplacer si l'écran ou la carte mère est HS. Le reconditionné est courant pour la Switch.",
+  },
+  Manette: {
+    reparer: "Pour une manette, le stick drift et les boutons sont souvent réparables en DIY. Coût faible, tutoriels nombreux.",
+    remplacer: "Remplacer si la réparation échoue ou si la manette est très usée. Les manettes neuves restent abordables.",
+  },
+  "Écouteurs sans fil": {
+    reparer: "Pour des écouteurs sans fil, la réparation est rarement rentable : composants miniaturisés, soudure délicate. La batterie peut parfois être changée sur certains modèles.",
+    remplacer: "Remplacer dans la plupart des cas. Le reconditionné existe pour AirPods et équivalents.",
+  },
+  "Casque audio": {
+    reparer: "Pour un casque, les coussinets et le câble sont facilement remplaçables. La réparation est pertinente si le coût reste sous 25 % du neuf.",
+    remplacer: "Remplacer si le driver ou la carte Bluetooth est HS. Le reconditionné est courant pour les casques premium.",
+  },
+  "Vélo électrique": {
+    reparer: "Pour un VAE, batterie et moteur sont les pièces les plus coûteuses. Le reste (freins, câbles, pneus) est souvent réparable en DIY ou chez un vélociste.",
+    remplacer: "Remplacer si la batterie ou le moteur est HS et que le coût dépasse 40 % du neuf. L'occasion est courante pour les vélos électriques.",
+  },
+  "Montre connectée": {
+    reparer: "Pour une montre connectée, la réparation est rarement rentable : composants miniaturisés, étanchéité à préserver. La batterie peut parfois être changée sur certains modèles.",
+    remplacer: "Remplacer dans la plupart des cas. Le reconditionné existe pour Apple Watch et Galaxy Watch.",
   },
 }

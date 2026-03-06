@@ -10,6 +10,10 @@ const nextConfig = {
     return [
       { source: "/guide", destination: "/comment-ca-marche", permanent: true },
       { source: "/guide-reparation", destination: "/guide/reparer-ou-racheter", permanent: true },
+      { source: "/categories/cuisine", destination: "/categories/electromenager", permanent: true },
+      { source: "/categories/cuisine/:path*", destination: "/categories/electromenager/:path*", permanent: true },
+      { source: "/categories/mobilier", destination: "/", permanent: true },
+      { source: "/categories/mobilier/:path*", destination: "/", permanent: true },
     ];
   },
 };
