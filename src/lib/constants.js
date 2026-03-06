@@ -9,6 +9,7 @@ export const CSS = `@keyframes slideFadeIn{from{opacity:0;transform:translateX(8
 @keyframes contentSlideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes subtlePulse{0%,100%{opacity:1}50%{opacity:.92}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media(max-width:768px){.page-enter{animation-duration:.25s!important}.card-hover{transition-duration:.15s!important}.btn-cta{transition-duration:.15s!important}.banner-carousel-card{min-height:240px!important}}
 .page-enter{animation:contentSlideUp .4s cubic-bezier(.25,.46,.45,.94) forwards}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .skip-link{position:absolute;top:-100px;left:12px;z-index:9999;padding:12px 20px;background:#1B4332;color:#fff;font-weight:600;border-radius:8px;transition:top .2s}.skip-link:focus{top:12px;outline:2px solid #fff;outline-offset:2px}

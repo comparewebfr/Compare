@@ -8,6 +8,7 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "600", "700"],
   display: "swap",
   preload: true,
+  adjustFontFallback: true,
 });
 
 export const metadata = {
@@ -23,13 +24,14 @@ export default function RootLayout({ children }) {
     <html lang="fr">
       <head>
         <link rel="preload" as="image" href="/banner-hero.jpg" fetchPriority="high" />
+        <link rel="preconnect" href="https://images.unsplash.com" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
       </head>
       <body className={dmSans.className} style={{ background: W, margin: 0, minHeight: "100vh" }}>
         {children}
         {/* Google Analytics (GA4) - chargement après interaction */}
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-3QHNEN9NGX" strategy="afterInteractive" />
-        <Script id="ga-config" strategy="afterInteractive">
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-3QHNEN9NGX" strategy="lazyOnload" />
+        <Script id="ga-config" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}

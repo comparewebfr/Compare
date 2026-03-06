@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import CompareApp from "../components/CompareApp";
+import CompareApp from "../components/CompareAppWrapper";
 
 const Fallback = () => (
   <div style={{ minHeight: "100vh", background: "#F8F6F0", display: "flex", alignItems: "center", justifyContent: "center" }}>

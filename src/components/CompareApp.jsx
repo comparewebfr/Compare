@@ -23,8 +23,8 @@ import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
 
 // ─── LOGO ───
-function Logo({ s = 32 }) {
-  return <Image src="/logo.png" alt="Compare." width={s} height={s} style={{ width: s, height: s, objectFit: "contain", borderRadius: "50%" }} />;
+function Logo({ s = 32, priority = false }) {
+  return <Image src="/logo.png" alt="Compare." width={s} height={s} sizes={`${s}px`} priority={priority} style={{ width: s, height: s, objectFit: "contain", borderRadius: "50%" }} />;
 }
 
 // ─── MINIMAL ICONS (decorative, aria-hidden) ───
@@ -328,6 +328,7 @@ function BannerCarousel({ banners, onNav }) {
       onClick={() => onNav("cat", b.catId)}
       onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav("cat", b.catId); } }}
       aria-label={`Voir les produits ${b.title}`}
+      className="banner-carousel-card"
       style={{
         animation: "slideFadeIn 0.5s ease-out",
         background: b.image ? undefined : b.bg,
@@ -359,8 +360,8 @@ function BannerCarousel({ banners, onNav }) {
 // ─── HERO ───
 const HERO_BANNERS = (W, ACCENT, GREEN) => [
   { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "/banner-hero.jpg", title: "Les meilleurs prix pour votre smartphone", sub: "Comparez, réparez ou rachetez un smartphone reconditionné", catId: "smartphones", icon: "smartphone", dark: false },
-  { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=640&q=75", title: "Réparez votre console de jeux", sub: "Donnez une seconde vie à votre PS5", catId: "consoles", icon: "gamepad", dark: true },
-  { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=640&q=75", title: "Un problème dans votre cuisine ?", sub: "Réparez vos appareils à prix imbattables", catId: "electromenager", icon: "kitchen", dark: false },
+  { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=480&q=70", title: "Réparez votre console de jeux", sub: "Donnez une seconde vie à votre PS5", catId: "consoles", icon: "gamepad", dark: true },
+  { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=480&q=70", title: "Un problème dans votre cuisine ?", sub: "Réparez vos appareils à prix imbattables", catId: "electromenager", icon: "kitchen", dark: false },
 ];
 function Hero({ onSearch, onNav, popularSearches = POPULAR_SEARCHES }) {
   const [q, setQ] = useState(""); const [show, setShow] = useState(false); const [noMatchMsg, setNoMatchMsg] = useState(false);
@@ -370,7 +371,7 @@ function Hero({ onSearch, onNav, popularSearches = POPULAR_SEARCHES }) {
   const banners = useMemo(() => HERO_BANNERS(W, ACCENT, GREEN), []);
   return <><div style={{ background: `linear-gradient(180deg, ${W} 0%, #F0EDE6 50%, #E8E6E0 100%)`, paddingBottom: 0 }}>
     <section style={{ padding: "40px 20px 32px", textAlign: "center" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Logo s={56} /></div>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Logo s={56} priority /></div>
       <h1 className="hero-title" style={{ fontSize: 38, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, margin: "0 0 6px", letterSpacing: "-.03em", fontFamily: F }}>Réparer ou racheter<span style={{ color: ACCENT }}> ?</span></h1>
       <p style={{ fontSize: 14, color: "#4B5563", margin: "0 auto 28px", maxWidth: 380, fontWeight: 500, lineHeight: 1.5 }}>Comparez les coûts. Choisissez malin.</p>
       <div style={{ position: "relative", maxWidth: 460, margin: "0 auto" }}>

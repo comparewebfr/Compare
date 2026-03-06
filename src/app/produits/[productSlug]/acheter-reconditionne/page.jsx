@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import CompareApp from "../../../../components/CompareApp";
+import CompareApp from "../../../../components/CompareAppWrapper";
 
 export default function Page() {
   return (
