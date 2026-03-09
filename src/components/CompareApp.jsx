@@ -1959,24 +1959,23 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
           {sortedRets.map(({ r, price }, rank) => {
             const isBestPrice = rank === 0;
             const url = buildRetailerUrl(r, item, affType);
-            return <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
+            return <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={{
               background: "#fff",
               border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
-              borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit",
+              borderRadius: 12, padding: "14px 16px", paddingRight: isBestPrice ? 80 : 16, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit", position: "relative",
             }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#374151", flexShrink: 0 }}>{(r.logo || r.n[0])}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
-                  {isBestPrice && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: "#111", color: "#fff" }}>Meilleur prix</span>}
+              {isBestPrice && <span className="retailer-badge" style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff" }}>Meilleur prix</span>}
+              <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
+                <div className="retailer-logo" style={{ width: 44, height: 44, borderRadius: 10, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, color: "#374151", flexShrink: 0 }}>{(r.logo || r.n[0])}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.n}</div>
+                  <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
                 </div>
-                <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{r.t}</div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 18, color: "#111" }}>{price} €</div>
+                </div>
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{price} €</div>
-                <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>Voir l'offre</div>
-              </div>
-              <div style={{ padding: "10px 18px", borderRadius: 8, background: "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", justifyContent: "center", transition: "transform .2s" }}>Voir l'offre →</div>
+              <div className="retailer-cta" style={{ padding: "10px 16px", borderRadius: 8, background: "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform .2s", flexShrink: 0 }}>Voir l'offre →</div>
             </a>;
           })}
         </div>
@@ -2067,34 +2066,26 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
         {bestAlt && (() => {
           const altIssues = getIssues(bestAlt.item);
           const altAlts = getAlternatives(bestAlt.item);
-          return <div onClick={() => onNav("aff", { item: bestAlt.item, issues: altIssues, affType, alts: altAlts })} className="card-hover" style={{
+          return <div onClick={() => onNav("aff", { item: bestAlt.item, issues: altIssues, affType, alts: altAlts })} className="card-hover alt-card-mobile" style={{
             background: isTech && bestAlt.type === "newer"
               ? `linear-gradient(90deg, ${GREEN}10, ${GREEN}05, #fff)`
               : GREEN + "06",
-            border: `1.5px solid ${GREEN}40`, borderRadius: 12, padding: "14px 16px",
+            border: `1.5px solid ${GREEN}40`, borderRadius: 12, padding: "12px 14px",
             marginBottom: 6, display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
           }}>
-            <ProductImg brand={bestAlt.item.brand} item={bestAlt.item} size={40} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>
-                {bestAlt.item.brand} {bestAlt.item.name}
-                {bestAlt.badge && <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3, background: GREEN, color: "#fff" }}>{bestAlt.badge}</span>}
+            <ProductImg brand={bestAlt.item.brand} item={bestAlt.item} size={36} />
+            <div className="alt-main" style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{bestAlt.item.brand} {bestAlt.item.name}</span>
+                {bestAlt.badge && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 5px", borderRadius: 3, background: GREEN, color: "#fff" }}>{bestAlt.badge}</span>}
+                {bestAlt.priceDiff !== 0 && bestAlt.priceDiff < 0 && <span style={{ fontSize: 11, fontWeight: 600, color: GREEN }}>{bestAlt.priceDiff} €</span>}
               </div>
-              {bestAlt.microTag && <div style={{ marginTop: 4 }}>
-                <span style={{ display: "inline-block", fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 999, background: "#fff", border: `1px solid ${GREEN}35`, color: GREEN }}>
-                  {bestAlt.microTag}
-                </span>
-              </div>}
+              <div style={{ fontSize: 10, color: "#6B7280", marginTop: 1 }}>{bestAlt.item.productType} · {bestAlt.item.year}</div>
               <div style={{ fontSize: 11, color: GREEN, fontWeight: 500, marginTop: 2 }}>{bestAlt.displayReason}</div>
-              <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 1 }}>{bestAlt.item.productType} · {bestAlt.item.year}</div>
-              <button type="button" onClick={e => { e.stopPropagation(); onNav("compare", bestAlt.item.id); }} style={{ marginTop: 6, background: "none", border: "none", padding: 0, fontSize: 10, color: "#9CA3AF", cursor: "pointer", fontFamily: F, textDecoration: "underline" }}>Voir le comparatif complet</button>
             </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: modeColor }}>{bestAlt.price} €</div>
-              <div style={{ fontSize: 10, color: "#9CA3AF" }}>{modeLabel}</div>
-              {bestAlt.priceDiff !== 0 && <div style={{ fontSize: 10, color: bestAlt.priceDiff > 0 ? "#9CA3AF" : GREEN, fontWeight: 600 }}>
-                {bestAlt.priceDiff > 0 ? `+${bestAlt.priceDiff}` : bestAlt.priceDiff} €
-              </div>}
+            <div style={{ textAlign: "right", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+              <div className="alt-price" style={{ fontSize: 17, fontWeight: 800, color: modeColor }}>{bestAlt.price} €</div>
+              <button type="button" onClick={e => { e.stopPropagation(); onNav("compare", bestAlt.item.id); }} className="hide-mobile" style={{ background: "none", border: "none", padding: 0, fontSize: 10, color: "#9CA3AF", cursor: "pointer", fontFamily: F, textDecoration: "underline" }}>Comparatif</button>
             </div>
             <Chev />
           </div>;
@@ -2105,22 +2096,21 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
         {otherAlts.map(alt => {
           const altIssues = getIssues(alt.item);
           const altAlts = getAlternatives(alt.item);
-          return <div key={alt.item.id} onClick={() => onNav("aff", { item: alt.item, issues: altIssues, affType, alts: altAlts })} className="card-hover" style={{
-            background: "#fff", border: "1px solid #E5E3DE", borderRadius: 12, padding: "14px 16px",
-            marginBottom: 6, display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
+          return <div key={alt.item.id} onClick={() => onNav("aff", { item: alt.item, issues: altIssues, affType, alts: altAlts })} className="card-hover alt-card-mobile" style={{
+            background: "#fff", border: "1px solid #E5E3DE", borderRadius: 12, padding: "10px 14px",
+            marginBottom: 6, display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
           }}>
-            <ProductImg brand={alt.item.brand} item={alt.item} size={34} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
-                {alt.item.brand} {alt.item.name} <span style={{ fontSize: 10, color: "#9CA3AF" }}>({alt.item.year})</span>
-                {alt.badge && <span style={{ marginLeft: 4, fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 3, background: GREEN + "18", color: GREEN }}>{alt.badge}</span>}
+            <ProductImg brand={alt.item.brand} item={alt.item} size={32} />
+            <div className="alt-main" style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>{alt.item.brand} {alt.item.name}</span>
+                <span style={{ fontSize: 10, color: "#9CA3AF" }}>({alt.item.year})</span>
+                {alt.badge && <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 4px", borderRadius: 3, background: GREEN + "18", color: GREEN }}>{alt.badge}</span>}
               </div>
-              {alt.microTag && <div style={{ marginTop: 3, fontSize: 10, fontWeight: 700, color: "#6B7280" }}>{alt.microTag}</div>}
-              <div style={{ fontSize: 11, color: "#6B7280" }}>{alt.displayReason}</div>
-              <button type="button" onClick={e => { e.stopPropagation(); onNav("compare", alt.item.id); }} style={{ marginTop: 4, background: "none", border: "none", padding: 0, fontSize: 10, color: "#9CA3AF", cursor: "pointer", fontFamily: F, textDecoration: "underline" }}>Voir le comparatif complet</button>
+              <div style={{ fontSize: 10, color: "#6B7280", marginTop: 1 }}>{alt.displayReason}</div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: modeColor }}>{alt.price} €</div>
+              <div className="alt-price" style={{ fontSize: 15, fontWeight: 700, color: modeColor }}>{alt.price} €</div>
             </div>
             <Chev />
           </div>;
@@ -2636,26 +2626,26 @@ export default function App() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8 }} className="grid-2">
             {popularSearches.map((entry, idx) => {
               if (entry.type === "general") {
-                return <Card key={idx} onClick={() => nav("cat-type", { catId: entry.catId, productType: entry.productType })} style={{ padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ width: 34, height: 34, borderRadius: 8, background: "#FEF3E2", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="washer" s={18} color="#B45309" /></span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 12, color: "#111" }}>{entry.label}</div>
-                    <div style={{ fontSize: 11, color: "#6B7280" }}>Réparer ou remplacer ?</div>
+                return <Card key={idx} onClick={() => nav("cat-type", { catId: entry.catId, productType: entry.productType })} className="popular-card-mobile" style={{ padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, minHeight: 56 }}>
+                  <span style={{ width: 36, height: 36, borderRadius: 8, background: "#FEF3E2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="washer" s={18} color="#B45309" /></span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.label}</div>
+                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>Réparer ou remplacer ?</div>
                   </div>
-                  <Badge color={AMBER}>Comparer</Badge>
+                  <span style={{ flexShrink: 0 }}><Badge color={AMBER}>Comparer</Badge></span>
                 </Card>;
               }
               const item = findProductByPopular({ brand: entry.brand, name: entry.name });
               if (!item) return null;
               const iss = getIssues(item);
               const v = getVerdict([iss[0]], item);
-              return <Card key={item.id} onClick={() => nav("compare", item.id)} style={{ padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
-                <ProductImg brand={item.brand} item={item} size={34} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 12, color: "#111" }}>{item.brand} {item.name}</div>
-                  <div style={{ fontSize: 11, color: "#6B7280" }}>{entry.intent} · {iss[0].repairMin}–{iss[0].repairMax} €</div>
+              return <Card key={item.id} onClick={() => nav("compare", item.id)} className="popular-card-mobile" style={{ padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, minHeight: 56 }}>
+                <ProductImg brand={item.brand} item={item} size={36} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.brand} {item.name}</div>
+                  <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{entry.intent} · {iss[0].repairMin}–{iss[0].repairMax} €</div>
                 </div>
-                <Badge color={v.color}>{v.label}</Badge>
+                <span style={{ flexShrink: 0 }}><Badge color={v.color}>{v.label}</Badge></span>
               </Card>;
             })}
           </div>

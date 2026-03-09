@@ -9,7 +9,19 @@ export const CSS = `@keyframes slideFadeIn{from{opacity:0;transform:translateX(8
 @keyframes contentSlideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes subtlePulse{0%,100%{opacity:1}50%{opacity:.92}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
-@media(max-width:768px){.page-enter{animation-duration:.25s!important}.card-hover{transition-duration:.15s!important}.btn-cta{transition-duration:.15s!important}.banner-carousel-card{min-height:240px!important}}
+@media(max-width:768px){.page-enter{animation-duration:.25s!important}.card-hover{transition-duration:.15s!important}.btn-cta{transition-duration:.15s!important}.banner-carousel-card{min-height:240px!important}
+.retailer-card-mobile{flex-direction:column!important;align-items:stretch!important;padding:12px 14px!important;min-height:72px!important}
+.retailer-card-mobile .retailer-main{display:flex!important;align-items:center!important;gap:10px!important;flex:1!important}
+.retailer-card-mobile .retailer-logo{width:40px!important;height:40px!important;font-size:14px!important}
+.retailer-card-mobile .retailer-price-row{display:flex!important;align-items:center!important;justify-content:space-between!important;margin-top:8px!important;padding-top:8px!important;border-top:1px solid #F3F4F6!important}
+.retailer-card-mobile .retailer-badge{position:absolute!important;top:8px!important;right:8px!important;margin:0!important}
+.retailer-card-mobile .retailer-cta{width:100%!important;margin-top:8px!important;text-align:center!important;padding:10px!important;flex-shrink:0!important}
+.alt-card-mobile{padding:10px 12px!important;min-height:64px!important}
+.alt-card-mobile .alt-main{flex:1!important;min-width:0!important}
+.alt-card-mobile .alt-price{font-size:16px!important}
+.popular-card-mobile .popular-badge{flex-shrink:0!important}
+.popular-card-mobile{min-height:56px!important}
+}
 .page-enter{animation:contentSlideUp .4s cubic-bezier(.25,.46,.45,.94) forwards}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .skip-link{position:absolute;top:-100px;left:12px;z-index:9999;padding:12px 20px;background:#1B4332;color:#fff;font-weight:600;border-radius:8px;transition:top .2s}.skip-link:focus{top:12px;outline:2px solid #fff;outline-offset:2px}
