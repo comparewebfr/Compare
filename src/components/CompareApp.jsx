@@ -566,48 +566,90 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
           </div>
         </div>
 
-        {/* 4. Tableau comparatif — repliable */}
+        {/* 4. Tableau comparatif — simplifié, mobile-first */}
         <details style={{ background: "#fff", borderRadius: 14, border: "1px solid #E5E3DE", marginBottom: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
           <summary style={{ padding: "16px 20px", cursor: "pointer", fontWeight: 700, fontSize: 15, color: "#111", listStyle: "none", display: "flex", alignItems: "center", gap: 10 }}>
-            <Icon name="chart" s={18} color={ACCENT} /> Tableau comparatif — Réparer / {sl} / Neuf
+            <Icon name="chart" s={18} color={ACCENT} /> Comparer les 3 options
           </summary>
           <div style={{ padding: "0 20px 20px" }}>
           {(() => {
-            const tableRows = [
-              { l: "Coût total", r: activeIssues.length ? `${tMin}–${tMax} €` : "Variable", o: `~${recon} €`, n: `${refItem?.priceNew || avgPrice} €`, bold: true },
-              { l: "Pièce seule", r: `${tPart} €`, o: "—", n: "—" },
-              { l: "Économie vs neuf", r: activeIssues.length ? `${Math.max(0, (refItem?.priceNew || avgPrice) - tMax)} €` : "—", o: `${(refItem?.priceNew || avgPrice) - recon} €`, n: "—", hR: GREEN, hO: AMBER },
-              { l: "Temps (DIY)", r: activeIssues.length ? (timeInfo.diyFeasible ? timeInfo.diyLabel : "Professionnel requis") : "—", o: "—", n: "—" },
-              { l: "Temps (pro)", r: activeIssues.length ? (activeIssues.length === 1 ? "1-5 jours" : "3-7 jours") : "—", o: "2-5 jours", n: "1-3 jours" },
-              { l: "Difficulté", r: activeIssues.length ? (activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile") : "—", o: "Aucune", n: "Aucune", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : activeIssues.some(i => i.diff === "moyen") ? AMBER : GREEN },
-              { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
-              { l: "Impact écolo", r: "Minimal", o: "Modéré", n: "Important" },
-              { l: "Recommandation", r: v?.v === "reparer" ? "Recommandé" : "—", o: v?.v === "remplacer" ? "Recommandé" : "—", n: v?.v === "remplacer" ? "Recommandé" : "—", hR: v?.v === "reparer" ? GREEN : null, hO: v?.v === "remplacer" ? AMBER : null, hN: v?.v === "remplacer" ? "#DC2626" : null },
-            ];
+            const neuf = refItem?.priceNew || avgPrice;
+            const econRep = activeIssues.length ? neuf - tMax : null;
+            const econRecon = neuf - recon;
+            const econRepLabel = econRep !== null ? (econRep > 0 ? `Économisez jusqu'à ${econRep} €` : econRep < 0 ? `Surcoût ${Math.abs(econRep)} €` : "—") : "—";
+            const econReconLabel = econRecon > 0 ? `Économisez ${econRecon} €` : "—";
+            const diffLabel = activeIssues.length ? (activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile") : "—";
+            const priceRep = activeIssues.length ? `${tMin}–${tMax} €` : "Variable";
+            const priceNeuf = neuf ? `${neuf} €` : "Variable";
+            const bestChoiceBanner = v?.v === "reparer" && econRep > 0
+              ? { label: "Réparer", econ: `Économisez jusqu'à ${econRep} €`, color: GREEN }
+              : v?.v === "remplacer" && econRecon > 0
+              ? { label: sl, econ: `Économisez ${econRecon} €`, color: AMBER }
+              : null;
             if (isMobile) {
-              return <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {tableRows.map((row, i) => (
-                  <div key={i} style={{ background: "#F8FAFC", borderRadius: 10, padding: 12, border: "1px solid #E2E8F0" }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10 }}>{row.l}</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
-                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
-                        <div style={{ fontSize: 10, color: GREEN, fontWeight: 600, marginBottom: 2 }}>Réparer</div>
-                        <div style={{ color: row.hR || "#374151", fontWeight: row.bold || row.hR ? 700 : 400 }}>{row.r}</div>
-                      </div>
-                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
-                        <div style={{ fontSize: 10, color: AMBER, fontWeight: 600, marginBottom: 2 }}>{sl}</div>
-                        <div style={{ color: row.hO || "#374151", fontWeight: row.bold || row.hO ? 700 : 400 }}>{row.o}</div>
-                      </div>
-                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
-                        <div style={{ fontSize: 10, color: "#DC2626", fontWeight: 600, marginBottom: 2 }}>Neuf</div>
-                        <div style={{ color: row.hN || "#374151", fontWeight: row.bold || row.hN ? 700 : 400 }}>{row.n}</div>
-                      </div>
-                    </div>
+              return <>
+                {neuf && <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 12 }}>Référence : {neuf} € neuf</div>}
+                {bestChoiceBanner && (
+                  <div style={{ background: bestChoiceBanner.color + "12", border: `1px solid ${bestChoiceBanner.color}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: "#111" }}>Meilleur rapport : {bestChoiceBanner.label}</span>
+                    <span style={{ fontSize: 12, color: bestChoiceBanner.color, fontWeight: 600 }}>{bestChoiceBanner.econ}</span>
                   </div>
-                ))}
-              </div>;
+                )}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ background: v?.v === "reparer" ? GREEN + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v?.v === "reparer" ? `2px solid ${GREEN}` : "1px solid #E2E8F0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ width: 32, height: 32, borderRadius: 8, background: GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="tool" s={16} color={GREEN} /></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Réparer</span>
+                      {v?.v === "reparer" && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: GREEN, color: "#fff" }}>Recommandé</span>}
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{priceRep}</div>
+                    <div style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{econRepLabel}</div>
+                    {activeIssues.length > 0 && <>
+                      <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {tPart} €</div>
+                      <div style={{ fontSize: 11, color: "#6B7280" }}>Temps DIY : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
+                    </>}
+                    <div style={{ fontSize: 11, color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : "#6B7280" }}>Difficulté : {diffLabel}</div>
+                  </div>
+                  <div style={{ background: v?.v === "remplacer" ? AMBER + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v?.v === "remplacer" ? `2px solid ${AMBER}` : "1px solid #E2E8F0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ width: 32, height: 32, borderRadius: 8, background: AMBER + "12", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="recycle" s={16} color={AMBER} /></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{sl}</span>
+                      {v?.v === "remplacer" && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: AMBER, color: "#fff" }}>Recommandé</span>}
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>~{recon} €</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>{sl.toLowerCase()} garanti</div>
+                    <div style={{ fontSize: 12, color: GREEN, fontWeight: 600, marginTop: 2 }}>{econReconLabel}</div>
+                  </div>
+                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: 14, border: "1px solid #E2E8F0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ width: 32, height: 32, borderRadius: 8, background: "#DC262612", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="cart" s={16} color="#DC2626" /></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Neuf</span>
+                      <span style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>référence</span>
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{priceNeuf}</div>
+                    <div style={{ fontSize: 12, color: "#9CA3AF" }}>Prix de base</div>
+                  </div>
+                </div>
+              </>;
             }
+            const tableRows = [
+              { l: "Prix", r: priceRep, o: `~${recon} €`, n: priceNeuf, bold: true },
+              { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
+              { l: "Pièce seule", r: activeIssues.length ? `${tPart} €` : "—", o: "—", n: "—" },
+              { l: "Temps (DIY)", r: activeIssues.length ? (timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis") : "—", o: "—", n: "—" },
+              { l: "Difficulté", r: diffLabel, o: "—", n: "—", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
+              { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
+            ];
             return <>
+              {neuf && <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Référence : {neuf} € neuf</div>}
+              {bestChoiceBanner && (
+                <div style={{ background: bestChoiceBanner.color + "12", border: `1px solid ${bestChoiceBanner.color}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "#111" }}>Meilleur rapport : {bestChoiceBanner.label}</span>
+                  <span style={{ fontSize: 12, color: bestChoiceBanner.color, fontWeight: 600 }}>{bestChoiceBanner.econ}</span>
+                </div>
+              )}
               <div className="table-compare-scroll" style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead><tr style={{ background: W }}>
@@ -628,7 +670,6 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
                   </tbody>
                 </table>
               </div>
-              <div className="table-compare-scroll-hint">← Glissez pour voir toutes les colonnes →</div>
             </>;
           })()}
           </div>
@@ -1392,49 +1433,86 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           </div>
         </div>
 
-        {/* Tableau comparatif — repliable (ouvert par défaut pour SEO) */}
+        {/* Tableau comparatif — simplifié, mobile-first */}
         <details open style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", overflow: "hidden", marginBottom: 20 }}>
           <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 700, fontSize: 15, color: "#111", display: "flex", alignItems: "center", gap: 8, listStyle: "none" }}>
-            <Icon name="chart" s={16} color={ACCENT} /> Tableau comparatif détaillé
+            <Icon name="chart" s={16} color={ACCENT} /> Comparer les 3 options
           </summary>
           <div style={{ padding: "0 16px 16px" }}>
           {(() => {
-            const tableRows = [
-              { l: "Coût total", r: `${tMin}–${tMax} €`, o: `~${recon} €`, n: `${item.priceNew} €`, bold: true },
-              { l: "Pièce seule", r: `${tPart} €`, o: "—", n: "—" },
-              { l: "Économie vs neuf", r: `${Math.max(0, item.priceNew - tMax)} €`, o: `${item.priceNew - recon} €`, n: "—", hR: GREEN, hO: AMBER },
-              { l: "Temps (DIY)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Professionnel requis", o: "—", n: "—" },
-              { l: "Temps (pro)", r: activeIssues.length === 1 ? "1-5 jours" : "3-7 jours", o: "2-5 jours", n: "1-3 jours" },
-              { l: "Difficulté", r: activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile", o: "Aucune", n: "Aucune", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : activeIssues.some(i => i.diff === "moyen") ? AMBER : GREEN },
-              { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
-              { l: "Impact écolo", r: "Minimal", o: "Modéré", n: "Important" },
-              { l: "Recommandation", r: v.v === "reparer" ? "Recommandé" : "—", o: v.v === "remplacer" ? "Recommandé" : "—", n: v.v === "remplacer" ? "Recommandé" : "—", hR: v.v === "reparer" ? GREEN : null, hO: v.v === "remplacer" ? AMBER : null, hN: v.v === "remplacer" ? "#DC2626" : null },
-              ...(bestNewer ? [{ l: "Alternative récente", r: "—", o: `${bestNewer.item.brand} ${bestNewer.item.name} ~${bestNewer.reconPrice} €`, n: `${bestNewer.item.brand} ${bestNewer.item.name} ${bestNewer.neufPrice} €`, hO: AMBER, hN: "#DC2626" }] : []),
-            ];
+            const neuf = item.priceNew;
+            const econRep = neuf - tMax;
+            const econRecon = neuf - recon;
+            const econRepLabel = econRep > 0 ? `Économisez jusqu'à ${econRep} €` : econRep < 0 ? `Surcoût ${Math.abs(econRep)} €` : "—";
+            const econReconLabel = econRecon > 0 ? `Économisez ${econRecon} €` : "—";
+            const diffLabel = activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile";
+            const bestChoiceBanner = v.v === "reparer" && econRep > 0
+              ? { label: "Réparer", econ: `Économisez jusqu'à ${econRep} €`, color: GREEN }
+              : v.v === "remplacer" && econRecon > 0
+              ? { label: sl, econ: `Économisez ${econRecon} €`, color: AMBER }
+              : null;
             if (isMobile) {
-              return <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {tableRows.map((row, i) => (
-                  <div key={i} style={{ background: "#F8FAFC", borderRadius: 10, padding: 12, border: "1px solid #E2E8F0" }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10 }}>{row.l}</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
-                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
-                        <div style={{ fontSize: 10, color: GREEN, fontWeight: 600, marginBottom: 2 }}>Réparer</div>
-                        <div style={{ color: row.hR || "#374151", fontWeight: row.bold || row.hR ? 700 : 400 }}>{row.r}</div>
-                      </div>
-                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
-                        <div style={{ fontSize: 10, color: AMBER, fontWeight: 600, marginBottom: 2 }}>{sl}</div>
-                        <div style={{ color: row.hO || "#374151", fontWeight: row.bold || row.hO ? 700 : 400 }}>{row.o}</div>
-                      </div>
-                      <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #E5E7EB" }}>
-                        <div style={{ fontSize: 10, color: "#DC2626", fontWeight: 600, marginBottom: 2 }}>Neuf</div>
-                        <div style={{ color: row.hN || "#374151", fontWeight: row.bold || row.hN ? 700 : 400 }}>{row.n}</div>
-                      </div>
-                    </div>
+              return <>
+                <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 12 }}>Référence : {neuf} € neuf</div>
+                {bestChoiceBanner && (
+                  <div style={{ background: bestChoiceBanner.color + "12", border: `1px solid ${bestChoiceBanner.color}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: "#111" }}>Meilleur rapport : {bestChoiceBanner.label}</span>
+                    <span style={{ fontSize: 12, color: bestChoiceBanner.color, fontWeight: 600 }}>{bestChoiceBanner.econ}</span>
                   </div>
-                ))}
-              </div>;
+                )}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ background: v.v === "reparer" ? GREEN + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v.v === "reparer" ? `2px solid ${GREEN}` : "1px solid #E2E8F0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ width: 32, height: 32, borderRadius: 8, background: GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="tool" s={16} color={GREEN} /></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Réparer</span>
+                      {v.v === "reparer" && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: GREEN, color: "#fff" }}>Recommandé</span>}
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{tMin}–{tMax} €</div>
+                    <div style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{econRepLabel}</div>
+                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {tPart} €</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>Temps DIY : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
+                    <div style={{ fontSize: 11, color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : "#6B7280" }}>Difficulté : {diffLabel}</div>
+                  </div>
+                  <div style={{ background: v.v === "remplacer" ? AMBER + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v.v === "remplacer" ? `2px solid ${AMBER}` : "1px solid #E2E8F0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ width: 32, height: 32, borderRadius: 8, background: AMBER + "12", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="recycle" s={16} color={AMBER} /></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{sl}</span>
+                      {v.v === "remplacer" && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: AMBER, color: "#fff" }}>Recommandé</span>}
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>~{recon} €</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>{sl.toLowerCase()} garanti</div>
+                    <div style={{ fontSize: 12, color: GREEN, fontWeight: 600, marginTop: 2 }}>{econReconLabel}</div>
+                  </div>
+                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: 14, border: "1px solid #E2E8F0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ width: 32, height: 32, borderRadius: 8, background: "#DC262612", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="cart" s={16} color="#DC2626" /></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Neuf</span>
+                      <span style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>référence</span>
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{neuf} €</div>
+                    <div style={{ fontSize: 12, color: "#9CA3AF" }}>Prix de base</div>
+                  </div>
+                </div>
+              </>;
             }
+            const tableRows = [
+              { l: "Prix", r: `${tMin}–${tMax} €`, o: `~${recon} €`, n: `${neuf} €`, bold: true },
+              { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
+              { l: "Pièce seule", r: `${tPart} €`, o: "—", n: "—" },
+              { l: "Temps (DIY)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis", o: "—", n: "—" },
+              { l: "Difficulté", r: diffLabel, o: "—", n: "—", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
+              { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
+            ];
             return <>
+              <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Référence : {neuf} € neuf</div>
+              {bestChoiceBanner && (
+                <div style={{ background: bestChoiceBanner.color + "12", border: `1px solid ${bestChoiceBanner.color}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "#111" }}>Meilleur rapport : {bestChoiceBanner.label}</span>
+                  <span style={{ fontSize: 12, color: bestChoiceBanner.color, fontWeight: 600 }}>{bestChoiceBanner.econ}</span>
+                </div>
+              )}
               <div className="table-compare-scroll" style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead><tr style={{ background: W }}>
@@ -1453,7 +1531,6 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                   </tbody>
                 </table>
               </div>
-              <div className="table-compare-scroll-hint">← Glissez pour voir toutes les colonnes →</div>
             </>;
           })()}
           </div>
