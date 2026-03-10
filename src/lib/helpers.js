@@ -146,9 +146,9 @@ export function getAlternatives(item) {
 
 export function getRet(cat, type) {
   const m = OCC_CATS.includes(cat);
-  if (type === "neuf") return RET.neuf.filter(r => m ? ["Amazon", "Leroy Merlin", "ManoMano", "Cdiscount", "IKEA", "But"].includes(r.n) : ["Amazon", "Fnac", "Darty", "Boulanger", "Cdiscount"].includes(r.n));
-  if (type === "occ") return RET.occ.filter(r => m ? ["Rakuten", "Cdiscount", "Amazon Renewed"].includes(r.n) : ["Back Market", "Amazon Renewed", "Certideal"].includes(r.n));
-  return RET.pcs.filter(r => m ? ["Amazon", "But", "Leroy Merlin", "ManoMano"].includes(r.n) : ["Amazon", "SOSav", "Spareka"].includes(r.n));
+  if (type === "neuf") return RET.neuf.filter(r => m ? ["Amazon", "Castorama", "ManoMano", "Cdiscount", "Darty"].includes(r.n) : ["Amazon", "Fnac", "Darty", "Cdiscount"].includes(r.n));
+  if (type === "occ") return RET.occ.filter(r => ["Back Market", "Amazon Renewed", "Rakuten", "Cdiscount"].includes(r.n));
+  return RET.pcs.filter(r => m ? ["Amazon", "Spareka", "ManoMano", "Castorama"].includes(r.n) : ["Amazon", "Spareka"].includes(r.n));
 }
 
 export function buildRetailerUrl(r, item, affType) {
@@ -158,16 +158,11 @@ export function buildRetailerUrl(r, item, affType) {
   if (r.n === "Back Market") return `https://www.backmarket.fr/fr-fr/search?q=${q}`;
   if (r.n === "Fnac") return `https://www.fnac.com/SearchResult/ResultList.aspx?Search=${q}`;
   if (r.n === "Darty") return `https://www.darty.com/nav/recherche?s=${q}`;
-  if (r.n === "Boulanger") return `https://www.boulanger.com/recherche?text=${q}`;
   if (r.n === "Cdiscount") return `https://www.cdiscount.com/search/10/${q.replace(/ /g, "+")}.html`;
-  if (r.n === "Leroy Merlin") return `https://www.leroymerlin.fr/recherche?q=${q}`;
+  if (r.n === "Castorama") return `https://www.castorama.fr/recherche?q=${q}`;
   if (r.n === "ManoMano") return `https://www.manomano.fr/recherche?q=${q}`;
-  if (r.n === "Certideal") return `https://www.certideal.com/fr/search?q=${q}`;
   if (r.n === "Rakuten") return `https://fr.shopping.rakuten.com/search/${q.replace(/ /g, "+")}`;
-  if (r.n === "SOSav") return `https://www.sosav.fr/recherche?q=${q}`;
   if (r.n === "Spareka") return `https://www.spareka.fr/recherche?q=${q}`;
-  if (r.n === "IKEA") return `https://www.ikea.com/fr/fr/search/?q=${q}`;
-  if (r.n === "But") return `https://www.but.fr/recherche?q=${q}`;
   return `https://www.google.com/search?q=${q}+${r.n}`;
 }
 
@@ -175,11 +170,9 @@ export function buildRetailerUrl(r, item, affType) {
 export function buildRetailerUrlForParts(r, productType, panneName) {
   const q = encodeURIComponent(`pièce ${panneName} ${productType}`.trim());
   if (r.n === "Amazon") return `https://www.amazon.fr/s?k=${q}`;
-  if (r.n === "Leroy Merlin") return `https://www.leroymerlin.fr/recherche?q=${q}`;
   if (r.n === "ManoMano") return `https://www.manomano.fr/recherche?q=${q}`;
-  if (r.n === "But") return `https://www.but.fr/recherche?q=${q}`;
+  if (r.n === "Castorama") return `https://www.castorama.fr/recherche?q=${q}`;
   if (r.n === "Spareka") return `https://www.spareka.fr/recherche?q=${q}`;
-  if (r.n === "SOSav") return `https://www.sosav.fr/recherche?q=${q}`;
   return `https://www.google.com/search?q=${q}`;
 }
 

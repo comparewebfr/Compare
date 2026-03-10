@@ -709,32 +709,29 @@ export const POPULAR_SEARCHES_IPHONE = [
   { label: "Lave-vaisselle : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Lave-vaisselle" },
 ];
 
+/** Marques affiliées uniquement — ne pas inclure les sites sans programme d'affiliation */
+export const AFFILIATED_RETAILERS = ["Amazon", "Cdiscount", "Rakuten", "Fnac", "Darty", "Castorama", "Back Market", "ManoMano", "Spareka"];
+
 export const RET = {
   neuf: [
-    { n: "Amazon", t: "Livraison rapide", c: "#FF9900", logo: "A" },
-    { n: "Fnac", t: "Retrait 1h en magasin", c: "#E4A100", logo: "F" },
-    { n: "Darty", t: "Garantie 2 ans", c: "#CE0E2D", logo: "D" },
-    { n: "Boulanger", t: "Conseils experts", c: "#003DA5", logo: "B" },
-    { n: "Cdiscount", t: "Prix mini", c: "#00A651", logo: "C" },
-    { n: "Leroy Merlin", t: "Bricolage & maison", c: "#78BE20", logo: "L" },
-    { n: "ManoMano", t: "Bricolage", c: "#00B2A9", logo: "M" },
-    { n: "IKEA", t: "Mobilier & déco", c: "#0058A3", logo: "I" },
-    { n: "But", t: "Mobilier", c: "#E30613", logo: "B" },
+    { n: "Amazon", t: "Livraison rapide", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.svg" },
+    { n: "Cdiscount", t: "Prix mini", c: "#00A651", logo: "C", logoUrl: "/retailers/cdiscount.svg" },
+    { n: "Fnac", t: "Retrait 1h en magasin", c: "#E4A100", logo: "F", logoUrl: "/retailers/fnac.svg" },
+    { n: "Darty", t: "Garantie 2 ans", c: "#CE0E2D", logo: "D", logoUrl: "/retailers/darty.svg" },
+    { n: "Castorama", t: "Bricolage & maison", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.svg" },
+    { n: "ManoMano", t: "Bricolage", c: "#00B2A9", logo: "M", logoUrl: "/retailers/manomano.svg" },
   ],
   occ: [
-    { n: "Back Market", t: "N°1 reconditionné garanti", c: "#4DBC80", logo: "B" },
-    { n: "Amazon Renewed", t: "Garantie Amazon", c: "#FF9900", logo: "A" },
-    { n: "Certideal", t: "Made in France", c: "#6366F1", logo: "C" },
-    { n: "Rakuten", t: "Occasion vérifiée", c: "#B00020", logo: "R" },
-    { n: "Cdiscount", t: "Occasion & reconditionné", c: "#00A651", logo: "C" },
+    { n: "Back Market", t: "N°1 reconditionné garanti", c: "#4DBC80", logo: "B", logoUrl: "/retailers/backmarket.svg" },
+    { n: "Amazon Renewed", t: "Garantie Amazon", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.svg" },
+    { n: "Rakuten", t: "Occasion vérifiée", c: "#B00020", logo: "R", logoUrl: "/retailers/rakuten.svg" },
+    { n: "Cdiscount", t: "Occasion & reconditionné", c: "#00A651", logo: "C", logoUrl: "/retailers/cdiscount.svg" },
   ],
   pcs: [
-    { n: "Amazon", t: "Pièces détachées", c: "#FF9900", logo: "A" },
-    { n: "But", t: "Électroménager & pièces", c: "#E30613", logo: "B" },
-    { n: "Leroy Merlin", t: "Plomberie & bricolage", c: "#78BE20", logo: "L" },
-    { n: "ManoMano", t: "Pièces & outillage", c: "#00B2A9", logo: "M" },
-    { n: "SOSav", t: "Pièces France", c: "#EF4444", logo: "S" },
-    { n: "Spareka", t: "Électroménager", c: "#00B8D9", logo: "S" },
+    { n: "Amazon", t: "Pièces détachées", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.svg" },
+    { n: "Spareka", t: "Électroménager", c: "#00B8D9", logo: "S", logoUrl: "/retailers/spareka.svg" },
+    { n: "ManoMano", t: "Pièces & outillage", c: "#00B2A9", logo: "M", logoUrl: "/retailers/manomano.svg" },
+    { n: "Castorama", t: "Plomberie & bricolage", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.svg" },
   ],
 }
 

@@ -140,6 +140,19 @@ function ProductTypeImg({ productType, size = 120, iconName = "washer", iconColo
   );
 }
 
+/** Logo retailer — image ou initiale */
+function RetailerLogo({ r, size = 44, className }) {
+  const [hasError, setHasError] = useState(false);
+  useEffect(() => setHasError(false), [r?.n]);
+  const boxStyle = { width: size, height: size, borderRadius: 10, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: Math.round(size * 0.4), color: "#374151", flexShrink: 0 };
+  if (!r?.logoUrl || hasError) {
+    return <div className={className} style={boxStyle}>{r?.logo || r?.n?.[0] || "?"}</div>;
+  }
+  return (
+    <Image src={r.logoUrl} alt={r.n} onError={() => setHasError(true)} width={size} height={size} sizes={`${size}px`} className={className} style={{ width: size, height: size, borderRadius: 10, objectFit: "contain", background: "#F3F4F6", flexShrink: 0 }} />
+  );
+}
+
 // ─── AUTH MODAL ───
 const FIREBASE_ENABLED = typeof window !== "undefined" && process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
@@ -991,16 +1004,16 @@ function RepairPage({ catId, productType, onNav }) {
                   {sortedRets.map(({ r, price }, rank) => {
                     const isBest = rank === 0;
                     return (
-                      <a key={r.n} href={buildRetailerUrlForParts(r, productType, iss.name)} target="_blank" rel="noopener noreferrer sponsored" className={`card-hover ${isBest ? "parts-retailer-card" : ""}`} style={{
+                      <a key={r.n} href={buildRetailerUrlForParts(r, productType, iss.name)} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
                         background: "#fff", border: isBest ? "2px solid #111" : "1px solid #E5E3DE", borderRadius: 12, padding: "16px 18px",
                         display: "flex", alignItems: "center", gap: 16, cursor: "pointer", boxShadow: isBest ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)",
-                        textDecoration: "none", color: "inherit", position: isBest ? "relative" : undefined,
+                        textDecoration: "none", color: "inherit",
                       }}>
-                        <div style={{ width: 48, height: 48, borderRadius: 12, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#374151", flexShrink: 0 }}>{(r.logo || r.n[0])}</div>
+                        <RetailerLogo r={r} size={48} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                             <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
-                            {isBest && <span className="parts-retailer-badge" style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: "#111", color: "#fff" }}>Meilleur prix</span>}
+                            {isBest && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
                           </div>
                           <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{r.t}</div>
                         </div>
@@ -1730,7 +1743,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             { q: `Combien coûte la réparation d'un ${item.brand} ${item.name} ?`, a: `Selon la panne, le coût de réparation d'un ${item.brand} ${item.name} varie de ${issues.reduce((m,i) => Math.min(m,i.repairMin),999)}€ à ${issues.reduce((m,i) => Math.max(m,i.repairMax),0)}€ (pièces + main d'œuvre). La panne la plus courante est "${issues[0]?.name}" à environ ${issues[0]?.repairMin}–${issues[0]?.repairMax}€.` },
             { q: `Vaut-il mieux réparer ou racheter un ${item.brand} ${item.name} ?`, a: `Cela dépend de la panne. Pour les réparations simples (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "batterie, pièces d'usure"}), la réparation est généralement plus rentable. Au-delà de 40% du prix neuf (${Math.round(item.priceNew*.4)}€), un modèle ${sl.toLowerCase()} peut être plus avantageux.` },
             { q: `Peut-on réparer un ${item.brand} ${item.name} soi-même ?`, a: `Les réparations notées "Facile" (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "certaines pièces"}) sont accessibles aux débutants avec un tutoriel vidéo YouTube. Les réparations "Difficile" nécessitent un professionnel.` },
-            { q: `Où trouver les pièces détachées pour ${item.brand} ${item.name} ?`, a: OCC_CATS.includes(item.category) ? "Les pièces sont disponibles chez Spareka, Leroy Merlin, ManoMano et Amazon. Spareka propose aussi des guides de réparation adaptés." : "Les pièces sont disponibles chez SOSav, Amazon et les revendeurs spécialisés. Des tutoriels vidéo YouTube ciblés existent pour de nombreux modèles." },
+            { q: `Où trouver les pièces détachées pour ${item.brand} ${item.name} ?`, a: OCC_CATS.includes(item.category) ? "Les pièces sont disponibles chez Spareka, Castorama, ManoMano et Amazon. Spareka propose aussi des guides de réparation adaptés." : "Les pièces sont disponibles chez Spareka, Amazon et les revendeurs spécialisés. Des tutoriels vidéo YouTube ciblés existent pour de nombreux modèles." },
             { q: `Le bonus QualiRépar s'applique-t-il au ${item.brand} ${item.name} ?`, a: `Oui ! Le bonus QualiRépar (10 à 45€) est applicable sur la réparation des ${item.productType.toLowerCase()}s chez un réparateur agréé. La réduction est automatique, aucune démarche nécessaire.` },
           ].map((f, i) => <details key={i} style={{ background: "#fff", borderRadius: 6, marginBottom: 4, border: "1px solid #E0DDD5" }}>
             <summary style={{ padding: "10px 14px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#111" }}>{f.q}</summary>
@@ -1938,23 +1951,30 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
       <span>{titles[affType]}</span>
     </div>
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 20px 80px" }}>
-      {/* Header + description */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: "0 0 4px" }}>{titles[affType]} — {item.brand} {item.name}</h1>
-          <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 8 }}>
-          {isPcs ? `Coût total estimé (pièces + main d'œuvre pro) : ${repairTotalMin}–${repairTotalMax} €` : issues?.map(i => i.name).join(", ")}
-        </p>
-          <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, maxWidth: 560 }}>
-            Le {item.brand} {item.name} est un {item.productType.toLowerCase()} de {item.year}. Prix neuf indicatif : {item.priceNew} €. Comparez les offres des prestataires ci-dessous.
-          </p>
+      {/* Header + photo produit + description */}
+      <div style={{ display: "flex", gap: 20, alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ flexShrink: 0 }}>
+          <ProductImg brand={item.brand} item={item} size={120} />
         </div>
-        {!isPcs && <div style={{ padding: "4px 10px", borderRadius: 4, background: modeColor + "12", color: modeColor, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <Icon name={isNeuf ? "cart" : "recycle"} s={14} color={modeColor} />
-            {isNeuf ? "Prix neuf uniquement" : `${sl} uniquement`}
-          </span>
-        </div>}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: "0 0 4px" }}>{titles[affType]} — {item.brand} {item.name}</h1>
+              <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 8 }}>
+                {isPcs ? `Coût total estimé (pièces + main d'œuvre pro) : ${repairTotalMin}–${repairTotalMax} €` : issues?.map(i => i.name).join(", ")}
+              </p>
+              <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, maxWidth: 560 }}>
+                Le {item.brand} {item.name} est un {item.productType.toLowerCase()} de {item.year}. Prix neuf indicatif : {item.priceNew} €. Comparez les offres des prestataires ci-dessous.
+              </p>
+            </div>
+            {!isPcs && <div style={{ padding: "4px 10px", borderRadius: 4, background: modeColor + "12", color: modeColor, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <Icon name={isNeuf ? "cart" : "recycle"} s={14} color={modeColor} />
+                {isNeuf ? "Prix neuf uniquement" : `${sl} uniquement`}
+              </span>
+            </div>}
+          </div>
+        </div>
       </div>
 
       {/* 1. Détail réparation — EN PREMIER (sans prestataires) : étapes, puis prix */}
@@ -2039,13 +2059,15 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             return <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={{
               background: "#fff",
               border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
-              borderRadius: 12, padding: "14px 16px", paddingRight: isBestPrice ? 80 : 16, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit", position: "relative",
+              borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit",
             }}>
-              {isBestPrice && <span className="retailer-badge" style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff" }}>Meilleur prix</span>}
               <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
-                <div className="retailer-logo" style={{ width: 44, height: 44, borderRadius: 10, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, color: "#374151", flexShrink: 0 }}>{(r.logo || r.n[0])}</div>
+                <RetailerLogo r={r} size={44} className="retailer-logo" />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.n}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{r.n}</span>
+                    {isBestPrice && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+                  </div>
                   <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
