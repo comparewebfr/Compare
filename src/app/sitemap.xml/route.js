@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { CATS, PTYPES, ITEMS } from "../../lib/data";
+import { CATS, PTYPES, ITEMS, PAGES_GENERALES } from "../../lib/data";
 import { getCategorySlug, getProductTypeSlug, getProductSlug, getIssueSlug } from "../../lib/routes";
 import { getIssues } from "../../lib/helpers";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://compare-fr.com";
+
+/** Ne pas inclure les produits PAGES_GENERALES : ils redirigent vers /categories/... */
+const INDEXABLE_ITEMS = ITEMS.filter((i) => !PAGES_GENERALES.includes(i.category));
 
 function escapeXml(s) {
   if (!s) return "";
@@ -35,6 +38,7 @@ export async function GET() {
     urlEntry("/mentions-legales", "yearly"),
     urlEntry("/contact", "monthly"),
     urlEntry("/a-propos", "monthly"),
+    urlEntry("/avantages", "monthly"),
   ];
 
   for (const cat of CATS) {
@@ -45,7 +49,7 @@ export async function GET() {
     }
   }
 
-  for (const item of ITEMS) {
+  for (const item of INDEXABLE_ITEMS) {
     urls.push(urlEntry(`/produits/${getProductSlug(item)}`, "weekly", 0.9));
     const issues = getIssues(item);
     for (const issue of issues) {

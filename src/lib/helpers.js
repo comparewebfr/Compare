@@ -306,6 +306,8 @@ export function buildSeo(page, data) {
     const typeLabel = data.affType === "neuf" ? "Acheter neuf" : data.affType === "occ" ? (OCC_CATS.includes(item.category) ? "Occasion" : "Reconditionné") : "Pièces";
     return { title: `${typeLabel} — ${name} | ${siteName}`, description: `Prix et offres pour ${name} (${typeLabel}). Comparateur d'offres.`, canonicalPath: pathCompare(item), breadcrumb: [{ label: "Accueil", path: "/" }, { label: name, path: pathCompare(item) }, { label: typeLabel, path: "" }] };
   }
+  const staticPages = { guide: "/comment-ca-marche", "repair-guide": "/guide/reparer-ou-racheter", avantages: "/avantages", faq: "/faq", legal: "/mentions-legales", about: "/a-propos", contact: "/contact" };
+  if (staticPages[page]) return { title: siteName, description: "Comparez réparation, achat reconditionné et neuf.", canonicalPath: staticPages[page], breadcrumb: [] };
   return { title: siteName, description: "Réparer, occasion ou neuf ? Comparez en un clic.", canonicalPath: "/", breadcrumb: [] };
 }
 

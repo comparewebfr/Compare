@@ -2664,6 +2664,15 @@ export default function App() {
     document.title = seo.title;
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", seo.description);
+    const base = (typeof window !== "undefined" && window.location.origin) || "https://compare-fr.com";
+    const canonicalHref = `${base}${seo.canonicalPath}`;
+    let linkCanonical = document.querySelector('link[rel="canonical"]');
+    if (!linkCanonical) {
+      linkCanonical = document.createElement("link");
+      linkCanonical.rel = "canonical";
+      document.head.appendChild(linkCanonical);
+    }
+    linkCanonical.href = canonicalHref;
   }, [page.type, page.itemId, page.catId, page.productType, page.item, page.issue, page.affType]);
 
   // Redirection produits maison vers pages type (compare/issue uniquement — pas aff : l'utilisateur doit voir les prestataires Occasion/Neuf/Pièces)
