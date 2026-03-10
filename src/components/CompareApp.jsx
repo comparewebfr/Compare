@@ -19,7 +19,7 @@ import { PRODUCT_IMAGES } from "../data/product-images";
 import { PRODUCT_TYPE_IMAGES } from "../data/product-type-images";
 import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
-import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
+import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
 
 // ─── LOGO ───
@@ -140,16 +140,17 @@ function ProductTypeImg({ productType, size = 120, iconName = "washer", iconColo
   );
 }
 
-/** Logo retailer — image ou initiale */
+/** Logo retailer — fond = prolongement de la couleur du logo (LOGO_BG), pas la couleur accent */
 function RetailerLogo({ r, size = 44, className }) {
   const [hasError, setHasError] = useState(false);
   useEffect(() => setHasError(false), [r?.n]);
-  const boxStyle = { width: size, height: size, borderRadius: 10, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: Math.round(size * 0.4), color: "#374151", flexShrink: 0 };
+  const bg = (r?.logoUrl && LOGO_BG[r.logoUrl]) || "#F3F4F6";
+  const boxStyle = { width: size, height: size, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: Math.round(size * 0.4), color: "#374151", flexShrink: 0 };
   if (!r?.logoUrl || hasError) {
     return <div className={className} style={boxStyle}>{r?.logo || r?.n?.[0] || "?"}</div>;
   }
   return (
-    <Image src={r.logoUrl} alt={r.n} onError={() => setHasError(true)} width={size} height={size} sizes={`${size}px`} className={className} style={{ width: size, height: size, borderRadius: 10, objectFit: "contain", background: "#F3F4F6", flexShrink: 0 }} />
+    <Image src={r.logoUrl} alt={r.n} onError={() => setHasError(true)} width={size} height={size} sizes={`${size}px`} className={className} style={{ width: size, height: size, borderRadius: 10, objectFit: "contain", background: bg, flexShrink: 0 }} />
   );
 }
 
@@ -1021,7 +1022,7 @@ function RepairPage({ catId, productType, onNav }) {
                           <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{price} €</div>
                           <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>Voir l'offre</div>
                         </div>
-                        <div style={{ padding: "10px 18px", borderRadius: 8, background: "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}>Voir l'offre →</div>
+                        <div style={{ padding: "10px 18px", borderRadius: 8, background: r.c || "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}>Voir l'offre →</div>
                       </a>
                     );
                   })}
@@ -2074,7 +2075,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                   <div style={{ fontWeight: 800, fontSize: 18, color: "#111" }}>{price} €</div>
                 </div>
               </div>
-              <div className="retailer-cta" style={{ padding: "10px 16px", borderRadius: 8, background: "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform .2s", flexShrink: 0 }}>Voir l'offre →</div>
+              <div className="retailer-cta" style={{ padding: "10px 16px", borderRadius: 8, background: r.c || "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform .2s", flexShrink: 0 }}>Voir l'offre →</div>
             </a>;
           })}
         </div>

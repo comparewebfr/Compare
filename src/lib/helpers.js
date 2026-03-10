@@ -147,7 +147,11 @@ export function getAlternatives(item) {
 export function getRet(cat, type) {
   const m = OCC_CATS.includes(cat);
   if (type === "neuf") return RET.neuf.filter(r => m ? ["Amazon", "Castorama", "ManoMano", "Cdiscount", "Darty"].includes(r.n) : ["Amazon", "Fnac", "Darty", "Cdiscount"].includes(r.n));
-  if (type === "occ") return RET.occ.filter(r => ["Back Market", "Amazon Renewed", "Rakuten", "Cdiscount"].includes(r.n));
+  if (type === "occ") {
+    const occRets = RET.occ.filter(r => ["Back Market", "Amazon Renewed", "Rakuten", "Cdiscount"].includes(r.n));
+    if (OCC_CATS.includes(cat)) return occRets.filter(r => r.n !== "Back Market");
+    return occRets;
+  }
   return RET.pcs.filter(r => m ? ["Amazon", "Spareka", "ManoMano", "Castorama"].includes(r.n) : ["Amazon", "Spareka"].includes(r.n));
 }
 

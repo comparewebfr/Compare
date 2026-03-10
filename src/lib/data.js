@@ -712,26 +712,39 @@ export const POPULAR_SEARCHES_IPHONE = [
 /** Marques affiliées uniquement — ne pas inclure les sites sans programme d'affiliation */
 export const AFFILIATED_RETAILERS = ["Amazon", "Cdiscount", "Rakuten", "Fnac", "Darty", "Castorama", "Back Market", "ManoMano", "Spareka"];
 
+/** Couleur du fond du logo (prolongement visuel, pas la couleur accent) */
+export const LOGO_BG = {
+  "/retailers/amazon.png": "#ffffff",
+  "/retailers/cdiscount.png": "#0066B2",
+  "/retailers/fnac.png": "#E4A100",
+  "/retailers/darty.png": "#CE0E2D",
+  "/retailers/castorama.png": "#E30613",
+  "/retailers/manomano.png": "#00B2A9",
+  "/retailers/backmarket.png": "#1A1A1A",
+  "/retailers/rakuten.png": "#B00020",
+  "/retailers/spareka.png": "#00B8D9",
+};
+
 export const RET = {
   neuf: [
-    { n: "Amazon", t: "Livraison rapide", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.svg" },
-    { n: "Cdiscount", t: "Prix mini", c: "#00A651", logo: "C", logoUrl: "/retailers/cdiscount.svg" },
-    { n: "Fnac", t: "Retrait 1h en magasin", c: "#E4A100", logo: "F", logoUrl: "/retailers/fnac.svg" },
-    { n: "Darty", t: "Garantie 2 ans", c: "#CE0E2D", logo: "D", logoUrl: "/retailers/darty.svg" },
-    { n: "Castorama", t: "Bricolage & maison", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.svg" },
-    { n: "ManoMano", t: "Bricolage", c: "#00B2A9", logo: "M", logoUrl: "/retailers/manomano.svg" },
+    { n: "Amazon", t: "Livraison rapide", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.png" },
+    { n: "Cdiscount", t: "Prix mini", c: "#00A651", logo: "C", logoUrl: "/retailers/cdiscount.png" },
+    { n: "Fnac", t: "Retrait 1h en magasin", c: "#E4A100", logo: "F", logoUrl: "/retailers/fnac.png" },
+    { n: "Darty", t: "Garantie 2 ans", c: "#CE0E2D", logo: "D", logoUrl: "/retailers/darty.png" },
+    { n: "Castorama", t: "Bricolage & maison", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.png" },
+    { n: "ManoMano", t: "Bricolage", c: "#00B2A9", logo: "M", logoUrl: "/retailers/manomano.png" },
   ],
   occ: [
-    { n: "Back Market", t: "N°1 reconditionné garanti", c: "#4DBC80", logo: "B", logoUrl: "/retailers/backmarket.svg" },
-    { n: "Amazon Renewed", t: "Garantie Amazon", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.svg" },
-    { n: "Rakuten", t: "Occasion vérifiée", c: "#B00020", logo: "R", logoUrl: "/retailers/rakuten.svg" },
-    { n: "Cdiscount", t: "Occasion & reconditionné", c: "#00A651", logo: "C", logoUrl: "/retailers/cdiscount.svg" },
+    { n: "Back Market", t: "N°1 reconditionné garanti", c: "#4DBC80", logo: "B", logoUrl: "/retailers/backmarket.png" },
+    { n: "Amazon Renewed", t: "Garantie Amazon", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.png" },
+    { n: "Rakuten", t: "Occasion vérifiée", c: "#B00020", logo: "R", logoUrl: "/retailers/rakuten.png" },
+    { n: "Cdiscount", t: "Occasion & reconditionné", c: "#00A651", logo: "C", logoUrl: "/retailers/cdiscount.png" },
   ],
   pcs: [
-    { n: "Amazon", t: "Pièces détachées", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.svg" },
-    { n: "Spareka", t: "Électroménager", c: "#00B8D9", logo: "S", logoUrl: "/retailers/spareka.svg" },
-    { n: "ManoMano", t: "Pièces & outillage", c: "#00B2A9", logo: "M", logoUrl: "/retailers/manomano.svg" },
-    { n: "Castorama", t: "Plomberie & bricolage", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.svg" },
+    { n: "Amazon", t: "Pièces détachées", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.png" },
+    { n: "Spareka", t: "Électroménager", c: "#00B8D9", logo: "S", logoUrl: "/retailers/spareka.png" },
+    { n: "ManoMano", t: "Pièces & outillage", c: "#00B2A9", logo: "M", logoUrl: "/retailers/manomano.png" },
+    { n: "Castorama", t: "Plomberie & bricolage", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.png" },
   ],
 }
 
