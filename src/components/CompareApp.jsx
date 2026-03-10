@@ -297,25 +297,82 @@ function Sidebar({ open, onClose, onNav }) {
   </>;
 }
 
+// ─── NAVBAR SEARCH (barre de recherche compacte) ───
+function NavbarSearch({ onSearch }) {
+  const [q, setQ] = useState("");
+  const [show, setShow] = useState(false);
+  const qNorm = (q || "").trim().toLowerCase();
+  const sug = useMemo(() => qNorm.length > 1 ? ITEMS.filter(i => !PAGES_GENERALES.includes(i.category) && `${i.brand} ${i.name} ${i.productType}`.toLowerCase().includes(qNorm)).slice(0, 5) : [], [qNorm]);
+  const exactMatch = useMemo(() => qNorm.length > 0 ? ITEMS.find(i => !PAGES_GENERALES.includes(i.category) && `${i.brand} ${i.name}`.toLowerCase() === qNorm) : null, [qNorm]);
+  const containerRef = useRef(null);
+  useEffect(() => {
+    const h = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setShow(false); };
+    document.addEventListener("click", h);
+    return () => document.removeEventListener("click", h);
+  }, []);
+  const handleSelect = (id) => { onSearch(id); setQ(""); setShow(false); };
+  return (
+    <div ref={containerRef} style={{ position: "relative", flex: "1 1 200px", maxWidth: 320, minWidth: 140 }} className="nav-search-wrap">
+      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,.95)", borderRadius: 10, padding: "8px 14px", border: "1px solid rgba(255,255,255,.3)" }}>
+        <Icon name="search" s={18} color={ACCENT} style={{ opacity: 0.8, flexShrink: 0 }} />
+        <input
+          value={q}
+          onChange={e => { setQ(e.target.value); setShow(true); }}
+          onFocus={() => setShow(true)}
+          placeholder="iPhone, MacBook, PS5..."
+          aria-label="Rechercher un produit"
+          style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontFamily: F, fontSize: 13, color: "#111" }}
+        />
+        {q.trim() && <button type="button" onClick={() => { setQ(""); setShow(false); }} aria-label="Effacer" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#9CA3AF", fontSize: 16 }}>×</button>}
+      </div>
+      {show && (qNorm.length > 0) && (
+        <div className="page-enter" style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 6, background: "#fff", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,.15)", overflow: "hidden", zIndex: 200, border: "1px solid #E5E7EB" }}>
+          {sug.length > 0 ? (
+            <ul style={{ margin: 0, padding: "6px 0", listStyle: "none" }}>
+              {sug.map(item => (
+                <li key={item.id}>
+                  <button type="button" onMouseDown={() => handleSelect(item.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", font: "inherit" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#F8FAF9"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+                    <ProductImg brand={item.brand} item={item} size={36} expandable={false} />
+                    <div><div style={{ fontWeight: 600, fontSize: 13, color: "#111" }}>{item.brand} {item.name}</div><div style={{ fontSize: 11, color: "#9CA3AF" }}>{item.productType}</div></div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : exactMatch ? (
+            <button type="button" onMouseDown={() => handleSelect(exactMatch.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", width: "100%", textAlign: "left", background: "#F8FAF9", border: "none", cursor: "pointer", font: "inherit" }}>
+              <ProductImg brand={exactMatch.brand} item={exactMatch} size={36} expandable={false} />
+              <div><div style={{ fontWeight: 600, fontSize: 13, color: "#111" }}>{exactMatch.brand} {exactMatch.name}</div><div style={{ fontSize: 11, color: "#9CA3AF" }}>Appuyez pour comparer</div></div>
+            </button>
+          ) : qNorm.length > 1 ? (
+            <div style={{ padding: "12px 16px", fontSize: 13, color: "#6B7280" }}>Aucun produit trouvé</div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── NAVBAR ───
-function Navbar({ onNav, user, onAuth, onMenu }) {
-  return <header><nav aria-label="Navigation principale" style={{ position: "sticky", top: 0, zIndex: 100, background: ACCENT, padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: F }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+function Navbar({ onNav, onSearch, user, onAuth, onMenu }) {
+  return <header><nav aria-label="Navigation principale" style={{ position: "sticky", top: 0, zIndex: 100, background: ACCENT, padding: "0 16px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, fontFamily: F }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
       <button onClick={onMenu} aria-label="Ouvrir le menu" style={{ background: "none", border: "none", cursor: "pointer", padding: 8, display: "flex", flexDirection: "column", gap: 3, minWidth: 44, minHeight: 44, justifyContent: "center", alignItems: "center" }}>
         {[0,1,2].map(i => <div key={i} style={{ width: 17, height: 2, background: "#fff", borderRadius: 1 }} />)}
       </button>
-      <button type="button" onClick={() => onNav("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", padding: 0, font: "inherit" }} aria-label="Compare. - Retour à l'accueil">
-        <Image src="/logo.png" alt="" width={44} height={44} style={{ width: 44, height: 44, objectFit: "contain", borderRadius: "50%" }} />
-        <span style={{ fontSize: 24, fontWeight: 800, color: W, letterSpacing: "-.03em" }}>Compare<span style={{ color: "#52B788" }}>.</span></span>
+      <button type="button" onClick={() => onNav("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, font: "inherit" }} aria-label="Compare. - Retour à l'accueil">
+        <Image src="/logo.png" alt="" width={40} height={40} style={{ width: 40, height: 40, objectFit: "contain", borderRadius: "50%" }} />
+        <span className="hide-mobile" style={{ fontSize: 20, fontWeight: 800, color: W, letterSpacing: "-.03em" }}>Compare<span style={{ color: "#52B788" }}>.</span></span>
       </button>
     </div>
-    <div className="nav-links" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+    {onSearch && <NavbarSearch onSearch={onSearch} />}
+    <div className="nav-links" style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
       {[{ l: "Comment ça marche", p: "guide" }, { l: "Guide", p: "repair-guide" }, { l: "Avantages", p: "avantages" }, { l: "À propos", p: "about" }, { l: "Contact", p: "contact" }].map(x =>
-        <button key={x.l} onClick={() => onNav(x.p)} style={{ background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,.9)", fontFamily: F, padding: "10px 16px", transition: "color .2s, background .2s" }}
+        <button key={x.l} onClick={() => onNav(x.p)} style={{ background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,.9)", fontFamily: F, padding: "8px 14px", transition: "color .2s, background .2s" }}
           onMouseEnter={e => { e.target.style.color = "#fff"; e.target.style.background = "rgba(255,255,255,.12)"; }} onMouseLeave={e => { e.target.style.color = "rgba(255,255,255,.9)"; e.target.style.background = "transparent"; }}>{x.l}</button>
       )}
     </div>
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+    <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
       <button onClick={onAuth} aria-label={user ? `Connecté en tant que ${user.name}` : "Se connecter"} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "1px solid rgba(255,255,255,.2)", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: F }}>{user ? user.name : "Connexion"}</button>
     </div>
   </nav></header>;
@@ -393,11 +450,13 @@ function Hero({ onSearch, onNav, popularSearches = POPULAR_SEARCHES }) {
   const exactMatch = useMemo(() => qNorm.length > 0 ? ITEMS.find(i => !PAGES_GENERALES.includes(i.category) && `${i.brand} ${i.name}`.toLowerCase() === qNorm) : null, [qNorm]);
   const banners = useMemo(() => HERO_BANNERS(W, ACCENT, GREEN), []);
   return <><div style={{ background: `linear-gradient(180deg, ${W} 0%, #F0EDE6 50%, #E8E6E0 100%)`, paddingBottom: 0 }}>
-    <section style={{ padding: "40px 20px 32px", textAlign: "center" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Logo s={56} priority /></div>
-      <h1 className="hero-title" style={{ fontSize: 38, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, margin: "0 0 6px", letterSpacing: "-.03em", fontFamily: F }}>Réparer ou racheter<span style={{ color: ACCENT }}> ?</span></h1>
-      <p style={{ fontSize: 14, color: "#4B5563", margin: "0 auto 28px", maxWidth: 380, fontWeight: 500, lineHeight: 1.5 }}>Comparez les coûts. Choisissez malin.</p>
-      <div style={{ position: "relative", maxWidth: 460, margin: "0 auto" }}>
+    <section style={{ padding: "40px 20px 32px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", maxWidth: 520 }}>
+        <div style={{ marginBottom: 14 }}><Logo s={56} priority /></div>
+        <h1 className="hero-title" style={{ fontSize: 38, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, margin: "0 0 8px", letterSpacing: "-.03em", fontFamily: F, textAlign: "center" }}>Réparer ou racheter<span style={{ color: ACCENT }}> ?</span></h1>
+        <p style={{ fontSize: 14, color: "#4B5563", margin: "0 0 28px", maxWidth: 380, fontWeight: 500, lineHeight: 1.5, textAlign: "center" }}>Comparez les coûts. Choisissez malin.</p>
+      </div>
+      <div style={{ position: "relative", maxWidth: 460, margin: "0 auto", width: "100%" }}>
         <div style={{ display: "flex", background: "#fff", borderRadius: 14, padding: "4px 4px 4px 18px", boxShadow: "0 2px 20px rgba(27,67,50,.12), 0 0 0 1px rgba(27,67,50,.06)" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" style={{ marginTop: 12, opacity: .6 }} aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
           <label htmlFor="hero-search" className="sr-only">Rechercher un produit tech (ex: iPhone 15, MacBook, PS5)</label>
@@ -2824,7 +2883,7 @@ export default function App() {
     <a href="#main" className="skip-link">Aller au contenu</a>
     {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     <Sidebar open={sidebar} onClose={() => setSidebar(false)} onNav={nav} />
-    <Navbar onNav={nav} user={user} onAuth={() => user ? logout() : setShowAuth(true)} onMenu={() => setSidebar(true)} />
+    <Navbar onNav={nav} onSearch={page.type === "home" ? undefined : (id) => nav("compare", id)} user={user} onAuth={() => user ? logout() : setShowAuth(true)} onMenu={() => setSidebar(true)} />
     <main id="main">
     {page.type === "home" && <>
       <Hero onSearch={id => nav("compare", id)} onNav={nav} popularSearches={popularSearches} />
