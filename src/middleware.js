@@ -4,22 +4,15 @@ import { ITEMS } from "./lib/data";
 
 export function middleware(request) {
   const url = request.nextUrl.clone();
-  const host = request.headers.get("host") || "";
   const pathname = url.pathname;
 
-  // 1. www → non-www (canonical)
-  if (host.startsWith("www.")) {
-    url.host = url.host.replace(/^www\./, "");
-    return NextResponse.redirect(url, 301);
-  }
-
-  // 2. trailing slash → sans slash (sauf racine)
+  // 1. trailing slash → sans slash (sauf racine)
   if (pathname !== "/" && pathname.endsWith("/")) {
     url.pathname = pathname.slice(0, -1);
     return NextResponse.redirect(url, 301);
   }
 
-  // 3. /c/:slug → /categories/:slug (anciennes URLs)
+  // 2. /c/:slug → /categories/:slug (anciennes URLs)
   const cMatch = pathname.match(/^\/c\/([^/]+)$/);
   if (cMatch) {
     const cat = findCategoryBySlug(cMatch[1]);
@@ -29,7 +22,7 @@ export function middleware(request) {
     }
   }
 
-  // 4. /p/:id (sans /aff) → /produits/:slug
+  // 3. /p/:id (sans /aff) → /produits/:slug
   const pMatch = pathname.match(/^\/p\/(\d+)(?:-.*)?$/);
   if (pMatch && !pathname.endsWith("/aff")) {
     const id = parseInt(pMatch[1], 10);
