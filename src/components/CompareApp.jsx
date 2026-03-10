@@ -991,16 +991,16 @@ function RepairPage({ catId, productType, onNav }) {
                   {sortedRets.map(({ r, price }, rank) => {
                     const isBest = rank === 0;
                     return (
-                      <a key={r.n} href={buildRetailerUrlForParts(r, productType, iss.name)} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
+                      <a key={r.n} href={buildRetailerUrlForParts(r, productType, iss.name)} target="_blank" rel="noopener noreferrer sponsored" className={`card-hover ${isBest ? "parts-retailer-card" : ""}`} style={{
                         background: "#fff", border: isBest ? "2px solid #111" : "1px solid #E5E3DE", borderRadius: 12, padding: "16px 18px",
                         display: "flex", alignItems: "center", gap: 16, cursor: "pointer", boxShadow: isBest ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)",
-                        textDecoration: "none", color: "inherit",
+                        textDecoration: "none", color: "inherit", position: isBest ? "relative" : undefined,
                       }}>
                         <div style={{ width: 48, height: 48, borderRadius: 12, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#374151", flexShrink: 0 }}>{(r.logo || r.n[0])}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                             <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
-                            {isBest && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: "#111", color: "#fff" }}>Meilleur prix</span>}
+                            {isBest && <span className="parts-retailer-badge" style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: "#111", color: "#fff" }}>Meilleur prix</span>}
                           </div>
                           <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{r.t}</div>
                         </div>
