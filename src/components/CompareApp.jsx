@@ -13,7 +13,6 @@ function useIsMobile() {
   return isMobile;
 }
 import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import { PRODUCT_IMAGES } from "../data/product-images";
 import { PRODUCT_TYPE_IMAGES } from "../data/product-type-images";
@@ -21,6 +20,10 @@ import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
+import { getOffersForNeuf } from "../lib/supabase-queries";
+import { getProductSlug } from "../lib/routes";
+import { useProductImage } from "../lib/product-image-context";
+import { useImageLightbox } from "../lib/image-lightbox-context";
 
 // ─── LOGO ───
 function Logo({ s = 32, priority = false }) {
@@ -88,39 +91,45 @@ function Card({ children, onClick, style = {}, as: Tag = "div", ...rest }) {
 function Chev() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6" /></svg>; }
 
 // ─── Images produits ────────────────────────────────────────────────────────
-// Priorité : 1) PRODUCT_IMAGES (src/data/product-images.js)  2) public/products/{id}.jpg  3) placeholder
-function getProductImageSrc(item, ext = "jpg") {
-  if (!item?.id) return null;
-  if (PRODUCT_IMAGES[item.id]) return PRODUCT_IMAGES[item.id];
-  return `/products/${item.id}.${ext}`;
-}
+// Priorité centralisée : 1) Supabase (product_assets)  2) PRODUCT_IMAGES  3) placeholder (pas de /products/ pour éviter 404)
 function getPlaceholderSrc(item) {
   if (!item?.id) return null;
   const seed = `${item.id}-${(item.brand || "")}-${(item.name || "")}`.replace(/\s/g, "-");
   return `https://picsum.photos/seed/${encodeURIComponent(seed)}/400/400`;
 }
 
-function ProductImg({ brand, item, size = 48 }) {
-  const [step, setStep] = useState(0); // 0=jpg, 1=png, 2=placeholder, 3=initials
-  useEffect(() => { setStep(0); }, [item?.id]);
+function ProductImg({ brand, item, size = 48, priorityUrl: priorityUrlProp, expandable = true }) {
+  const supabaseUrl = useProductImage(item);
+  const lightbox = useImageLightbox();
+  const priorityUrl = priorityUrlProp ?? supabaseUrl;
+  const [step, setStep] = useState(0);
+  useEffect(() => { setStep(0); }, [item?.id, priorityUrl]);
   const initials = ((brand || item?.brand) || "?").slice(0, 3);
   const fallbackDiv = <div style={{ width: size, height: size, borderRadius: 10, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #E5E7EB", flexShrink: 0 }}>
     <span style={{ fontSize: Math.max(8, size * .15), fontWeight: 800, color: "#9CA3AF", textTransform: "uppercase" }}>{initials}</span>
   </div>;
   let src = null;
   if (item) {
-    if (step <= 1) src = getProductImageSrc(item, step === 0 ? "jpg" : "png");
-    else if (step === 2) src = getPlaceholderSrc(item);
+    if (step === 0 && priorityUrl?.trim()) src = priorityUrl.trim();
+    else if (step === 0 && PRODUCT_IMAGES[item.id]) src = PRODUCT_IMAGES[item.id];
+    else if (step === 0) src = getPlaceholderSrc(item);
+    else src = getPlaceholderSrc(item);
   }
-  const onError = () => {
-    if (step === 0 && PRODUCT_IMAGES[item.id]) setStep(2); // URL custom échouée → placeholder
-    else if (step < 2) setStep(s => s + 1);
-    else setStep(3);
-  };
+  const onError = () => setStep((s) => (s < 1 ? 1 : 3));
   if (!item || step === 3) return fallbackDiv;
-  return (
-    <Image src={src} alt={`Produit : ${item?.brand || ""} ${item?.name || ""}`.trim()} onError={onError} loading="lazy" width={size} height={size} sizes={`${size}px`} style={{ width: size, height: size, borderRadius: 10, objectFit: "cover", border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" }} />
+  if (step === 0 && !src) return fallbackDiv;
+  const objectFit = priorityUrl && step === 0 ? "contain" : "cover";
+  const imgEl = (
+    <Image src={src} alt={`Produit : ${item?.brand || ""} ${item?.name || ""}`.trim()} onError={onError} loading="lazy" width={size} height={size} sizes={`${size}px`} style={{ width: size, height: size, borderRadius: 10, objectFit, border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" }} />
   );
+  if (expandable && lightbox && src) {
+    return (
+      <button type="button" onClick={() => lightbox.openLightbox(src)} style={{ padding: 0, border: "none", background: "none", cursor: "zoom-in", flexShrink: 0 }} aria-label="Agrandir l'image">
+        {imgEl}
+      </button>
+    );
+  }
+  return imgEl;
 }
 
 /** Image par type de produit (maison) — PRODUCT_TYPE_IMAGES ou public/products-types/{slug}.jpg */
@@ -407,7 +416,7 @@ function Hero({ onSearch, onNav, popularSearches = POPULAR_SEARCHES }) {
         {show && sug.length > 0 && <ul className="page-enter" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", borderRadius: 12, boxShadow: "0 8px 32px rgba(27,67,50,.12)", overflow: "hidden", zIndex: 50, border: "1px solid rgba(0,0,0,.06)", margin: 0, padding: 0, listStyle: "none" }}>
           {sug.map(item => <li key={item.id}><button type="button" onMouseDown={() => { setQ(""); setNoMatchMsg(false); onSearch(item.id); }} className="link-hover" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #f0f0f0", transition: "background .2s", width: "100%", textAlign: "left", background: "none", borderLeft: "none", borderRight: "none", borderTop: "none", font: "inherit" }}
             onMouseEnter={e => e.currentTarget.style.background = "#F8FAF9"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
-            <ProductImg brand={item.brand} item={item} size={34} />
+            <ProductImg brand={item.brand} item={item} size={44} />
             <div style={{ textAlign: "left" }}><div style={{ fontWeight: 600, fontSize: 13, color: "#111" }}>{item.brand} {item.name}</div><div style={{ fontSize: 11, color: "#6B7280" }}>{item.productType} · {item.priceNew} €</div></div>
           </button></li>)}
         </ul>}
@@ -899,7 +908,7 @@ function ModelsListPage({ catId, productType, affType, onNav }) {
           {filtered.map(item => (
             <Card key={item.id} onClick={() => onNav("aff", { item, issues: getIssues(item).slice(0, 1), affType, alts: getAlternatives(item) })} style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <ProductImg brand={item.brand} item={item} size={56} />
+                <ProductImg brand={item.brand} item={item} size={72} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{item.brand} {item.name}</div>
                   <div style={{ fontSize: 12, color: "#6B7280" }}>{item.productType} · {item.year}</div>
@@ -1189,7 +1198,7 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
             return <div key={b.name} onClick={() => onNav("cat-brand", { catId, productType: null, brand: b.name })} style={{ background: "#fff", border: "1px solid #E0DDD5", borderRadius: 8, padding: "16px 12px", cursor: "pointer", textAlign: "center", transition: "all .2s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0DDD5"; e.currentTarget.style.transform = "none"; }}>
-              <ProductImg brand={b.name} item={sample} size={36} />
+              <ProductImg brand={b.name} item={sample} size={48} />
               <div style={{ fontWeight: 700, fontSize: 13, color: "#111", marginTop: 6 }}>{b.name}</div>
               <div style={{ fontSize: 11, color: "#9CA3AF" }}>{b.count} produit{b.count > 1 ? "s" : ""}</div>
             </div>;
@@ -1230,7 +1239,7 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
             const v = getVerdict([iss[0]], item);
             return <Card key={item.id} onClick={() => onNav("compare", item.id)} style={{ padding: 14 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <ProductImg brand={item.brand} item={item} size={38} />
+                <ProductImg brand={item.brand} item={item} size={48} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 12, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.brand} {item.name}</div>
                   <div style={{ fontSize: 11, color: "#6B7280" }}>{item.productType} · {item.year}</div>
@@ -1302,7 +1311,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
       {/* En-tête produit + sélection panne — problème sous le nom */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
-          <ProductImg brand={item.brand} item={item} size={56} />
+          <ProductImg brand={item.brand} item={item} size={72} />
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: 0 }}>{item.brand} {item.name}</h1>
             <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>{item.productType} · {item.year} · {item.priceNew} € neuf</p>
@@ -1565,7 +1574,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
 
           {/* Current model baseline */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: W, borderRadius: 6, border: "1px solid #E0DDD5", marginBottom: 8, opacity: .7 }}>
-            <ProductImg brand={item.brand} item={item} size={32} />
+            <ProductImg brand={item.brand} item={item} size={42} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>{item.brand} {item.name} <span style={{ fontSize: 10, color: "#9CA3AF" }}>({item.year})</span></div>
               <div style={{ fontSize: 11, color: "#6B7280" }}>Votre modèle actuel</div>
@@ -1584,7 +1593,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: idx === 0 ? GREEN + "06" : "#fff",
               borderRadius: 6, border: idx === 0 ? `1.5px solid ${GREEN}40` : "1px solid #E0DDD5", marginBottom: 6, transition: "all .15s",
             }}>
-              <ProductImg brand={n.item.brand} item={n.item} size={32} />
+              <ProductImg brand={n.item.brand} item={n.item} size={42} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#111" }}>
                   {n.item.brand} {n.item.name} <span style={{ fontSize: 10, color: "#9CA3AF" }}>({n.item.year})</span>
@@ -1612,7 +1621,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#fff",
               borderRadius: 6, border: "1px solid #E0DDD5", marginBottom: 6, transition: "all .15s",
             }}>
-              <ProductImg brand={e.item.brand} item={e.item} size={32} />
+              <ProductImg brand={e.item.brand} item={e.item} size={42} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
                   {e.item.brand} {e.item.name} <span style={{ fontSize: 10, color: "#9CA3AF" }}>({e.item.year})</span>
@@ -1758,7 +1767,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
             {ITEMS.filter(i => i.category === item.category && i.productType === item.productType && i.id !== item.id).slice(0, 4).map(rel =>
               <Card key={rel.id} onClick={() => onNav("compare", rel.id)} style={{ padding: 12, textAlign: "center" }}>
-                <ProductImg brand={rel.brand} item={rel} size={36} />
+                <ProductImg brand={rel.brand} item={rel} size={48} />
                 <div style={{ fontWeight: 600, fontSize: 11, color: "#111", marginTop: 4 }}>{rel.brand}</div>
                 <div style={{ fontSize: 10, color: "#6B7280" }}>{rel.name}</div>
                 <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>{rel.priceNew} €</div>
@@ -1832,9 +1841,21 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   </div>;
 }
 
+/** Associe merchant (Supabase) → retailer RET pour logo/couleur */
+function getRetailerForMerchant(merchant) {
+  if (!merchant) return { n: "?", t: "", c: "#111", logoUrl: null };
+  const m = String(merchant).toLowerCase();
+  const all = [...RET.neuf, ...RET.occ];
+  const match = all.find((r) => m.includes(r.n.toLowerCase()) || r.n.toLowerCase().includes(m));
+  return match || { n: merchant, t: "", c: "#111", logoUrl: null };
+}
+
 // ─── AFFILIATE PAGE ───
 function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   const [place, setPlace] = useState("");
+  const [supabaseOffers, setSupabaseOffers] = useState(null);
+  const productImageUrl = useProductImage(item);
+  const lightbox = useImageLightbox();
   const cat = CATS.find(c => c.id === item.category);
   const rets = getRet(item.category, affType);
   const sl = shLabel(item.category);
@@ -1848,7 +1869,17 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   const off = [0, -.04, .03, -.06, .05];
   // Tri du moins cher au plus cher (lisibilité)
   const retsWithPrice = rets.map((r, idx) => ({ r, price: Math.round(base * (1 + (off[idx] ?? 0))), idx }));
-  const sortedRets = [...retsWithPrice].sort((a, b) => a.price - b.price); // croissant : prix bas → prix haut
+  const sortedRets = [...retsWithPrice].sort((a, b) => a.price - b.price);
+
+  // Chargement offres Supabase pour page "Acheter neuf" (image produit via useProductImage)
+  useEffect(() => {
+    if (affType !== "neuf" || !item) return;
+    let cancelled = false;
+    getOffersForNeuf(getProductSlug(item)).then(({ data, error }) => {
+      if (!cancelled) setSupabaseOffers(error ? [] : data ?? []);
+    });
+    return () => { cancelled = true; };
+  }, [affType, item?.id]);
   const isTech = alts.type === "tech";
   const isOcc = affType === "occ";
   const isNeuf = affType === "neuf";
@@ -1953,9 +1984,9 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
     </div>
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 20px 80px" }}>
       {/* Header + photo produit + description */}
-      <div style={{ display: "flex", gap: 20, alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ flexShrink: 0 }}>
-          <ProductImg brand={item.brand} item={item} size={120} />
+          <ProductImg brand={item.brand} item={item} size={160} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
@@ -1965,7 +1996,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                 {isPcs ? `Coût total estimé (pièces + main d'œuvre pro) : ${repairTotalMin}–${repairTotalMax} €` : issues?.map(i => i.name).join(", ")}
               </p>
               <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, maxWidth: 560 }}>
-                Le {item.brand} {item.name} est un {item.productType.toLowerCase()} de {item.year}. Prix neuf indicatif : {item.priceNew} €. Comparez les offres des prestataires ci-dessous.
+                Le {item.brand} {item.name} est un {item.productType.toLowerCase()} de {item.year}. Comparez les offres des prestataires ci-dessous.
               </p>
             </div>
             {!isPcs && <div style={{ padding: "4px 10px", borderRadius: 4, background: modeColor + "12", color: modeColor, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
@@ -2054,30 +2085,100 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {sortedRets.map(({ r, price }, rank) => {
-            const isBestPrice = rank === 0;
-            const url = buildRetailerUrl(r, item, affType);
-            return <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={{
-              background: "#fff",
-              border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
-              borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit",
-            }}>
-              <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
-                <RetailerLogo r={r} size={44} className="retailer-logo" />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{r.n}</span>
-                    {isBestPrice && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+          {isNeuf ? (() => {
+            const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
+            const findOffer = (r) => offers.find((o) => {
+              const m = (o.merchant ?? o.retailer ?? "").toLowerCase();
+              return m && (m.includes(r.n.toLowerCase()) || r.n.toLowerCase().includes(m));
+            });
+            const merged = retsWithPrice.map(({ r, price: fallbackPrice }) => {
+              const offer = findOffer(r);
+              const price = offer?.price_amount != null ? Number(offer.price_amount) : fallbackPrice;
+              const affUrl = offer?.url?.trim() || null;
+              const url = affUrl || buildRetailerUrl(r, item, "neuf");
+              return { r, offer, price, url };
+            });
+            const sorted = [...merged].sort((a, b) => a.price - b.price);
+            const imgUrl = productImageUrl?.trim() || null;
+            return sorted.map(({ r, offer, price, url }, rank) => {
+              const isBestPrice = rank === 0;
+              const priceStr = price > 0 ? `${price} €` : "—";
+              const cardStyle = {
+                background: "#fff",
+                border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
+                borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 18,
+                boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)",
+                textDecoration: "none", color: "inherit", cursor: "pointer",
+              };
+              return (
+                <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={cardStyle}>
+                  {/* Image produit Supabase — cliquable pour agrandir */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="offer-product-img"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (imgUrl && lightbox) lightbox.openLightbox(imgUrl); }}
+                    onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && imgUrl && lightbox) { e.preventDefault(); lightbox.openLightbox(imgUrl); } }}
+                    style={{ width: 96, height: 96, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", cursor: imgUrl ? "zoom-in" : "default" }}
+                  >
+                    {imgUrl ? (
+                      <img src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} loading="lazy" />
+                    ) : (
+                      <Icon name="cart" s={28} color="#9CA3AF" style={{ opacity: 0.6 }} />
+                    )}
                   </div>
-                  <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
+                  <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 0 }}>
+                    {offer?.image_url ? (
+                      <img src={offer.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: "contain", background: "#F3F4F6", flexShrink: 0 }} />
+                    ) : (
+                      <RetailerLogo r={r} size={56} className="retailer-logo" />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
+                        {isBestPrice && price > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{priceStr}</div>
+                    </div>
+                  </div>
+                  <div className="retailer-cta" style={{
+                    padding: "12px 18px", borderRadius: 10, fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    background: r.c || "#111", color: "#fff", transition: "transform .2s",
+                  }}>
+                    Voir l&apos;offre →
+                  </div>
+                </a>
+              );
+            });
+          })() : (
+            sortedRets.map(({ r, price }, rank) => {
+              const isBestPrice = rank === 0;
+              const url = buildRetailerUrl(r, item, affType);
+              return <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={{
+                background: "#fff",
+                border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
+                borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 18, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit",
+              }}>
+                <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 0 }}>
+                  <RetailerLogo r={r} size={56} className="retailer-logo" />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
+                      {isBestPrice && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{price} €</div>
+                  </div>
                 </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: 18, color: "#111" }}>{price} €</div>
-                </div>
-              </div>
-              <div className="retailer-cta" style={{ padding: "10px 16px", borderRadius: 8, background: r.c || "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform .2s", flexShrink: 0 }}>Voir l'offre →</div>
-            </a>;
-          })}
+                <div className="retailer-cta" style={{ padding: "12px 18px", borderRadius: 10, background: r.c || "#111", color: "#fff", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform .2s", flexShrink: 0 }}>Voir l&apos;offre →</div>
+              </a>;
+            })
+          )}
         </div>
       </div>
 
@@ -2173,7 +2274,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             border: `1.5px solid ${GREEN}40`, borderRadius: 12, padding: "12px 14px",
             marginBottom: 6, display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
           }}>
-            <ProductImg brand={bestAlt.item.brand} item={bestAlt.item} size={36} />
+            <ProductImg brand={bestAlt.item.brand} item={bestAlt.item} size={48} />
             <div className="alt-main" style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{bestAlt.item.brand} {bestAlt.item.name}</span>
@@ -2200,7 +2301,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             background: "#fff", border: "1px solid #E5E3DE", borderRadius: 12, padding: "10px 14px",
             marginBottom: 6, display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
           }}>
-            <ProductImg brand={alt.item.brand} item={alt.item} size={32} />
+            <ProductImg brand={alt.item.brand} item={alt.item} size={42} />
             <div className="alt-main" style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>{alt.item.brand} {alt.item.name}</span>
@@ -2749,7 +2850,7 @@ export default function App() {
               const iss = getIssues(item);
               const v = getVerdict([iss[0]], item);
               return <Card key={item.id} onClick={() => nav("compare", item.id)} className="popular-card-mobile" style={{ padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, minHeight: 56 }}>
-                <ProductImg brand={item.brand} item={item} size={36} />
+                <ProductImg brand={item.brand} item={item} size={48} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.brand} {item.name}</div>
                   <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{entry.intent} · {iss[0].repairMin}–{iss[0].repairMax} €</div>

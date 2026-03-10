@@ -10,9 +10,10 @@ export const CSS = `@keyframes slideFadeIn{from{opacity:0;transform:translateX(8
 @keyframes subtlePulse{0%,100%{opacity:1}50%{opacity:.92}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 @media(max-width:768px){.page-enter{animation-duration:.25s!important}.card-hover{transition-duration:.15s!important}.btn-cta{transition-duration:.15s!important}.banner-carousel-card{min-height:240px!important}
-.retailer-card-mobile{flex-direction:column!important;align-items:stretch!important;padding:12px 14px!important;min-height:72px!important}
-.retailer-card-mobile .retailer-main{display:flex!important;align-items:center!important;gap:10px!important;flex:1!important;min-width:0!important}
-.retailer-card-mobile .retailer-logo{width:40px!important;height:40px!important;font-size:14px!important}
+.retailer-card-mobile{flex-direction:column!important;align-items:stretch!important;padding:14px 16px!important;min-height:96px!important}
+.retailer-card-mobile .retailer-main{display:flex!important;align-items:center!important;gap:12px!important;flex:1!important;min-width:0!important}
+.retailer-card-mobile .retailer-logo{width:48px!important;height:48px!important;font-size:16px!important}
+.retailer-card-mobile .offer-product-img{align-self:center!important}
 .retailer-card-mobile .retailer-price-row{display:flex!important;align-items:center!important;justify-content:space-between!important;margin-top:8px!important;padding-top:8px!important;border-top:1px solid #F3F4F6!important}
 .retailer-card-mobile .retailer-cta{width:100%!important;margin-top:8px!important;text-align:center!important;padding:10px!important;flex-shrink:0!important}
 .alt-card-mobile{padding:10px 12px!important;min-height:64px!important}
