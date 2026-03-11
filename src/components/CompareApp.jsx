@@ -20,7 +20,7 @@ import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
-import { getOffersForNeuf } from "../lib/supabase-queries";
+import { getOffersForNeuf, getOffersForOcc } from "../lib/supabase-queries";
 import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
 import { useImageLightbox } from "../lib/image-lightbox-context";
@@ -1330,6 +1330,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const [showWriteReview, setShowWriteReview] = useState(false);
   const [reviewText, setReviewText] = useState("");
   const [reviews, setReviews] = useState([]);
+  const [minNeufPrice, setMinNeufPrice] = useState(null);
+  const [minOccPrice, setMinOccPrice] = useState(null);
   const cat = item ? CATS.find(c => c.id === item.category) : null;
   const sl = item ? shLabel(item.category) : "Reconditionné";
 
@@ -1339,6 +1341,20 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
     setCumul(false); setSelMulti([]); setPlace(""); setReviews([]); setReviewText("");
   }, [itemId, initialIssueId]);
 
+  // Charger les prix min des offres affiliées (neuf + occasion) pour affichage
+  useEffect(() => {
+    if (!item) return;
+    let cancelled = false;
+    Promise.all([getOffersForNeuf(getProductSlug(item)), getOffersForOcc(getProductSlug(item))]).then(([neufRes, occRes]) => {
+      if (cancelled) return;
+      const neufMin = neufRes.data?.[0]?.price_amount != null ? Number(neufRes.data[0].price_amount) : null;
+      const occMin = occRes.data?.[0]?.price_amount != null ? Number(occRes.data[0].price_amount) : null;
+      setMinNeufPrice(neufMin);
+      setMinOccPrice(occMin);
+    });
+    return () => { cancelled = true; };
+  }, [item?.id]);
+
   if (!item) return <div style={{ padding: 80, textAlign: "center", fontFamily: F }}>Produit non trouvé</div>;
 
   const activeIssues = cumul ? issues.filter(i => selMulti.includes(i.id)) : [issues.find(i => i.id === selIssue)].filter(Boolean);
@@ -1346,7 +1362,9 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const tMin = repairEst?.min ?? activeIssues.reduce((s, i) => s + i.repairMin, 0);
   const tMax = repairEst?.max ?? activeIssues.reduce((s, i) => s + i.repairMax, 0);
   const tPart = activeIssues.reduce((s, i) => s + i.partPrice, 0);
-  const recon = activeIssues[0]?.reconPrice || Math.round(item.priceNew * .6);
+  const reconFallback = activeIssues[0]?.reconPrice || Math.round(item.priceNew * .6);
+  const recon = minOccPrice != null ? minOccPrice : reconFallback;
+  const neufDisplay = minNeufPrice != null ? minNeufPrice : item.priceNew;
   const v = activeIssues.length ? getVerdict(activeIssues, item) : null;
   const timeInfo = getCumulTimeInfo(activeIssues);
   const alts = item ? getAlternatives(item) : null;
@@ -1373,7 +1391,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           <ProductImg brand={item.brand} item={item} size={72} />
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: 0 }}>{item.brand} {item.name}</h1>
-            <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>{item.productType} · {item.year} · {item.priceNew} € neuf</p>
+            <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>{item.productType} · {item.year} · {neufDisplay} € neuf</p>
           </div>
         </div>
         <div style={{ background: "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)", borderRadius: 12, padding: "14px 18px", border: "1px solid #E2E8F0", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
@@ -1425,8 +1443,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             return <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
               {[
                 { top: repairTop, color: GREEN, label: "Réparer", price: `${tMin}–${tMax} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
-                { top: v.v === "remplacer" && TECH_CATS.includes(item.category), color: AMBER, label: sl, price: `~${recon} €`, sub: TECH_CATS.includes(item.category) ? "Très en vogue (tech)" : "garanti 12 mois", btn: `Voir ${sl.toLowerCase()} →`, aff: "occ" },
-                { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: `${item.priceNew} €`, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer neuf →", aff: "neuf" },
+                { top: v.v === "remplacer" && TECH_CATS.includes(item.category), color: AMBER, label: sl, price: minOccPrice != null ? `${recon} €` : `~${recon} €`, sub: TECH_CATS.includes(item.category) ? "Très en vogue (tech)" : "garanti 12 mois", btn: `Voir ${sl.toLowerCase()} →`, aff: "occ" },
+                { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: `${neufDisplay} €`, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer neuf →", aff: "neuf" },
               ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: activeIssues, affType: o.aff, alts })} className="card-hover" style={{
                 background: "#fff", border: o.top ? `2px solid ${o.color}` : "1px solid #E5E3DE",
                 borderRadius: 12, padding: 14, cursor: "pointer", textAlign: "center",
@@ -1522,7 +1540,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           </summary>
           <div style={{ padding: "0 16px 16px" }}>
           {(() => {
-            const neuf = item.priceNew;
+            const neuf = neufDisplay;
             const econRep = neuf - tMax;
             const econRecon = neuf - recon;
             const econRepLabel = econRep > 0 ? `Économisez jusqu'à ${econRep} €` : econRep < 0 ? `Surcoût ${Math.abs(econRep)} €` : "—";
@@ -1562,7 +1580,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                       <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{sl}</span>
                       {v.v === "remplacer" && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: AMBER, color: "#fff" }}>Recommandé</span>}
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>~{recon} €</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{minOccPrice != null ? "" : "~"}{recon} €</div>
                     <div style={{ fontSize: 11, color: "#6B7280" }}>{sl.toLowerCase()} garanti</div>
                     <div style={{ fontSize: 12, color: GREEN, fontWeight: 600, marginTop: 2 }}>{econReconLabel}</div>
                   </div>
@@ -1579,7 +1597,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               </>;
             }
             const tableRows = [
-              { l: "Prix", r: `${tMin}–${tMax} €`, o: `~${recon} €`, n: `${neuf} €`, bold: true },
+              { l: "Prix", r: `${tMin}–${tMax} €`, o: minOccPrice != null ? `${recon} €` : `~${recon} €`, n: `${neuf} €`, bold: true },
               { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
               { l: "Pièce seule", r: `${tPart} €`, o: "—", n: "—" },
               { l: "Temps (DIY)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis", o: "—", n: "—" },
@@ -1639,8 +1657,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               <div style={{ fontSize: 11, color: "#6B7280" }}>Votre modèle actuel</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 11, color: AMBER, fontWeight: 600 }}>~{recon} € {sl.toLowerCase()}</div>
-              <div style={{ fontSize: 11, color: "#9CA3AF" }}>{item.priceNew} € neuf</div>
+              <div style={{ fontSize: 11, color: AMBER, fontWeight: 600 }}>{minOccPrice != null ? "" : "~"}{recon} € {sl.toLowerCase()}</div>
+              <div style={{ fontSize: 11, color: "#9CA3AF" }}>{neufDisplay} € neuf</div>
             </div>
           </div>
 
@@ -1867,7 +1885,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                   { icon: "money", label: "Économie vs neuf", value: v.v === "reparer" ? `${Math.max(0, item.priceNew - tMax)} €` : v.v === "remplacer" ? `${item.priceNew - recon} € (${sl})` : "—", color: v.v === "reparer" ? GREEN : v.v === "remplacer" ? AMBER : "#999" },
                   { icon: "tool", label: "Difficulté", value: activeIssues.some(i => i.diff === "difficile") ? "Difficile" : activeIssues.some(i => i.diff === "moyen") ? "Moyenne" : "Facile", color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : activeIssues.some(i => i.diff === "moyen") ? AMBER : GREEN },
                   (() => {
-                    const idx = isRepairabilityEligible(item.category) ? getRepairabilityIndex(item.productType) : null;
+                    const idx = isRepairabilityEligible(item.category) ? getRepairabilityIndex(item.productType, item) : null;
                     const idxColor = idx != null ? (idx >= 7 ? GREEN : idx >= 5 ? AMBER : "#DC2626") : "#9CA3AF";
                     return { icon: "shield", label: "Indice de réparabilité", value: idx != null ? `${idx}/10` : "—", color: idxColor };
                   })(),
@@ -1930,11 +1948,12 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   const retsWithPrice = rets.map((r, idx) => ({ r, price: Math.round(base * (1 + (off[idx] ?? 0))), idx }));
   const sortedRets = [...retsWithPrice].sort((a, b) => a.price - b.price);
 
-  // Chargement offres Supabase pour page "Acheter neuf" (image produit via useProductImage)
+  // Chargement offres Supabase pour neuf et occasion (image produit via useProductImage)
   useEffect(() => {
-    if (affType !== "neuf" || !item) return;
+    if ((affType !== "neuf" && affType !== "occ") || !item) return;
     let cancelled = false;
-    getOffersForNeuf(getProductSlug(item)).then(({ data, error }) => {
+    const fetchOffers = affType === "neuf" ? getOffersForNeuf : getOffersForOcc;
+    fetchOffers(getProductSlug(item)).then(({ data, error }) => {
       if (!cancelled) setSupabaseOffers(error ? [] : data ?? []);
     });
     return () => { cancelled = true; };
@@ -2144,7 +2163,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {isNeuf ? (() => {
+          {(isNeuf || isOcc) ? (() => {
             const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
             const findOffer = (r) => offers.find((o) => {
               const m = (o.merchant ?? o.retailer ?? "").toLowerCase();
@@ -2154,7 +2173,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               const offer = findOffer(r);
               const price = offer?.price_amount != null ? Number(offer.price_amount) : fallbackPrice;
               const affUrl = offer?.url?.trim() || null;
-              const url = affUrl || buildRetailerUrl(r, item, "neuf");
+              const url = affUrl || buildRetailerUrl(r, item, affType);
               return { r, offer, price, url };
             });
             const sorted = [...merged].sort((a, b) => a.price - b.price);
@@ -2248,7 +2267,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.08)", overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
                 {(() => {
-                  const idx = getRepairabilityIndex(item.productType);
+                  const idx = getRepairabilityIndex(item.productType, item);
                   if (idx != null) {
                     const hue = Math.round((idx / 10) * 120);
                     const color = `hsl(${hue}, 55%, 42%)`;
@@ -2432,18 +2451,21 @@ function FaqPage({ onNav }) {
 
 // ─── LEGAL ───
 function LegalPage({ onNav }) {
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 660, margin: "0 auto", padding: "40px 20px 80px" }}>
+  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
     <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Mentions légales</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Mentions légales</h1></div>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Mentions légales</h1></div>
+    <p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.7, marginBottom: 28 }}>Conformément aux dispositions des articles 6-III et 19 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique (LCEN), les présentes mentions légales sont portées à la connaissance des utilisateurs du site Compare.</p>
     {[
-      { t: "Éditeur", c: "Compare. est édité par [Société]. SIRET : [numéro]. Directeur de la publication : [nom]." },
-      { t: "Hébergement", c: "Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA." },
-      { t: "Affiliation", c: "Compare. participe aux programmes d'affiliation Amazon Partenaires, Awin, CJ Affiliate et autres. Nous recevons une commission sans surcoût pour l'utilisateur." },
-      { t: "Données personnelles (RGPD)", c: "Vous disposez d'un droit d'accès, modification et suppression de vos données. Contact : compare.webfr@gmail.com." },
-      { t: "Cookies", c: "Ce site utilise des cookies fonctionnels et analytiques. Gérez vos préférences dans votre navigateur." },
-      { t: "Propriété intellectuelle", c: "Tout le contenu est protégé par le droit d'auteur. Reproduction interdite sans autorisation." },
-      { t: "Limitation de responsabilité", c: "Les prix sont indicatifs. Compare. ne peut être tenu responsable de l'exactitude des prix ou de la qualité des réparations." },
-    ].map((s, i) => <div key={i} style={{ marginBottom: 14 }}><h3 style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 3 }}>{s.t}</h3><p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.6 }}>{s.c}</p></div>)}
+      { t: "Éditeur du site", c: "Le site Compare. est édité par [Raison sociale]. Siège social : [Adresse complète]. SIRET : [numéro]. Directeur de la publication : [nom du responsable]." },
+      { t: "Hébergement", c: "Le site est hébergé par Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis." },
+      { t: "Programmes d'affiliation", c: "Compare. participe à des programmes d'affiliation (Amazon Partenaires, Awin, CJ Affiliate, etc.). Lorsque vous cliquez sur un lien partenaire et effectuez un achat, nous percevons une commission sans surcoût pour vous. Les prix affichés restent ceux pratiqués par les marchands." },
+      { t: "Données personnelles (RGPD)", c: "Conformément au Règlement général sur la protection des données (RGPD), vous disposez d'un droit d'accès, de rectification, de suppression et de portabilité de vos données personnelles. Pour exercer ces droits ou pour toute question : compare.webfr@gmail.com. Nous ne collectons pas de données personnelles identifiables via les fonctionnalités de comparaison." },
+      { t: "Cookies", c: "Le site utilise des cookies techniques nécessaires au fonctionnement et, le cas échéant, des cookies analytiques pour mesurer l'audience. Vous pouvez gérer vos préférences via les paramètres de votre navigateur." },
+      { t: "Propriété intellectuelle", c: "L'ensemble du contenu (textes, visuels, structure) est protégé par le droit d'auteur. Toute reproduction, représentation ou exploitation non autorisée est interdite." },
+      { t: "Limitation de responsabilité", c: "Les informations (prix, estimations de réparation, verdicts) sont fournies à titre indicatif. Compare. ne garantit pas leur exactitude ni leur exhaustivité. Les prix peuvent varier selon les marchands et le moment. Nous déclinons toute responsabilité quant aux achats effectués auprès des partenaires ou à la qualité des réparations réalisées par des tiers." },
+      { t: "Liens hypertextes", c: "Le site peut contenir des liens vers des sites externes. Compare. n'exerce aucun contrôle sur ces sites et décline toute responsabilité quant à leur contenu." },
+    ].map((s, i) => <div key={i} style={{ marginBottom: 20 }}><h3 style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 6 }}>{s.t}</h3><p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.7 }}>{s.c}</p></div>)}
+    <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 24 }}>Dernière mise à jour : février 2025</p>
   </div>;
 }
 

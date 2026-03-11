@@ -11,3 +11,4 @@ Logos officiels des partenaires affiliés (PNG).
 - backmarket.png
 - spareka.png
 - rakuten.png
+- rueducommerce.png

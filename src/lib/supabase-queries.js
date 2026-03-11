@@ -75,6 +75,36 @@ export async function getOffersForNeuf(productSlug) {
   return { data: sorted, error: null };
 }
 
+/**
+ * Récupère les offres "occasion/reconditionné" pour un produit.
+ * Filtre sur condition = refurbished, occasion, occ, etc.
+ */
+export async function getOffersForOcc(productSlug) {
+  const supabase = getSupabase();
+  if (!supabase) return { data: [], error: new Error("Supabase non configuré") };
+
+  const { data: product, error: productErr } = await getProductBySlug(productSlug);
+  if (productErr || !product) return { data: [], error: productErr };
+
+  const { data: offers, error } = await supabase
+    .from("offers")
+    .select("*")
+    .eq("product_id", product.id);
+
+  if (error) return { data: [], error };
+
+  const occConditions = ["refurbished", "occasion", "occ", "reconditionné", "reconditionne"];
+  const filtered = (offers ?? []).filter(
+    (o) => {
+      const c = (o.condition ?? o.product_condition ?? "").toLowerCase();
+      return occConditions.some(term => c.includes(term));
+    }
+  );
+  const sorted = [...filtered].sort((a, b) => (Number(a.price_amount) ?? 99999) - (Number(b.price_amount) ?? 99999));
+
+  return { data: sorted, error: null };
+}
+
 /** Récupère tous les assets */
 export async function getProductAssets() {
   const supabase = getSupabase();

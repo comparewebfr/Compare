@@ -3,7 +3,7 @@
  */
 
 import { CATS } from "./data";
-import { OCC_CATS, ISS_TPL, ITEMS, TECH_CATS, RET, CHIP_TO_PRODUCT, PAGES_GENERALES, REPAIRABILITY_ELIGIBLE_CATS, QUALIREPAR_ELIGIBLE_CATS, REPAIRABILITY_INDEX_BY_TYPE, TUTORIAL_STEPS_BY_PRODUCT } from "./data";
+import { OCC_CATS, ISS_TPL, ITEMS, TECH_CATS, RET, CHIP_TO_PRODUCT, PAGES_GENERALES, REPAIRABILITY_ELIGIBLE_CATS, QUALIREPAR_ELIGIBLE_CATS, REPAIRABILITY_INDEX_BY_TYPE, REPAIRABILITY_INDEX_BY_PRODUCT, TUTORIAL_STEPS_BY_PRODUCT } from "./data";
 import * as R from "./routes";
 
 export { slugify } from "./routes";
@@ -146,13 +146,13 @@ export function getAlternatives(item) {
 
 export function getRet(cat, type) {
   const m = OCC_CATS.includes(cat);
-  if (type === "neuf") return RET.neuf.filter(r => m ? ["Amazon", "Castorama", "ManoMano", "Cdiscount", "Darty"].includes(r.n) : ["Amazon", "Fnac", "Darty", "Cdiscount"].includes(r.n));
+  if (type === "neuf") return RET.neuf.filter(r => m ? ["Amazon", "Castorama", "ManoMano", "Cdiscount", "Darty", "Rue du Commerce"].includes(r.n) : ["Amazon", "Fnac", "Darty", "Cdiscount", "Rue du Commerce"].includes(r.n));
   if (type === "occ") {
     const occRets = RET.occ.filter(r => ["Back Market", "Amazon Renewed", "Rakuten", "Cdiscount"].includes(r.n));
     if (OCC_CATS.includes(cat)) return occRets.filter(r => r.n !== "Back Market");
     return occRets;
   }
-  return RET.pcs.filter(r => m ? ["Amazon", "Spareka", "ManoMano", "Castorama"].includes(r.n) : ["Amazon", "Spareka"].includes(r.n));
+  return RET.pcs.filter(r => m ? ["Amazon", "Spareka", "ManoMano", "Castorama", "Rue du Commerce"].includes(r.n) : ["Amazon", "Spareka", "Rue du Commerce"].includes(r.n));
 }
 
 export function buildRetailerUrl(r, item, affType) {
@@ -166,14 +166,17 @@ export function buildRetailerUrl(r, item, affType) {
   if (r.n === "Castorama") return `https://www.castorama.fr/recherche?q=${q}`;
   if (r.n === "ManoMano") return `https://www.manomano.fr/recherche?q=${q}`;
   if (r.n === "Rakuten") return `https://fr.shopping.rakuten.com/search/${q.replace(/ /g, "+")}`;
+  if (r.n === "Rue du Commerce") return `https://www.rueducommerce.fr/recherche/${q.replace(/ /g, "%20")}`;
   if (r.n === "Spareka") return `https://www.spareka.fr/recherche?q=${q}`;
   return `https://www.google.com/search?q=${q}+${r.n}`;
 }
 
 /** URL de recherche pièces détachées (par type de produit + panne) — pour pages générales sans item précis */
 export function buildRetailerUrlForParts(r, productType, panneName) {
-  const q = encodeURIComponent(`pièce ${panneName} ${productType}`.trim());
+  const raw = `pièce ${panneName} ${productType}`.trim();
+  const q = encodeURIComponent(raw);
   if (r.n === "Amazon") return `https://www.amazon.fr/s?k=${q}`;
+  if (r.n === "Rue du Commerce") return `https://www.rueducommerce.fr/recherche/${raw.replace(/ /g, "+")}`;
   if (r.n === "ManoMano") return `https://www.manomano.fr/recherche?q=${q}`;
   if (r.n === "Castorama") return `https://www.castorama.fr/recherche?q=${q}`;
   if (r.n === "Spareka") return `https://www.spareka.fr/recherche?q=${q}`;
@@ -188,7 +191,9 @@ export function isQualiReparEligible(catId) {
   return QUALIREPAR_ELIGIBLE_CATS.includes(catId);
 }
 
-export function getRepairabilityIndex(productType) {
+export function getRepairabilityIndex(productType, item) {
+  const key = item ? `${item.brand}|${item.name}` : null;
+  if (key && REPAIRABILITY_INDEX_BY_PRODUCT[key] != null) return REPAIRABILITY_INDEX_BY_PRODUCT[key];
   return REPAIRABILITY_INDEX_BY_TYPE[productType] ?? null;
 }
 

@@ -710,7 +710,7 @@ export const POPULAR_SEARCHES_IPHONE = [
 ];
 
 /** Marques affiliées uniquement — ne pas inclure les sites sans programme d'affiliation */
-export const AFFILIATED_RETAILERS = ["Amazon", "Cdiscount", "Rakuten", "Fnac", "Darty", "Castorama", "Back Market", "ManoMano", "Spareka"];
+export const AFFILIATED_RETAILERS = ["Amazon", "Cdiscount", "Rakuten", "Fnac", "Darty", "Castorama", "Back Market", "ManoMano", "Spareka", "Rue du Commerce"];
 
 /** Couleur du fond du logo (prolongement visuel, pas la couleur accent) */
 export const LOGO_BG = {
@@ -723,12 +723,14 @@ export const LOGO_BG = {
   "/retailers/backmarket.png": "#1A1A1A",
   "/retailers/rakuten.png": "#B00020",
   "/retailers/spareka.png": "#00B8D9",
+  "/retailers/rueducommerce.png": "#E30613",
 };
 
 export const RET = {
   neuf: [
     { n: "Amazon", t: "Livraison rapide", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.png" },
     { n: "Cdiscount", t: "Prix mini", c: "#00A651", logo: "C", logoUrl: "/retailers/cdiscount.png" },
+    { n: "Rue du Commerce", t: "Tech & électroménager", c: "#E30613", logo: "R", logoUrl: "/retailers/rueducommerce.png" },
     { n: "Fnac", t: "Retrait 1h en magasin", c: "#E4A100", logo: "F", logoUrl: "/retailers/fnac.png" },
     { n: "Darty", t: "Garantie 2 ans", c: "#CE0E2D", logo: "D", logoUrl: "/retailers/darty.png" },
     { n: "Castorama", t: "Bricolage & maison", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.png" },
@@ -743,6 +745,7 @@ export const RET = {
   pcs: [
     { n: "Amazon", t: "Pièces détachées", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.png" },
     { n: "Spareka", t: "Électroménager", c: "#00B8D9", logo: "S", logoUrl: "/retailers/spareka.png" },
+    { n: "Rue du Commerce", t: "Tech & pièces", c: "#E30613", logo: "R", logoUrl: "/retailers/rueducommerce.png" },
     { n: "ManoMano", t: "Pièces & outillage", c: "#00B2A9", logo: "M", logoUrl: "/retailers/manomano.png" },
     { n: "Castorama", t: "Plomberie & bricolage", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.png" },
   ],
@@ -769,6 +772,68 @@ export const REPAIRABILITY_INDEX_BY_TYPE = {
   Smartphone: 6.5, Tablette: 5.8, "PC Portable": 6.2, "PC Bureau": 7.5, "All-in-One": 5.0,
   Téléviseur: 5.5, "Console de salon": 6.0, "Console portable": 5.5, Manette: 7.0,
   "Écouteurs sans fil": 4.5, "Casque audio": 6.5, "Vélo électrique": 6.0, "Montre connectée": 4.0,
+};
+
+/** Indice de réparabilité par modèle (brand|name) — prioritaire sur REPAIRABILITY_INDEX_BY_TYPE quand défini
+ * Sources : indicereparabilite.fr, Apple Support, seb117.fr — voir INDICES_REPARABILITE_SOURCES.md */
+export const REPAIRABILITY_INDEX_BY_PRODUCT = {
+  // Apple iPhone — indicereparabilite.fr, Apple PDF, seb117.fr
+  "Apple|iPhone 16 Pro Max": 8.3,
+  "Apple|iPhone 16 Pro": 8.3,
+  "Apple|iPhone 16": 7.0,
+  "Apple|iPhone 16 Plus": 7.0,
+  "Apple|iPhone 15 Pro Max": 7.7,
+  "Apple|iPhone 15 Pro": 7.6,
+  "Apple|iPhone 15": 7.5,
+  "Apple|iPhone 15 Plus": 7.5,
+  "Apple|iPhone 14 Pro Max": 7.0,
+  "Apple|iPhone 14 Pro": 7.0,
+  "Apple|iPhone 14": 7.0,
+  "Apple|iPhone 14 Plus": 7.0,
+  "Apple|iPhone 13": 6.2,
+  "Apple|iPhone 13 Pro": 6.2,
+  "Apple|iPhone 13 Pro Max": 6.2,
+  "Apple|iPhone 12": 6.0,
+  "Apple|iPhone 11": 4.6,
+  "Apple|iPhone SE 2022": 6.2,
+  "Apple|iPhone XR": 4.5,
+  // Samsung — indicereparabilite.fr, seb117.fr
+  "Samsung|Galaxy S25 Ultra": 8.5,
+  "Samsung|Galaxy S25+": 9.0,
+  "Samsung|Galaxy S25": 8.5,
+  "Samsung|Galaxy S24 Ultra": 8.5,
+  "Samsung|Galaxy S24": 8.5,
+  "Samsung|Galaxy S23": 8.2,
+  "Samsung|Galaxy S22": 8.2,
+  "Samsung|Galaxy A55": 8.5,
+  "Samsung|Galaxy A54": 8.4,
+  "Samsung|Galaxy A35": 8.0,
+  "Samsung|Galaxy A25": 7.5,
+  "Samsung|Galaxy A15": 7.0,
+  "Samsung|Galaxy Z Flip 6": 8.0,
+  "Samsung|Galaxy Z Fold 6": 6.5,
+  // Google — seb117.fr, Charlestech
+  "Google|Pixel 9 Pro XL": 8.2,
+  "Google|Pixel 9 Pro": 8.2,
+  "Google|Pixel 9": 8.2,
+  "Google|Pixel 8 Pro": 8.2,
+  "Google|Pixel 8a": 8.2,
+  "Google|Pixel 8": 8.2,
+  // Apple MacBook — Apple Support PDF
+  "Apple|MacBook Air M3 15\"": 6.5,
+  "Apple|MacBook Air M3 13\"": 6.5,
+  "Apple|MacBook Air M2": 6.5,
+  "Apple|MacBook Air M1": 6.2,
+  "Apple|MacBook Pro 16\" M3 Max": 6.5,
+  "Apple|MacBook Pro 14\" M3 Pro": 6.5,
+  "Apple|MacBook Pro 14\" M3": 6.5,
+  // Apple iPad — indicereparabilite (tablettes)
+  "Apple|iPad Pro M4 13\"": 6.0,
+  "Apple|iPad Pro M4 11\"": 6.0,
+  "Apple|iPad Air M2": 6.0,
+  "Apple|iPad 10e gen.": 5.8,
+  "Apple|iPad Mini 7": 6.0,
+  "Apple|iPad 9e gen.": 5.5,
 };
 
 /** Étapes de tutoriel adaptées par type de produit (eau = couper eau si applicable) */
