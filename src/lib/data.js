@@ -344,7 +344,7 @@ export const RAW = {
 export const ISS_TPL = {
   Smartphone: [
     { n: "Écran cassé", rn: .08, rx: .22, d: "moyen", t: "1-2h", pr: .4, td: 3, yt: "remplacement écran", ix: "screen" },
-    { n: "Batterie usée", rn: .04, rx: .08, d: "facile", t: "30min", pr: .35, td: 2, yt: "changement batterie", ix: "battery" },
+    { n: "Batterie usée", rn: .04, rx: .08, d: "moyen", t: "30min", pr: .35, td: 2, yt: "changement batterie", ix: "battery" },
     { n: "Caméra arrière HS", rn: .05, rx: .13, d: "moyen", t: "1h", pr: .45, td: 3, yt: "remplacement caméra", ix: "camera" },
     { n: "Caméra avant / Face ID", rn: .04, rx: .10, d: "difficile", t: "1-2h", pr: .4, td: 4, yt: "caméra avant réparation", ix: "front-camera" },
     { n: "Connecteur de charge", rn: .04, rx: .09, d: "moyen", t: "1h", pr: .3, td: 3, yt: "port de charge réparation", ix: "charging-port" },
@@ -962,7 +962,7 @@ export const WHEN_REPAIR_SPEC = {
     remplacer: "Tablette de plus de 6 ans, écran trop cher à remplacer, ou panne de carte mère : le reconditionné (iPad, Galaxy Tab) offre une alternative crédible. Les tablettes se renouvellent moins vite que les smartphones.",
   },
   "PC Portable": {
-    reparer: "Batterie qui tient plus, clavier qui double des touches, ventilateur bruyant, SSD lent ? Ces pannes sont souvent réparables en DIY ou chez un réparateur. Les composants (RAM, disque) sont modulaires sur la plupart des portables. Pertinent si l'appareil a moins de 6 ans et que la panne est ciblée.",
+    reparer: "Batterie qui tient plus, clavier qui double des touches, ventilateur bruyant, SSD lent ? Ces pannes sont souvent réparables en réparation autonome ou chez un réparateur. Les composants (RAM, disque) sont modulaires sur la plupart des portables. Pertinent si l'appareil a moins de 6 ans et que la panne est ciblée.",
     remplacer: "Carte mère HS, écran cassé sur un modèle ancien, ou portable de plus de 7 ans : le reconditionné pro (ThinkPad, Latitude, MacBook) offre un bon rapport qualité/prix. Les pièces d'occasion circulent aussi.",
   },
   "PC Bureau": {
@@ -998,7 +998,7 @@ export const WHEN_REPAIR_SPEC = {
     remplacer: "Driver HS, carte Bluetooth défaillante : là, la réparation devient compliquée. Le reconditionné est courant pour les casques premium (Sony, Bose, Sennheiser).",
   },
   "Vélo électrique": {
-    reparer: "Batterie qui tient moins, freins à régler, pneu crevé, chaîne usée ? Tout ce qui n'est pas batterie ou moteur se répare souvent en DIY ou chez un vélociste. La batterie se change si le coût reste raisonnable — les modèles récents ont des packs plus abordables.",
+    reparer: "Batterie qui tient moins, freins à régler, pneu crevé, chaîne usée ? Tout ce qui n'est pas batterie ou moteur se répare souvent en réparation autonome ou chez un vélociste. La batterie se change si le coût reste raisonnable — les modèles récents ont des packs plus abordables.",
     remplacer: "Moteur HS ou batterie à remplacer pour un coût proche du neuf : le VAE d'occasion peut être une alternative. Les vélos électriques se revendent — un modèle récent d'occasion avec batterie garantie peut tenir la route.",
   },
   "Montre connectée": {

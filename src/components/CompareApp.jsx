@@ -45,6 +45,7 @@ function Icon({ name, s = 18, color = "#111", style = {} }) {
     case "clock": return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 7v6l4 2" /></svg>;
     case "warn": return <svg {...common}><path d="M12 3 2 21h20z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>;
     case "info": return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 10v6" /><path d="M12 7h.01" /></svg>;
+    case "help": return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>;
     case "shield": return <svg {...common}><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6z" /></svg>;
     case "search": return <svg {...common}><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></svg>;
     case "calendar": return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M3 11h18" /></svg>;
@@ -689,7 +690,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
                     <div style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{econRepLabel}</div>
                     {activeIssues.length > 0 && <>
                       <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {tPart} €</div>
-                      <div style={{ fontSize: 11, color: "#6B7280" }}>Temps DIY : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
+                      <div style={{ fontSize: 11, color: "#6B7280" }}>Temps (réparation autonome) : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
                     </>}
                     <div style={{ fontSize: 11, color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : "#6B7280" }}>Difficulté : {diffLabel}</div>
                   </div>
@@ -719,7 +720,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
               { l: "Prix", r: priceRep, o: `~${recon} €`, n: priceNeuf, bold: true },
               { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
               { l: "Pièce seule", r: activeIssues.length ? `${tPart} €` : "—", o: "—", n: "—" },
-              { l: "Temps (DIY)", r: activeIssues.length ? (timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis") : "—", o: "—", n: "—" },
+              { l: "Temps (réparation autonome)", r: activeIssues.length ? (timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis") : "—", o: "—", n: "—" },
               { l: "Difficulté", r: diffLabel, o: "—", n: "—", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
               { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
             ];
@@ -1332,6 +1333,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const [reviews, setReviews] = useState([]);
   const [minNeufPrice, setMinNeufPrice] = useState(null);
   const [minOccPrice, setMinOccPrice] = useState(null);
+  const [deviceUsé, setDeviceUsé] = useState(null);
+  const [isBricoleur, setIsBricoleur] = useState(null);
   const cat = item ? CATS.find(c => c.id === item.category) : null;
   const sl = item ? shLabel(item.category) : "Reconditionné";
 
@@ -1340,6 +1343,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
     setSelIssue(initialIssueId ?? iss[0]?.id);
     setCumul(false); setSelMulti([]); setPlace(""); setReviews([]); setReviewText("");
   }, [itemId, initialIssueId]);
+  useEffect(() => { setDeviceUsé(null); setIsBricoleur(null); }, [itemId]);
 
   // Charger les prix min des offres affiliées (neuf + occasion) pour affichage
   useEffect(() => {
@@ -1365,7 +1369,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const reconFallback = activeIssues[0]?.reconPrice || Math.round(item.priceNew * .6);
   const recon = minOccPrice != null ? minOccPrice : reconFallback;
   const neufDisplay = minNeufPrice != null ? minNeufPrice : item.priceNew;
-  const v = activeIssues.length ? getVerdict(activeIssues, item) : null;
+  const v = activeIssues.length ? getVerdict(activeIssues, item, { deviceUsé: deviceUsé === true, isBricoleur: isBricoleur === true, priceNeufOverride: minNeufPrice ?? undefined, priceOccOverride: minOccPrice ?? undefined }) : null;
   const timeInfo = getCumulTimeInfo(activeIssues);
   const alts = item ? getAlternatives(item) : null;
   const bestNewer = alts?.newer?.[0] || null;
@@ -1410,6 +1414,44 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             })}
           </div>
           {cumul && selMulti.length > 1 && <p style={{ fontSize: 12, color: ACCENT, fontWeight: 600, marginTop: 10 }}>{selMulti.length} problèmes sélectionnés — coûts cumulés</p>}
+
+          {/* Bloc diagnostic — intégré, cliquable, sélection persistante, impact visible */}
+          <div style={{ marginTop: 18, paddingTop: 18, borderTop: "2px dashed #E2E8F0", display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 36, height: 36, borderRadius: 10, background: ACCENT + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Icon name="help" s={18} color={ACCENT} />
+                </span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#111" }}>Affinez votre diagnostic</div>
+                  <div style={{ fontSize: 11, color: "#64748B", marginTop: 1 }}>Cliquez sur vos réponses — elles modifient la recommandation ci-dessous</div>
+                </div>
+              </div>
+              {(deviceUsé !== null || isBricoleur !== null) && (
+                <span style={{ padding: "4px 10px", borderRadius: 6, background: GREEN + "15", color: GREEN, fontSize: 11, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  ✓ Pris en compte
+                </span>
+              )}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#334155", marginBottom: 6 }}>Appareil usé ou ≥ 5 ans ?</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {[{ v: true, l: "Oui" }, { v: false, l: "Non" }].map(o => (
+                    <button key={String(o.v)} type="button" onClick={() => setDeviceUsé(o.v)} style={{ padding: "8px 14px", borderRadius: 8, border: deviceUsé === o.v ? `2px solid ${ACCENT}` : "1.5px solid #CBD5E1", background: deviceUsé === o.v ? ACCENT + "18" : "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: F, color: deviceUsé === o.v ? "#B45309" : "#64748B", transition: "all .15s ease" }}>{o.l}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#334155", marginBottom: 6 }}>À l'aise avec le bricolage ?</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {[{ v: true, l: "Oui" }, { v: false, l: "Non" }].map(o => (
+                    <button key={String(o.v)} type="button" onClick={() => setIsBricoleur(o.v)} style={{ padding: "8px 14px", borderRadius: 8, border: isBricoleur === o.v ? `2px solid ${ACCENT}` : "1.5px solid #CBD5E1", background: isBricoleur === o.v ? ACCENT + "18" : "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: F, color: isBricoleur === o.v ? "#B45309" : "#64748B", transition: "all .15s ease" }}>{o.l}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1425,21 +1467,39 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               <Icon name={v.icon} s={28} color={v.color} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: v.color, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 4 }}>Notre recommandation</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: v.color, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 4 }}>Avis expert — {item.productType}</div>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: "0 0 8px", lineHeight: 1.2 }}>{v.label}</h2>
               <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 8, background: v.color + "18", color: v.color, fontSize: 13, fontWeight: 800 }}>{v.pertinence}</div>
             </div>
           </div>
           <p style={{ fontSize: 15, color: "#374151", lineHeight: 1.7, margin: 0, position: "relative" }}>{v.why}</p>
+          {v.v === "reparer" && (
+            <div style={{ marginTop: 16, padding: "12px 16px", background: "#F0FDF4", borderRadius: 10, border: "1px solid #86EFAC", display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#166534", marginBottom: 4 }}>Deux façons de réparer</div>
+              <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>
+                {v.repairMode === "autonome" ? (
+                  <>
+                    <strong>Réparation autonome</strong> — Acheter la pièce et faire soi-même (tutoriels vidéo). Économie maximale. Recommandé si vous êtes à l'aise avec le démontage.<br />
+                    <strong>Réparateur professionnel</strong> — Confier à un pro (QualiRépar = aide État 10–45 € déduite). Plus sûr pour les pannes délicates.
+                  </>
+                ) : (
+                  <>
+                    <strong>Réparateur professionnel</strong> — Confier à un pro (QualiRépar = aide État 10–45 € déduite). Recommandé pour plus de sécurité.<br />
+                    <strong>Réparation autonome</strong> — Acheter la pièce et faire soi-même (tutoriels vidéo). Économie maximale, mais déconseillé sans expérience.
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 3 options — mobile only (sidebar visible sur desktop) */}
         <div className="show-mobile" style={{ flexDirection: "column", gap: 8, marginBottom: 16 }}>
           {(() => {
             const repairFeas = v.repairFeasibility || "facile";
-            const repairSub = repairFeas === "peu_realiste" ? "Pro recommandé" : repairFeas === "technique" ? "Technique" : "pièces + main d'œuvre";
-            const repairBtn = repairFeas === "peu_realiste" ? "Alternative" : repairFeas === "technique" ? "Réparation →" : "Réparer →";
-            const repairTop = v.v === "reparer" && repairFeas === "facile";
+            const repairSub = repairFeas === "peu_realiste" ? "Réparateur pro" : repairFeas === "technique" ? (v.repairMode === "autonome" ? "Réparation autonome ou pro" : "Réparateur pro") : "pièces + main d'œuvre";
+            const repairBtn = repairFeas === "peu_realiste" ? "Options pro →" : repairFeas === "technique" ? (v.repairMode === "autonome" ? "Réparer (autonome ou pro) →" : "Réparer chez un pro →") : "Réparer →";
+            const repairTop = v.v === "reparer";
             return <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
               {[
                 { top: repairTop, color: GREEN, label: "Réparer", price: `${tMin}–${tMax} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
@@ -1460,7 +1520,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           })()}
         </div>
 
-        {/* Réparer / Remplacer / DIY — détaillé, personnalisé par produit (maison + tech) */}
+        {/* Réparer / Remplacer / réparation autonome — détaillé, personnalisé par produit (maison + tech) */}
         <details style={{ marginBottom: 16, background: "#FAFBFC", borderRadius: 10, border: "1px solid #E8E6E1", overflow: "hidden" }}>
           <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#374151", listStyle: "none" }}>Quand réparer, remplacer ou faire soi-même ?</summary>
           <div style={{ padding: "0 16px 16px" }}>
@@ -1501,7 +1561,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                   ? `Possible, sous conditions. La réparation « ${panneNames} » est indiquée comme facile — un tutoriel vidéo peut vous guider. ${multiProbs ? `Avec plusieurs pannes, le cumul des interventions augmente le risque d'erreur. ` : ""}À tenter uniquement si vous êtes à l'aise ; sinon, un pro ou le ${sl.toLowerCase()} reste plus sûr.`
                   : v?.repairFeasibility === "technique"
                   ? `Déconseillé sans expérience. La réparation « ${panneNames} » sur ce ${item.brand} ${item.name} est technique : démontage délicat, outillage spécifique, risque de casser des connecteurs. Beaucoup de particuliers échouent. En pratique, passer par un réparateur ou remplacer est souvent plus rentable.`
-                  : `Non, pas de façon réaliste. Sans outillage et compétences pro, vous risquez d'endommager définitivement votre ${item.brand} ${item.name}. Ne tentez pas le DIY : privilégiez un réparateur agréé ou le remplacement (${sl.toLowerCase()} / neuf).`}
+                  : `Non, pas de façon réaliste. Sans outillage et compétences pro, vous risquez d'endommager définitivement votre ${item.brand} ${item.name}. Ne tentez pas la réparation autonome : privilégiez un réparateur agréé ou le remplacement (${sl.toLowerCase()} / neuf).`}
               </p>
             </div>
           </>;
@@ -1571,7 +1631,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                     <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{tMin}–{tMax} €</div>
                     <div style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{econRepLabel}</div>
                     <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {tPart} €</div>
-                    <div style={{ fontSize: 11, color: "#6B7280" }}>Temps DIY : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>Temps (réparation autonome) : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
                     <div style={{ fontSize: 11, color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : "#6B7280" }}>Difficulté : {diffLabel}</div>
                   </div>
                   <div style={{ background: v.v === "remplacer" ? AMBER + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v.v === "remplacer" ? `2px solid ${AMBER}` : "1px solid #E2E8F0" }}>
@@ -1600,7 +1660,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               { l: "Prix", r: `${tMin}–${tMax} €`, o: minOccPrice != null ? `${recon} €` : `~${recon} €`, n: `${neuf} €`, bold: true },
               { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
               { l: "Pièce seule", r: `${tPart} €`, o: "—", n: "—" },
-              { l: "Temps (DIY)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis", o: "—", n: "—" },
+              { l: "Temps (réparation autonome)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis", o: "—", n: "—" },
               { l: "Difficulté", r: diffLabel, o: "—", n: "—", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
               { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
             ];
@@ -1857,15 +1917,15 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
         <div style={{ position: "sticky", top: 24, display: "flex", flexDirection: "column", gap: 12 }} className="hide-mobile">
           {(() => {
             const repairFeas = v.repairFeasibility || "facile";
-            const repairSub = repairFeas === "peu_realiste" ? "Intervention pro recommandée" : repairFeas === "technique" ? "À envisager si équipé" : "pièces + main d'œuvre";
-            const repairBtn = repairFeas === "peu_realiste" ? "Alternative plus simple" : repairFeas === "technique" ? "Réparation technique →" : "Options réparation →";
-            const repairTop = v.v === "reparer" && repairFeas === "facile";
+            const repairSub = repairFeas === "peu_realiste" ? "Réparateur pro" : repairFeas === "technique" ? (v.repairMode === "autonome" ? "Réparation autonome ou pro" : "Réparateur pro") : "pièces + main d'œuvre";
+            const repairBtn = repairFeas === "peu_realiste" ? "Options pro →" : repairFeas === "technique" ? (v.repairMode === "autonome" ? "Réparer (autonome ou pro) →" : "Réparer chez un pro →") : "Options réparation →";
+            const repairTop = v.v === "reparer";
             return <>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
                   { top: repairTop, color: GREEN, label: "Réparer", price: `${tMin}–${tMax} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
                   { top: v.v === "remplacer" && TECH_CATS.includes(item.category), color: AMBER, label: sl, price: `~${recon} €`, sub: TECH_CATS.includes(item.category) ? "Très en vogue (tech)" : "garanti 12 mois", btn: `Voir ${sl.toLowerCase()} →`, aff: "occ" },
-                  { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: `${item.priceNew} €`, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer prix neuf →", aff: "neuf" },
+                  { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: `${neufDisplay} €`, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer prix neuf →", aff: "neuf" },
                 ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: activeIssues, affType: o.aff, alts })} className="card-hover" style={{
                   background: "#fff", border: o.top ? `2px solid ${o.color}` : "1px solid #E5E3DE",
                   borderRadius: 12, padding: 14, cursor: "pointer", position: "relative",
@@ -1882,7 +1942,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
-                  { icon: "money", label: "Économie vs neuf", value: v.v === "reparer" ? `${Math.max(0, item.priceNew - tMax)} €` : v.v === "remplacer" ? `${item.priceNew - recon} € (${sl})` : "—", color: v.v === "reparer" ? GREEN : v.v === "remplacer" ? AMBER : "#999" },
+                  { icon: "money", label: "Économie vs neuf", value: v.v === "reparer" ? `${Math.max(0, neufDisplay - tMax)} €` : v.v === "remplacer" ? `${neufDisplay - recon} € (${sl})` : "—", color: v.v === "reparer" ? GREEN : v.v === "remplacer" ? AMBER : "#999" },
                   { icon: "tool", label: "Difficulté", value: activeIssues.some(i => i.diff === "difficile") ? "Difficile" : activeIssues.some(i => i.diff === "moyen") ? "Moyenne" : "Facile", color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : activeIssues.some(i => i.diff === "moyen") ? AMBER : GREEN },
                   (() => {
                     const idx = isRepairabilityEligible(item.category) ? getRepairabilityIndex(item.productType, item) : null;
@@ -1907,7 +1967,9 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               </div>
               <details style={{ background: "#fff", borderRadius: 6, border: "1px solid #E0DDD5", overflow: "hidden" }}>
                 <summary style={{ padding: "8px 10px", cursor: "pointer", fontWeight: 600, fontSize: 11, color: "#6B7280", listStyle: "none" }}>Méthodologie</summary>
-                <p style={{ padding: "8px 10px", fontSize: 10, color: "#6B7280", lineHeight: 1.5, margin: 0, borderTop: "1px solid #E0DDD5" }}>{repairEst?.explanation ?? "Estimation à partir du prix neuf, des ratios par type de panne et de la difficulté. Variation locale ±15–25 %."}</p>
+                <p style={{ padding: "8px 10px", fontSize: 10, color: "#6B7280", lineHeight: 1.6, margin: 0, borderTop: "1px solid #E0DDD5" }}>
+                  Nous comparons le coût estimé de la réparation au prix du neuf et du reconditionné. Si la réparation reste nettement moins chère, nous la recommandons. Si le coût s’approche du prix d’un appareil de remplacement, nous conseillons plutôt de remplacer. Nous tenons compte de la difficulté de la panne (certaines se font soi-même avec un tutoriel, d’autres nécessitent un pro), du nombre de pannes cumulées, et de l’âge ou de l’état d’usure de l’appareil que vous indiquez. Les estimations de coût sont indicatives et varient selon les réparateurs et les régions — un devis reste la référence.
+                </p>
               </details>
             </>;
           })()}
@@ -2157,7 +2219,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
         </h2>
         <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 14 }}>
           {isPcs
-            ? `Comparez les prix pour réparer votre ${item.brand} ${item.name}. Cliquez sur une offre pour accéder directement au site partenaire.`
+            ? `Deux options : réparation autonome (acheter la pièce et faire soi-même) ou confier à un réparateur professionnel. Comparez les offres pièces ci-dessous, ou trouvez un réparateur près de chez vous.`
             : isNeuf
             ? `Les meilleures offres pour acheter ${item.brand} ${item.name} neuf. Livraison rapide, garantie fabricant.`
             : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
@@ -2483,7 +2545,7 @@ function AdvantagesPage({ onNav }) {
         { icon: "money", title: "Économies réelles", desc: "Une réparation coûte souvent 50 à 200 € — bien moins qu’un remplacement (400 à 1000 € pour un smartphone ou un lave-linge). Vous gardez un appareil fonctionnel sans vous ruiner." },
         { icon: "clock", title: "Durée de vie prolongée", desc: "Un appareil bien réparé peut tenir encore plusieurs années. Vous maximisez votre investissement initial au lieu de racheter trop tôt." },
         { icon: "shield", title: "Bonus QualiRépar", desc: "L’État déduit 10 à 45 € directement chez un réparateur labellisé. Aucune démarche — la réduction s’applique sur la facture." },
-        { icon: "tool", title: "Apprendre en faisant", desc: "Beaucoup de pannes (batterie, joint, filtre) se réparent en DIY avec un tutoriel. Une compétence utile pour la suite." },
+        { icon: "tool", title: "Apprendre en faisant", desc: "Beaucoup de pannes (batterie, joint, filtre) se réparent en réparation autonome avec un tutoriel. Une compétence utile pour la suite." },
       ].map((a, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
         <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
           <Icon name={a.icon} s={18} color={ACCENT} />
@@ -2585,7 +2647,7 @@ function RepairGuidePage({ onNav }) {
       {[
         { icon: "money", title: "Le coût de réparation", desc: "Comparez le devis à la valeur d'un appareil neuf ou reconditionné. Une réparation peu coûteuse (pièce d'usure, panne courante) reste presque toujours rentable. Quand le devis s'approche du prix du neuf, le remplacement devient plus logique." },
         { icon: "calendar", title: "L'âge de l'appareil", desc: "Un appareil récent a encore une longue durée de vie devant lui — la réparation maximise votre investissement. Au-delà de 7 à 10 ans, les pièces se raréfient et les modèles récents offrent souvent plus de performance ou d'économies d'énergie." },
-        { icon: "tool", title: "La difficulté technique", desc: "Batterie, filtre, joint : ces pannes sont souvent réparables en DIY avec un tutoriel. Les interventions plus lourdes (carte électronique, démontage complexe) demandent un professionnel — pensez au bonus QualiRépar." },
+        { icon: "tool", title: "La difficulté technique", desc: "Batterie, filtre, joint : ces pannes sont souvent réparables en réparation autonome avec un tutoriel. Les interventions plus lourdes (carte électronique, démontage complexe) demandent un professionnel — pensez au bonus QualiRépar." },
         { icon: "leaf", title: "L'impact écologique", desc: "Chaque appareil réparé, c'est un appareil de moins à produire et à recycler. Réparer un smartphone évite environ 70 kg de CO₂ ; un lave-linge, ~200 kg. L'impact est concret, sans être miraculeux." },
       ].map((c, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
         <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>

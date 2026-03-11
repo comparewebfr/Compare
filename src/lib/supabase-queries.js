@@ -44,7 +44,29 @@ export async function getProductBySlug(slug) {
   if (bySlug) return { data: bySlug, error: null };
   if (e1) return { data: null, error: e1 };
   const { data: byProductSlug } = await supabase.from("products").select("*").eq("product_slug", slug).maybeSingle();
-  return { data: byProductSlug, error: null };
+  if (byProductSlug) return { data: byProductSlug, error: null };
+  const slugLower = (slug || "").toLowerCase();
+  const variants = [slugLower, slugLower.replace(/-/g, "_"), slugLower.replace(/-/g, " ")];
+  for (const v of variants) {
+    if (!v) continue;
+    const { data: d1 } = await supabase.from("products").select("*").eq("slug", v).maybeSingle();
+    if (d1) return { data: d1, error: null };
+    const { data: d2 } = await supabase.from("products").select("*").eq("product_slug", v).maybeSingle();
+    if (d2) return { data: d2, error: null };
+  }
+  const { data: all } = await supabase.from("products").select("id, slug, product_slug");
+  if (all?.length) {
+    const slugNorm = slugLower.replace(/[-_\s]/g, "");
+    const match = all.find((p) => {
+      const s = ((p.slug || p.product_slug) || "").toLowerCase().replace(/[-_\s]/g, "");
+      return s === slugNorm || (s.length >= 5 && slugNorm.length >= 5 && (s.includes(slugNorm) || slugNorm.includes(s)));
+    });
+    if (match) {
+      const { data: full } = await supabase.from("products").select("*").eq("id", match.id).single();
+      return { data: full, error: null };
+    }
+  }
+  return { data: null, error: null };
 }
 
 /**
