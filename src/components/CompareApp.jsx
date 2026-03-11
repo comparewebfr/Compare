@@ -19,7 +19,7 @@ import { PRODUCT_TYPE_IMAGES } from "../data/product-type-images";
 import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
-import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
+import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
 import { getOffersForNeuf, getOffersForOcc } from "../lib/supabase-queries";
 import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
@@ -679,6 +679,11 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
                     <span style={{ fontSize: 12, color: bestChoiceBanner.color, fontWeight: 600 }}>{bestChoiceBanner.econ}</span>
                   </div>
                 )}
+                {v?.v === "reparer" && isQualiReparEligible(catId) && (
+                  <div style={{ marginBottom: 12, padding: "10px 14px", background: AMBER + "08", borderRadius: 8, border: "1px solid " + AMBER + "30", fontSize: 12, color: "#374151", lineHeight: 1.5 }}>
+                    <strong style={{ color: "#B45309" }}>Bonus QualiRépar</strong> — Chez un réparateur labellisé, vous économisez {getQualiReparBonus(productType) ?? "15 à 60"} € (aide de l'État déduite sur la facture).
+                  </div>
+                )}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ background: v?.v === "reparer" ? GREEN + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v?.v === "reparer" ? `2px solid ${GREEN}` : "1px solid #E2E8F0" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -731,6 +736,11 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
                   <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
                   <span style={{ fontWeight: 700, fontSize: 13, color: "#111" }}>Meilleur rapport : {bestChoiceBanner.label}</span>
                   <span style={{ fontSize: 12, color: bestChoiceBanner.color, fontWeight: 600 }}>{bestChoiceBanner.econ}</span>
+                </div>
+              )}
+              {v?.v === "reparer" && isQualiReparEligible(catId) && (
+                <div style={{ marginBottom: 10, padding: "10px 14px", background: AMBER + "08", borderRadius: 8, border: "1px solid " + AMBER + "30", fontSize: 12, color: "#374151", lineHeight: 1.5 }}>
+                  <strong style={{ color: "#B45309" }}>Bonus QualiRépar</strong> — Chez un réparateur labellisé, vous économisez {getQualiReparBonus(productType) ?? "15 à 60"} € (aide de l'État déduite sur la facture).
                 </div>
               )}
               <div className="table-compare-scroll" style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", overflow: "hidden" }}>
@@ -849,21 +859,29 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
                 </div>
               </div>
             )}
-            {isQualiReparEligible(catId) && (
-              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>10–45 €</span>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Bonus QualiRépar</div>
-                    <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
-                      Aide de l'État déduite automatiquement chez un réparateur labellisé. Si votre {typeLower} est éligible, la réduction s'applique sans démarche.
-                    </p>
+            {isQualiReparEligible(catId) && (() => {
+              const bonus = getQualiReparBonus(productType);
+              const bonusLabel = bonus != null ? `${bonus} €` : "15–60 €";
+              return (
+                <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>{bonusLabel}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "#B45309", marginTop: 2 }}>économisés</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Aide de l'État — Bonus QualiRépar</div>
+                      <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 10px 0" }}>
+                        {bonus != null ? `Vous économisez ${bonus} €` : "Jusqu'à 60 € d'économie"} sur la réparation chez un réparateur labellisé. Réduction appliquée sur la facture, aucune démarche.
+                      </p>
+                      <a href={QUALUREPAR_ANNUAIRE_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 700, color: AMBER, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        Trouver un réparateur labellisé →
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
@@ -886,7 +904,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
         {[
           { q: `Combien coûte la réparation d'un ${typeLower} ?`, a: `Les tarifs varient selon la panne : de ${fallbackIssues.reduce((m,i) => Math.min(m,i.repairMin),999)}€ à ${fallbackIssues.reduce((m,i) => Math.max(m,i.repairMax),0)}€ (pièces + main d’œuvre). La panne « ${fallbackIssues[0]?.name} » revient en général à ${fallbackIssues[0]?.repairMin}–${fallbackIssues[0]?.repairMax}€. Demandez un devis pour confirmer.` },
             { q: `Vaut-il mieux réparer ou remplacer un ${typeLower} ?`, a: `Tout dépend de la panne et de l’âge de l’appareil. Une réparation peu coûteuse (pièce d’usure, panne courante) reste souvent le meilleur choix. Si le devis s’approche du prix d’un neuf ou si l’appareil a plus de 10 ans, le remplacement devient plus logique. Utilisez notre comparateur pour voir les trois options côte à côte.` },
-            { q: `Peut-on réparer un ${typeLower} soi-même ?`, a: `Les pannes notées « Facile » sont accessibles avec un tutoriel vidéo. Pour les interventions « Difficile » ou nécessitant un pro, confiez l’appareil à un réparateur agréé — le bonus QualiRépar (10 à 45 €) s’applique automatiquement chez un labellisé.` },
+            { q: `Peut-on réparer un ${typeLower} soi-même ?`, a: `Les pannes notées « Facile » sont accessibles avec un tutoriel vidéo. Pour les interventions « Difficile » ou nécessitant un pro, confiez l’appareil à un réparateur agréé — le bonus QualiRépar (15 à 60 €) s’applique automatiquement chez un labellisé.` },
             { q: `Où trouver les pièces détachées ?`, a: "Spareka, Amazon, ManoMano et Rue du Commerce proposent des pièces pour l’électroménager et la tech. Vérifiez la référence exacte de votre modèle avant d’acheter. Comparez les prix entre enseignes." },
           ].map((f, i) => (
             <details key={i} style={{ background: "#fff", borderRadius: 6, marginBottom: 4, border: "1px solid #E0DDD5" }}>
@@ -1137,21 +1155,29 @@ function RepairPage({ catId, productType, onNav }) {
                 </div>
               </div>
             )}
-            {isQualiReparEligible(catId) && (
-              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>10–45 €</span>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Bonus QualiRépar</div>
-                    <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
-                      Aide de l'État déduite automatiquement chez un réparateur labellisé. Si votre {typeLower} est éligible, la réduction s'applique sans démarche.
-                    </p>
+            {isQualiReparEligible(catId) && (() => {
+              const bonus = getQualiReparBonus(productType);
+              const bonusLabel = bonus != null ? `${bonus} €` : "15–60 €";
+              return (
+                <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>{bonusLabel}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "#B45309", marginTop: 2 }}>économisés</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Aide de l'État — Bonus QualiRépar</div>
+                      <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 10px 0" }}>
+                        {bonus != null ? `Vous économisez ${bonus} €` : "Jusqu'à 60 € d'économie"} sur la réparation chez un réparateur labellisé. Réduction appliquée sur la facture, aucune démarche.
+                      </p>
+                      <a href={QUALUREPAR_ANNUAIRE_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 700, color: AMBER, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        Trouver un réparateur labellisé →
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
       </div>
@@ -1474,22 +1500,29 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           </div>
           <p style={{ fontSize: 15, color: "#374151", lineHeight: 1.7, margin: 0, position: "relative" }}>{v.why}</p>
           {v.v === "reparer" && (
-            <div style={{ marginTop: 16, padding: "12px 16px", background: "#F0FDF4", borderRadius: 10, border: "1px solid #86EFAC", display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#166534", marginBottom: 4 }}>Deux façons de réparer</div>
-              <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>
-                {v.repairMode === "autonome" ? (
-                  <>
-                    <strong>Réparation autonome</strong> — Acheter la pièce et faire soi-même (tutoriels vidéo). Économie maximale. Recommandé si vous êtes à l'aise avec le démontage.<br />
-                    <strong>Réparateur professionnel</strong> — Confier à un pro (QualiRépar = aide État 10–45 € déduite). Plus sûr pour les pannes délicates.
-                  </>
-                ) : (
-                  <>
-                    <strong>Réparateur professionnel</strong> — Confier à un pro (QualiRépar = aide État 10–45 € déduite). Recommandé pour plus de sécurité.<br />
-                    <strong>Réparation autonome</strong> — Acheter la pièce et faire soi-même (tutoriels vidéo). Économie maximale, mais déconseillé sans expérience.
-                  </>
-                )}
+            <>
+              <div style={{ marginTop: 16, padding: "12px 16px", background: "#F0FDF4", borderRadius: 10, border: "1px solid #86EFAC", display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#166534", marginBottom: 4 }}>Deux façons de réparer</div>
+                <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>
+                  {v.repairMode === "autonome" ? (
+                    <>
+                      <strong>Réparation autonome</strong> — Acheter la pièce et faire soi-même (tutoriels vidéo). Économie maximale. Recommandé si vous êtes à l'aise avec le démontage.<br />
+                      <strong>Réparateur professionnel</strong> — Confier à un pro (QualiRépar = aide État {getQualiReparBonus(item.productType) ?? "15–60"} € déduite). Plus sûr pour les pannes délicates.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Réparateur professionnel</strong> — Confier à un pro (QualiRépar = aide État {getQualiReparBonus(item.productType) ?? "15–60"} € déduite). Recommandé pour plus de sécurité.<br />
+                      <strong>Réparation autonome</strong> — Acheter la pièce et faire soi-même (tutoriels vidéo). Économie maximale, mais déconseillé sans expérience.
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+              {isQualiReparEligible(item.category) && (
+                <div style={{ marginTop: 10, padding: "10px 14px", background: AMBER + "08", borderRadius: 8, border: "1px solid " + AMBER + "30", fontSize: 12, color: "#374151", lineHeight: 1.5 }}>
+                  <strong style={{ color: "#B45309" }}>Bonus QualiRépar</strong> — Chez un réparateur labellisé, vous économisez {getQualiReparBonus(item.productType) ?? "15 à 60"} € (aide de l'État déduite sur la facture).
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -1621,6 +1654,11 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                     <span style={{ fontSize: 12, color: bestChoiceBanner.color, fontWeight: 600 }}>{bestChoiceBanner.econ}</span>
                   </div>
                 )}
+                {v.v === "reparer" && isQualiReparEligible(item.category) && (
+                  <div style={{ marginBottom: 12, padding: "10px 14px", background: AMBER + "08", borderRadius: 8, border: "1px solid " + AMBER + "30", fontSize: 12, color: "#374151", lineHeight: 1.5 }}>
+                    <strong style={{ color: "#B45309" }}>Bonus QualiRépar</strong> — Chez un réparateur labellisé, vous économisez {getQualiReparBonus(item.productType) ?? "15 à 60"} € (aide de l'État déduite sur la facture).
+                  </div>
+                )}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ background: v.v === "reparer" ? GREEN + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v.v === "reparer" ? `2px solid ${GREEN}` : "1px solid #E2E8F0" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -1671,6 +1709,11 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                   <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
                   <span style={{ fontWeight: 700, fontSize: 13, color: "#111" }}>Meilleur rapport : {bestChoiceBanner.label}</span>
                   <span style={{ fontSize: 12, color: bestChoiceBanner.color, fontWeight: 600 }}>{bestChoiceBanner.econ}</span>
+                </div>
+              )}
+              {v.v === "reparer" && isQualiReparEligible(item.category) && (
+                <div style={{ marginBottom: 10, padding: "10px 14px", background: AMBER + "08", borderRadius: 8, border: "1px solid " + AMBER + "30", fontSize: 12, color: "#374151", lineHeight: 1.5 }}>
+                  <strong style={{ color: "#B45309" }}>Bonus QualiRépar</strong> — Chez un réparateur labellisé, vous économisez {getQualiReparBonus(item.productType) ?? "15 à 60"} € (aide de l'État déduite sur la facture).
                 </div>
               )}
               <div className="table-compare-scroll" style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", overflow: "hidden" }}>
@@ -1891,7 +1934,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             { q: `Vaut-il mieux réparer ou racheter un ${item.brand} ${item.name} ?`, a: `Cela dépend de la panne. Pour les réparations simples (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "batterie, pièces d’usure"}), la réparation est généralement plus rentable. Au-delà de 40 % du prix neuf (${Math.round(item.priceNew*.4)}€), un modèle ${sl.toLowerCase()} peut être plus avantageux.` },
             { q: `Peut-on réparer un ${item.brand} ${item.name} soi-même ?`, a: `Les réparations notées « Facile » (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "certaines pièces"}) sont accessibles aux débutants avec un tutoriel vidéo YouTube. Les réparations « Difficile » nécessitent un professionnel.` },
             { q: `Où trouver les pièces détachées pour ${item.brand} ${item.name} ?`, a: OCC_CATS.includes(item.category) ? "Les pièces sont disponibles chez Spareka, Castorama, ManoMano et Amazon. Spareka propose aussi des guides de réparation adaptés." : "Les pièces sont disponibles chez Spareka, Amazon et les revendeurs spécialisés. Des tutoriels vidéo YouTube ciblés existent pour de nombreux modèles." },
-            { q: `Le bonus QualiRépar s'applique-t-il au ${item.brand} ${item.name} ?`, a: `Oui. Le bonus QualiRépar (10 à 45 €) est applicable sur la réparation des ${item.productType.toLowerCase()}s chez un réparateur agréé. La réduction est automatique, aucune démarche nécessaire.` },
+            { q: `Le bonus QualiRépar s'applique-t-il au ${item.brand} ${item.name} ?`, a: `Oui. Le bonus QualiRépar (${getQualiReparBonus(item.productType) ?? "15 à 60"} €) est applicable sur la réparation des ${item.productType.toLowerCase()}s chez un réparateur agréé. La réduction est automatique, aucune démarche nécessaire.` },
           ].map((f, i) => <details key={i} style={{ background: "#fff", borderRadius: 6, marginBottom: 4, border: "1px solid #E0DDD5" }}>
             <summary style={{ padding: "10px 14px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#111" }}>{f.q}</summary>
             <p style={{ padding: "0 14px 10px", fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>{f.a}</p>
@@ -2351,21 +2394,29 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               </div>
             </div>
           )}
-          {isQualiReparEligible(item.category) && (
-            <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>10–45 €</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Bonus QualiRépar</div>
-                  <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
-                    Aide de l'État déduite automatiquement chez un réparateur labellisé. Si votre {item.productType.toLowerCase()} est éligible, la réduction s'applique sans démarche.
-                  </p>
+          {isQualiReparEligible(item.category) && (() => {
+            const bonus = getQualiReparBonus(item.productType);
+            const bonusLabel = bonus != null ? `${bonus} €` : "15–60 €";
+            return (
+              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>{bonusLabel}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#B45309", marginTop: 2 }}>économisés</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Aide de l'État — Bonus QualiRépar</div>
+                    <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 10px 0" }}>
+                      {bonus != null ? `Vous économisez ${bonus} €` : "Jusqu'à 60 € d'économie"} sur la réparation chez un réparateur labellisé. Réduction appliquée sur la facture, aucune démarche.
+                    </p>
+                    <a href={QUALUREPAR_ANNUAIRE_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 700, color: AMBER, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      Trouver un réparateur labellisé →
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
@@ -2488,7 +2539,7 @@ function FaqPage({ onNav }) {
   const faqs = [
     { q: "Comment fonctionne Compare. ?", a: "Tapez le nom de votre appareil (iPhone 15, lave-linge Bosch, PS5…), choisissez la panne, et Compare. affiche côte à côte : coût de réparation estimé, prix reconditionné et prix neuf. Un verdict vous indique l’option la plus logique. Le tout en une trentaine de secondes." },
     { q: "Les prix affichés sont-ils fiables ?", a: "Ce sont des fourchettes basées sur les tarifs moyens en France (pièces + main d’œuvre). Ils varient selon le réparateur, la région et la disponibilité des pièces. À utiliser comme ordre de grandeur — un devis reste la référence pour trancher." },
-    { q: "C'est quoi le bonus QualiRépar ?", a: "Une aide de l’État (10 à 45 €) déduite automatiquement chez un réparateur labellisé QualiRépar. Pas de dossier à remplir : vous allez chez le pro, la réduction est appliquée sur la facture. Éligible : smartphones, électroménager, ordinateurs, TV, consoles, etc." },
+    { q: "C'est quoi le bonus QualiRépar ?", a: "Une aide de l’État (15 à 60 €) déduite automatiquement chez un réparateur labellisé QualiRépar. Pas de dossier à remplir : vous allez chez le pro, la réduction est appliquée sur la facture. Éligible : smartphones, électroménager, ordinateurs, TV, consoles, etc." },
     { q: "Compare. est-il gratuit ?", a: "Oui, 100 % gratuit. Nous sommes rémunérés par des commissions d’affiliation lorsque vous achetez via nos liens — sans surcoût pour vous." },
     { q: "Puis-je cumuler plusieurs pannes ?", a: "Oui. Sur chaque page produit, cliquez sur « Plusieurs problèmes ? » pour sélectionner plusieurs pannes et voir le coût total. Pratique quand votre appareil cumule écran cassé + batterie usée, par exemple." },
     { q: "Comment sont calculées les estimations de réparation ?", a: "Nous nous appuyons sur les tarifs moyens des pièces détachées et de la main d’œuvre en France, les tutoriels vidéo et les retours de réparateurs. Les fourchettes donnent un ordre de grandeur réaliste — un devis reste la référence." },
@@ -2544,7 +2595,7 @@ function AdvantagesPage({ onNav }) {
       {[
         { icon: "money", title: "Économies réelles", desc: "Une réparation coûte souvent 50 à 200 € — bien moins qu’un remplacement (400 à 1000 € pour un smartphone ou un lave-linge). Vous gardez un appareil fonctionnel sans vous ruiner." },
         { icon: "clock", title: "Durée de vie prolongée", desc: "Un appareil bien réparé peut tenir encore plusieurs années. Vous maximisez votre investissement initial au lieu de racheter trop tôt." },
-        { icon: "shield", title: "Bonus QualiRépar", desc: "L’État déduit 10 à 45 € directement chez un réparateur labellisé. Aucune démarche — la réduction s’applique sur la facture." },
+        { icon: "shield", title: "Bonus QualiRépar", desc: "L’État déduit 15 à 60 € directement chez un réparateur labellisé. Aucune démarche — la réduction s’applique sur la facture." },
         { icon: "tool", title: "Apprendre en faisant", desc: "Beaucoup de pannes (batterie, joint, filtre) se réparent en réparation autonome avec un tutoriel. Une compétence utile pour la suite." },
       ].map((a, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
         <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
@@ -2698,12 +2749,12 @@ function RepairGuidePage({ onNav }) {
     {/* QualiRépar */}
     <div style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "18px 20px", marginBottom: 28 }}>
       <h2 style={{ fontSize: 16, fontWeight: 800, color: ACCENT, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="shield" s={16} color={ACCENT} /> Le bonus QualiRépar
+        <Icon name="shield" s={16} color={ACCENT} /> L'aide de l'État — Bonus QualiRépar
       </h2>
       <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}>L'État français propose une aide de <strong>10 à 45 €</strong> sur la réparation d'appareils électriques et électroniques. Cette aide est déduite directement chez un réparateur labellisé QualiRépar.</p>
-        <p style={{ marginBottom: 6 }}><strong>Comment en bénéficier ?</strong> Aucune démarche : rendez-vous chez un réparateur agréé QualiRépar et la réduction est appliquée automatiquement sur la facture.</p>
-        <p><strong>Appareils éligibles :</strong> smartphones, tablettes, ordinateurs, TV, consoles, électroménager, aspirateurs, machines à café, etc.</p>
+        <p style={{ marginBottom: 6 }}>L'État français propose une aide de <strong>15 à 60 €</strong> sur la réparation d'appareils électriques et électroniques. Le montant varie selon le produit (ex. : smartphone 25 €, lave-linge 50 €, TV 60 €). La réduction est déduite directement sur la facture chez un réparateur labellisé QualiRépar.</p>
+        <p style={{ marginBottom: 6 }}><strong>Conditions :</strong> réparateur labellisé QualiRépar, appareil hors garantie constructeur. Aucune démarche : la réduction s'applique automatiquement à la caisse.</p>
+        <p><strong>Appareils éligibles :</strong> smartphones, tablettes, ordinateurs, TV, consoles, électroménager, aspirateurs, machines à café, vélos électriques, etc.</p>
       </div>
     </div>
 
@@ -3076,7 +3127,7 @@ export default function App() {
         {[
           { q: "Comment fonctionne Compare. ?", a: "Tapez le nom de votre appareil, choisissez la panne, et Compare. affiche côte à côte : coût de réparation, prix reconditionné et prix neuf. Un verdict vous indique l’option la plus logique. Le tout en une trentaine de secondes." },
           { q: "Les prix affichés sont-ils fiables ?", a: "Ce sont des fourchettes basées sur les tarifs moyens en France (pièces + main d’œuvre). Ils varient selon le réparateur et la région. À utiliser comme ordre de grandeur — un devis reste la référence." },
-          { q: "C'est quoi le bonus QualiRépar ?", a: "Une aide de l’État (10 à 45 €) déduite automatiquement chez un réparateur labellisé QualiRépar. Pas de dossier : la réduction est appliquée sur la facture." },
+          { q: "C'est quoi le bonus QualiRépar ?", a: "Une aide de l’État (15 à 60 €) déduite automatiquement chez un réparateur labellisé QualiRépar. Pas de dossier : la réduction est appliquée sur la facture." },
           { q: "Compare. est-il gratuit ?", a: "Oui, 100 % gratuit. Nous sommes rémunérés par des commissions d’affiliation lorsque vous achetez via nos liens — sans surcoût pour vous." },
           { q: "Puis-je cumuler plusieurs pannes ?", a: "Oui. Sur chaque page produit, cliquez sur « Plusieurs problèmes ? » pour voir le coût total de toutes vos réparations." },
           { q: "Comment sont calculées les estimations de réparation ?", a: "Nous nous appuyons sur les tarifs moyens des pièces et de la main d’œuvre en France, les tutoriels vidéo et les retours de réparateurs. Les fourchettes donnent un ordre de grandeur réaliste." },

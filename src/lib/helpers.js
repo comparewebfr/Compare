@@ -3,7 +3,7 @@
  */
 
 import { CATS } from "./data";
-import { OCC_CATS, ISS_TPL, ITEMS, TECH_CATS, RET, CHIP_TO_PRODUCT, PAGES_GENERALES, REPAIRABILITY_ELIGIBLE_CATS, QUALIREPAR_ELIGIBLE_CATS, REPAIRABILITY_INDEX_BY_TYPE, REPAIRABILITY_INDEX_BY_PRODUCT, TUTORIAL_STEPS_BY_PRODUCT } from "./data";
+import { OCC_CATS, ISS_TPL, ITEMS, TECH_CATS, RET, CHIP_TO_PRODUCT, PAGES_GENERALES, REPAIRABILITY_ELIGIBLE_CATS, QUALIREPAR_ELIGIBLE_CATS, QUALUREPAR_BONUS_BY_TYPE, QUALUREPAR_ANNUAIRE_URL, REPAIRABILITY_INDEX_BY_TYPE, REPAIRABILITY_INDEX_BY_PRODUCT, TUTORIAL_STEPS_BY_PRODUCT } from "./data";
 import * as R from "./routes";
 
 export { slugify } from "./routes";
@@ -213,6 +213,15 @@ export function isRepairabilityEligible(catId) {
 export function isQualiReparEligible(catId) {
   return QUALIREPAR_ELIGIBLE_CATS.includes(catId);
 }
+
+/** Montant du bonus QualiRépar pour un type de produit (€). Retourne null si non éligible ou inconnu. */
+export function getQualiReparBonus(productType) {
+  if (!productType) return null;
+  return QUALUREPAR_BONUS_BY_TYPE[productType] ?? null;
+}
+
+/** URL officielle pour trouver un réparateur labellisé QualiRépar */
+export { QUALUREPAR_ANNUAIRE_URL };
 
 export function getRepairabilityIndex(productType, item) {
   const key = item ? `${item.brand}|${item.name}` : null;

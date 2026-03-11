@@ -756,8 +756,89 @@ export const TECH_CATS = ["smartphones", "tablettes", "ordinateurs", "tv", "cons
 /** Catégories éligibles à l'indice de réparabilité (note sur 10, obligatoire sur les appareils électriques/électroniques) */
 export const REPAIRABILITY_ELIGIBLE_CATS = ["electromenager", "chauffage", "jardin", "smartphones", "tablettes", "ordinateurs", "tv", "consoles", "audio", "photo", "montres", "velo"];
 
-/** Catégories éligibles au bonus QualiRépar (10–45 € chez réparateur labellisé) */
+/** Catégories éligibles au bonus QualiRépar (chez réparateur labellisé) */
 export const QUALIREPAR_ELIGIBLE_CATS = ["electromenager", "chauffage", "jardin", "plomberie", "smartphones", "tablettes", "ordinateurs", "tv", "consoles", "audio", "photo", "montres", "velo"];
+
+/** Montants du bonus réparation par type de produit (source : label-qualirepar.fr, éco-organismes)
+ * Réduction appliquée directement sur la facture chez un réparateur labellisé QualiRépar.
+ * Conditions : réparateur labellisé, appareil hors garantie constructeur. */
+export const QUALUREPAR_BONUS_BY_TYPE = {
+  // Téléphonie
+  Smartphone: 25,
+  // Tablettes
+  Tablette: 25,
+  // Informatique
+  "PC Portable": 50,
+  "PC Bureau": 50,
+  "All-in-One": 50,
+  // TV & écrans
+  Téléviseur: 60,
+  "Moniteur PC": 50,
+  "Vidéoprojecteur": 35,
+  "Barre de son": 20,
+  // Consoles
+  "Console de salon": 20,
+  "Console portable": 20,
+  Manette: 15,
+  "Casque gaming": 20,
+  // Audio
+  "Écouteurs sans fil": 20,
+  "Casque audio": 20,
+  "Enceinte Bluetooth": 20,
+  "Enceinte connectée": 20,
+  "Platine vinyle": 25,
+  // Photo
+  "Appareil photo hybride": 20,
+  "Appareil photo compact": 20,
+  "Caméra action": 20,
+  Drone: 25,
+  // Électroménager
+  "Lave-linge": 50,
+  "Lave-vaisselle": 50,
+  "Sèche-linge": 50,
+  Réfrigérateur: 25,
+  Congélateur: 25,
+  Four: 25,
+  "Four encastrable": 25,
+  "Micro-ondes": 25,
+  "Aspirateur balai": 40,
+  "Aspirateur robot": 40,
+  "Robot cuisine": 25,
+  "Cafetière expresso": 20,
+  "Machine à café": 20,
+  "Plaque induction": 25,
+  "Plaque vitrocéramique": 25,
+  "Plaque gaz": 25,
+  "Hotte aspirante": 25,
+  "Cuisinière mixte": 25,
+  // Plomberie
+  "Robinet / Mitigeur": 25,
+  "WC / Toilettes": 25,
+  "Chauffe-eau": 25,
+  "Ballon thermodynamique": 25,
+  "Colonne de douche": 25,
+  // Chauffage
+  "Chaudière gaz": 35,
+  "Pompe à chaleur": 35,
+  "Radiateur électrique": 25,
+  Climatiseur: 25,
+  "Thermostat connecté": 25,
+  // Jardin
+  Tondeuse: 25,
+  "Tondeuse robot": 25,
+  "Taille-haie": 25,
+  "Nettoyeur haute pression": 25,
+  // Mobilité
+  "Vélo électrique": 25,
+  VTT: 25,
+  "Trottinette électrique": 15,
+  // Montres
+  "Montre connectée": 20,
+  "Bracelet connecté": 20,
+};
+
+/** URL officielle pour trouver un réparateur labellisé QualiRépar */
+export const QUALUREPAR_ANNUAIRE_URL = "https://www.label-qualirepar.fr/particulier/bonusreparation.html";
 
 /** Indice de réparabilité indicatif par type de produit (moyenne, pour affichage vignette) — variable selon modèle */
 export const REPAIRABILITY_INDEX_BY_TYPE = {
