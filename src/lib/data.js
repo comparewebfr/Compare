@@ -723,7 +723,7 @@ export const LOGO_BG = {
   "/retailers/backmarket.png": "#1A1A1A",
   "/retailers/rakuten.png": "#B00020",
   "/retailers/spareka.png": "#00B8D9",
-  "/retailers/rueducommerce.png": "#E30613",
+  "/retailers/rueducommerce.png": "#1a3a5c",
 };
 
 export const RET = {
