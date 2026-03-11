@@ -439,9 +439,9 @@ function BannerCarousel({ banners, onNav }) {
 
 // ─── HERO ───
 const HERO_BANNERS = (W, ACCENT, GREEN) => [
-  { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "/banner-hero.jpg", title: "Les meilleurs prix pour votre smartphone", sub: "Comparez, réparez ou rachetez un smartphone reconditionné", catId: "smartphones", icon: "smartphone", dark: false },
-  { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=480&q=70", title: "Réparez votre console de jeux", sub: "Donnez une seconde vie à votre PS5", catId: "consoles", icon: "gamepad", dark: true },
-  { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=480&q=70", title: "Un problème dans votre cuisine ?", sub: "Réparez vos appareils à prix imbattables", catId: "electromenager", icon: "kitchen", dark: false },
+  { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "/banner-hero.jpg", title: "Réparer ou remplacer ? La réponse en 30 secondes", sub: "Comparez réparation, reconditionné et neuf pour smartphones, électroménager, consoles…", catId: "smartphones", icon: "smartphone", dark: false },
+  { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=480&q=70", title: "Console en panne ? Ne la jetez pas tout de suite", sub: "Ventilateur, lecteur disque, alimentation : beaucoup de pannes se réparent. Comparez avant de racheter.", catId: "consoles", icon: "gamepad", dark: true },
+  { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=480&q=70", title: "Lave-linge, four, plaque : réparer ou changer ?", sub: "Fuite, ne chauffe plus, fait du bruit : symptômes, coûts indicatifs et verdict selon votre panne.", catId: "electromenager", icon: "kitchen", dark: false },
 ];
 function Hero({ onSearch, onNav, popularSearches = POPULAR_SEARCHES }) {
   const [q, setQ] = useState(""); const [show, setShow] = useState(false); const [noMatchMsg, setNoMatchMsg] = useState(false);
@@ -882,11 +882,11 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
         {/* 8. FAQ */}
         <div style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111", marginBottom: 10 }}>Questions fréquentes — {productType}</h3>
-          {[
-            { q: `Combien coûte la réparation d'un ${typeLower} ?`, a: `Selon la panne, le coût varie de ${fallbackIssues.reduce((m,i) => Math.min(m,i.repairMin),999)}€ à ${fallbackIssues.reduce((m,i) => Math.max(m,i.repairMax),0)}€ (pièces + main d'œuvre). La panne la plus courante est "${fallbackIssues[0]?.name}" à environ ${fallbackIssues[0]?.repairMin}–${fallbackIssues[0]?.repairMax}€.` },
-            { q: `Vaut-il mieux réparer ou remplacer un ${typeLower} ?`, a: `Cela dépend de la panne et de l'âge de l'appareil. Pour les réparations simples (coût < 30 % du neuf), la réparation est généralement plus rentable. Au-delà de 40% du prix neuf ou si l'appareil a plus de 10 ans, le remplacement peut être préférable.` },
-            { q: `Peut-on réparer un ${typeLower} soi-même ?`, a: `Les réparations notées "Facile" sont accessibles avec un tutoriel vidéo YouTube. Les réparations "Difficile" ou nécessitant un pro sont à confier à un réparateur agréé. Pensez au bonus QualiRépar (10 à 45€).` },
-            { q: `Où trouver les pièces détachées ?`, a: "Les pièces sont disponibles chez Amazon, But, Leroy Merlin et ManoMano. Comparez les prix et ajoutez vos références de pièces pour cette panne." },
+        {[
+          { q: `Combien coûte la réparation d'un ${typeLower} ?`, a: `Les tarifs varient selon la panne : de ${fallbackIssues.reduce((m,i) => Math.min(m,i.repairMin),999)}€ à ${fallbackIssues.reduce((m,i) => Math.max(m,i.repairMax),0)}€ (pièces + main d’œuvre). La panne « ${fallbackIssues[0]?.name} » revient en général à ${fallbackIssues[0]?.repairMin}–${fallbackIssues[0]?.repairMax}€. Demandez un devis pour confirmer.` },
+            { q: `Vaut-il mieux réparer ou remplacer un ${typeLower} ?`, a: `Tout dépend de la panne et de l’âge de l’appareil. Une réparation peu coûteuse (pièce d’usure, panne courante) reste souvent le meilleur choix. Si le devis s’approche du prix d’un neuf ou si l’appareil a plus de 10 ans, le remplacement devient plus logique. Utilisez notre comparateur pour voir les trois options côte à côte.` },
+            { q: `Peut-on réparer un ${typeLower} soi-même ?`, a: `Les pannes notées « Facile » sont accessibles avec un tutoriel vidéo. Pour les interventions « Difficile » ou nécessitant un pro, confiez l’appareil à un réparateur agréé — le bonus QualiRépar (10 à 45 €) s’applique automatiquement chez un labellisé.` },
+            { q: `Où trouver les pièces détachées ?`, a: "Spareka, Amazon, ManoMano et Rue du Commerce proposent des pièces pour l’électroménager et la tech. Vérifiez la référence exacte de votre modèle avant d’acheter. Comparez les prix entre enseignes." },
           ].map((f, i) => (
             <details key={i} style={{ background: "#fff", borderRadius: 6, marginBottom: 4, border: "1px solid #E0DDD5" }}>
               <summary style={{ padding: "10px 14px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#111" }}>{f.q}</summary>
@@ -1827,11 +1827,11 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
         <div style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111", marginBottom: 10 }}>Questions fréquentes — {item.brand} {item.name}</h3>
           {[
-            { q: `Combien coûte la réparation d'un ${item.brand} ${item.name} ?`, a: `Selon la panne, le coût de réparation d'un ${item.brand} ${item.name} varie de ${issues.reduce((m,i) => Math.min(m,i.repairMin),999)}€ à ${issues.reduce((m,i) => Math.max(m,i.repairMax),0)}€ (pièces + main d'œuvre). La panne la plus courante est "${issues[0]?.name}" à environ ${issues[0]?.repairMin}–${issues[0]?.repairMax}€.` },
-            { q: `Vaut-il mieux réparer ou racheter un ${item.brand} ${item.name} ?`, a: `Cela dépend de la panne. Pour les réparations simples (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "batterie, pièces d'usure"}), la réparation est généralement plus rentable. Au-delà de 40% du prix neuf (${Math.round(item.priceNew*.4)}€), un modèle ${sl.toLowerCase()} peut être plus avantageux.` },
-            { q: `Peut-on réparer un ${item.brand} ${item.name} soi-même ?`, a: `Les réparations notées "Facile" (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "certaines pièces"}) sont accessibles aux débutants avec un tutoriel vidéo YouTube. Les réparations "Difficile" nécessitent un professionnel.` },
+            { q: `Combien coûte la réparation d'un ${item.brand} ${item.name} ?`, a: `Selon la panne, le coût varie de ${issues.reduce((m,i) => Math.min(m,i.repairMin),999)}€ à ${issues.reduce((m,i) => Math.max(m,i.repairMax),0)}€ (pièces + main d’œuvre). La panne « ${issues[0]?.name} » revient en général à ${issues[0]?.repairMin}–${issues[0]?.repairMax}€. Demandez un devis pour confirmer.` },
+            { q: `Vaut-il mieux réparer ou racheter un ${item.brand} ${item.name} ?`, a: `Cela dépend de la panne. Pour les réparations simples (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "batterie, pièces d’usure"}), la réparation est généralement plus rentable. Au-delà de 40 % du prix neuf (${Math.round(item.priceNew*.4)}€), un modèle ${sl.toLowerCase()} peut être plus avantageux.` },
+            { q: `Peut-on réparer un ${item.brand} ${item.name} soi-même ?`, a: `Les réparations notées « Facile » (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "certaines pièces"}) sont accessibles aux débutants avec un tutoriel vidéo YouTube. Les réparations « Difficile » nécessitent un professionnel.` },
             { q: `Où trouver les pièces détachées pour ${item.brand} ${item.name} ?`, a: OCC_CATS.includes(item.category) ? "Les pièces sont disponibles chez Spareka, Castorama, ManoMano et Amazon. Spareka propose aussi des guides de réparation adaptés." : "Les pièces sont disponibles chez Spareka, Amazon et les revendeurs spécialisés. Des tutoriels vidéo YouTube ciblés existent pour de nombreux modèles." },
-            { q: `Le bonus QualiRépar s'applique-t-il au ${item.brand} ${item.name} ?`, a: `Oui ! Le bonus QualiRépar (10 à 45€) est applicable sur la réparation des ${item.productType.toLowerCase()}s chez un réparateur agréé. La réduction est automatique, aucune démarche nécessaire.` },
+            { q: `Le bonus QualiRépar s'applique-t-il au ${item.brand} ${item.name} ?`, a: `Oui. Le bonus QualiRépar (10 à 45 €) est applicable sur la réparation des ${item.productType.toLowerCase()}s chez un réparateur agréé. La réduction est automatique, aucune démarche nécessaire.` },
           ].map((f, i) => <details key={i} style={{ background: "#fff", borderRadius: 6, marginBottom: 4, border: "1px solid #E0DDD5" }}>
             <summary style={{ padding: "10px 14px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#111" }}>{f.q}</summary>
             <p style={{ padding: "0 14px 10px", fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>{f.a}</p>
@@ -2424,16 +2424,16 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
 // ─── FAQ ───
 function FaqPage({ onNav }) {
   const faqs = [
-    { q: "Comment fonctionne Compare. ?", a: "Compare. compare automatiquement le coût de réparation, de l'occasion/reconditionné et du neuf pour vous aider à prendre la meilleure décision." },
-    { q: "Les prix affichés sont-ils fiables ?", a: "Ce sont des estimations basées sur les tarifs moyens en France. Les prix réels peuvent varier selon le prestataire et votre localisation. Ils incluent pièces et main d'œuvre pour la réparation." },
-    { q: "C'est quoi le bonus QualiRépar ?", a: "C'est une aide de l'État de 10 à 45 € déduite directement chez un réparateur labellisé QualiRépar. Aucune démarche, la réduction est appliquée automatiquement." },
-    { q: "Compare. est-il gratuit ?", a: "Oui, 100% gratuit. Nous sommes rémunérés par des commissions d'affiliation lorsque vous achetez via nos liens, sans aucun surcoût pour vous." },
-    { q: "Puis-je cumuler plusieurs pannes ?", a: "Oui ! Sur chaque page produit, cliquez sur « Plusieurs problèmes ? » pour activer le mode cumul et voir le coût total de toutes vos réparations." },
-    { q: "Comment sont calculées les estimations de réparation ?", a: "Nous nous appuyons sur les tarifs moyens des pièces détachées et de la main d'œuvre en France, ainsi que sur les tutoriels vidéo et les retours de réparateurs. Les fourchettes indiquent un ordre de grandeur réaliste." },
-    { q: "Puis-je suggérer un produit à ajouter ?", a: "Oui ! Utilisez la page Contact pour nous envoyer votre suggestion. Nous examinons chaque demande et ajoutons les appareils les plus demandés." },
-    { q: "Les liens d'achat sont-ils sécurisés ?", a: "Oui. Nous redirigeons vers des marchands reconnus (Amazon, Back Market, Fnac, etc.). Vous achetez directement chez eux, nous ne stockons aucune donnée de paiement." },
-    { q: "Compare. compare-t-il les vrais prix en temps réel ?", a: "Les prix neuf et reconditionné sont indicatifs (basés sur les tarifs habituels). Pour les prix exacts, cliquez sur les liens pour voir les offres actuelles sur chaque site partenaire." },
-    { q: "Comment proposer un produit manquant ?", a: "Rendez-vous sur la page Contact pour nous envoyer votre suggestion. Nous intégrons les appareils les plus demandés." },
+    { q: "Comment fonctionne Compare. ?", a: "Tapez le nom de votre appareil (iPhone 15, lave-linge Bosch, PS5…), choisissez la panne, et Compare. affiche côte à côte : coût de réparation estimé, prix reconditionné et prix neuf. Un verdict vous indique l’option la plus logique. Le tout en une trentaine de secondes." },
+    { q: "Les prix affichés sont-ils fiables ?", a: "Ce sont des fourchettes basées sur les tarifs moyens en France (pièces + main d’œuvre). Ils varient selon le réparateur, la région et la disponibilité des pièces. À utiliser comme ordre de grandeur — un devis reste la référence pour trancher." },
+    { q: "C'est quoi le bonus QualiRépar ?", a: "Une aide de l’État (10 à 45 €) déduite automatiquement chez un réparateur labellisé QualiRépar. Pas de dossier à remplir : vous allez chez le pro, la réduction est appliquée sur la facture. Éligible : smartphones, électroménager, ordinateurs, TV, consoles, etc." },
+    { q: "Compare. est-il gratuit ?", a: "Oui, 100 % gratuit. Nous sommes rémunérés par des commissions d’affiliation lorsque vous achetez via nos liens — sans surcoût pour vous." },
+    { q: "Puis-je cumuler plusieurs pannes ?", a: "Oui. Sur chaque page produit, cliquez sur « Plusieurs problèmes ? » pour sélectionner plusieurs pannes et voir le coût total. Pratique quand votre appareil cumule écran cassé + batterie usée, par exemple." },
+    { q: "Comment sont calculées les estimations de réparation ?", a: "Nous nous appuyons sur les tarifs moyens des pièces détachées et de la main d’œuvre en France, les tutoriels vidéo et les retours de réparateurs. Les fourchettes donnent un ordre de grandeur réaliste — un devis reste la référence." },
+    { q: "Puis-je suggérer un produit à ajouter ?", a: "Oui. Utilisez la page Contact pour nous envoyer votre suggestion. Nous intégrons les appareils les plus demandés." },
+    { q: "Les liens d'achat sont-ils sécurisés ?", a: "Oui. Nous redirigeons vers des marchands reconnus (Amazon, Back Market, Fnac, Darty, etc.). Vous achetez directement chez eux — nous ne stockons aucune donnée de paiement." },
+    { q: "Compare. affiche-t-il les vrais prix en temps réel ?", a: "Les prix neuf et reconditionné sont indicatifs (basés sur les tarifs habituels). Pour les prix exacts, cliquez sur les liens pour voir les offres actuelles sur chaque site partenaire." },
+    { q: "Comment proposer un produit manquant ?", a: "Rendez-vous sur la page Contact. Nous examinons chaque suggestion et ajoutons les appareils les plus demandés." },
   ];
   return <div className="page-enter" style={{ fontFamily: F, maxWidth: 660, margin: "0 auto", padding: "40px 20px 80px" }}>
     <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>FAQ</span></div>
@@ -2474,16 +2474,16 @@ function AdvantagesPage({ onNav }) {
   return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
     <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Avantages</span></div>
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Les avantages de la réparation</h1></div>
-    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>Réparer plutôt que remplacer, c'est souvent le meilleur choix. Voici pourquoi.</p>
+    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>Réparer plutôt que remplacer, c’est souvent le meilleur choix : économies, durée de vie prolongée, impact écologique. Voici pourquoi.</p>
 
     {/* Avantages principaux */}
     <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 14 }}>Pourquoi réparer ?</h2>
     <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
       {[
-        { icon: "money", title: "Économies réelles", desc: "Jusqu'à 80% d'économies par rapport au prix neuf. Une réparation coûte souvent 50 à 200 € contre 400 à 1000 € pour un remplacement." },
-        { icon: "clock", title: "Durée de vie prolongée", desc: "Un appareil bien réparé peut durer encore plusieurs années. Vous maximisez votre investissement initial." },
-        { icon: "shield", title: "Bonus QualiRépar", desc: "L'État vous aide : 10 à 45 € déduits automatiquement chez un réparateur labellisé QualiRépar." },
-        { icon: "tool", title: "Apprendre en faisant", desc: "Beaucoup de pannes sont réparables soi-même avec un tutoriel. Une compétence utile pour la suite." },
+        { icon: "money", title: "Économies réelles", desc: "Une réparation coûte souvent 50 à 200 € — bien moins qu’un remplacement (400 à 1000 € pour un smartphone ou un lave-linge). Vous gardez un appareil fonctionnel sans vous ruiner." },
+        { icon: "clock", title: "Durée de vie prolongée", desc: "Un appareil bien réparé peut tenir encore plusieurs années. Vous maximisez votre investissement initial au lieu de racheter trop tôt." },
+        { icon: "shield", title: "Bonus QualiRépar", desc: "L’État déduit 10 à 45 € directement chez un réparateur labellisé. Aucune démarche — la réduction s’applique sur la facture." },
+        { icon: "tool", title: "Apprendre en faisant", desc: "Beaucoup de pannes (batterie, joint, filtre) se réparent en DIY avec un tutoriel. Une compétence utile pour la suite." },
       ].map((a, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
         <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
           <Icon name={a.icon} s={18} color={ACCENT} />
@@ -2499,12 +2499,15 @@ function AdvantagesPage({ onNav }) {
         <Icon name="leaf" s={20} color={GREEN} /> Bon pour la planète ?
       </h2>
       <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.8, marginBottom: 10 }}>
-        Oui. Réparer réduit les déchets et les émissions de CO₂. Chaque appareil réparé, c'est un appareil de moins à produire et à recycler.
+        Oui. Réparer réduit les déchets et les émissions de CO₂. Chaque appareil réparé, c’est un appareil de moins à produire et à recycler.
       </p>
       <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>
-        Exemples : réparer un smartphone évite environ 70 kg de CO₂ ; un lave-linge, ~200 kg. L'impact est concret, sans être miraculeux — c'est une contribution parmi d'autres gestes du quotidien.
+        Exemples : réparer un smartphone évite environ 70 kg de CO₂ ; un lave-linge, ~200 kg. L’impact est concret, sans être miraculeux — c’est une contribution parmi d’autres gestes du quotidien.
       </p>
     </div>
+
+    {/* Maillage interne */}
+    <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 16, lineHeight: 1.6 }}>Consultez aussi notre <button type="button" onClick={() => onNav("repair-guide")} style={{ background: "none", border: "none", padding: 0, font: "inherit", color: ACCENT, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>guide réparer ou racheter</button> pour les critères de décision détaillés.</p>
 
     {/* CTA */}
     <div style={{ textAlign: "center", padding: "24px 20px", background: `linear-gradient(135deg, ${ACCENT}, ${GREEN})`, borderRadius: 10 }}>
@@ -2520,14 +2523,14 @@ function GuidePage({ onNav }) {
   return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
     <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Comment ça marche</span></div>
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Comment ça marche ?</h1></div>
-    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>Compare. vous aide à prendre la meilleure décision en 3 étapes simples. Gratuit, instantané, sans inscription.</p>
+    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>Compare. vous aide à trancher : réparer, racheter d’occasion ou remplacer par du neuf. En 3 étapes, sans inscription.</p>
     
     {/* 3 steps */}
     <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 32 }}>
       {[
-        { n: "1", icon: "search", title: "Recherchez votre appareil", desc: `Tapez le nom exact de votre produit parmi nos ${ITEMS.length} références : smartphones, électroménager, consoles, plomberie, jardin… Si votre produit n'existe pas, contactez-nous pour le suggérer.`, color: GREEN },
-        { n: "2", icon: "chart", title: "Comparez les 3 options", desc: "Sélectionnez votre panne (ou cumulez-en plusieurs). Notre algorithme calcule instantanément le coût de réparation, le prix en occasion/reconditionné et le prix neuf. Un verdict clair vous guide.", color: AMBER },
-        { n: "3", icon: "check", title: "Choisissez la meilleure solution", desc: "Accédez directement aux tutoriels YouTube, aux pièces détachées ou aux meilleures offres. Vous savez exactement combien vous économisez et quel impact vous avez sur la planète.", color: ACCENT },
+        { n: "1", icon: "search", title: "Recherchez votre appareil", desc: `Tapez le nom de votre produit parmi nos ${ITEMS.length} références : iPhone, MacBook, lave-linge Bosch, PS5, chauffe-eau… Si votre modèle n’apparaît pas, suggérez-le via la page Contact.`, color: GREEN },
+        { n: "2", icon: "chart", title: "Comparez les 3 options", desc: "Indiquez votre panne (écran cassé, batterie HS, fuite…). Compare. estime le coût de réparation, le prix reconditionné et le prix neuf. Un verdict vous indique la solution la plus logique.", color: AMBER },
+        { n: "3", icon: "check", title: "Passez à l’action", desc: "Accédez aux tutoriels vidéo, aux pièces détachées ou aux offres des marchands. Vous savez combien vous économisez et quelle option fait sens pour votre situation.", color: ACCENT },
       ].map((s, i) => <div key={i} style={{ display: "flex", gap: 18, padding: "24px 0", borderBottom: i < 2 ? "1px solid #E0DDD5" : "none", alignItems: "flex-start" }}>
         <div style={{ width: 56, height: 56, borderRadius: 12, background: s.color + "12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
           <Icon name={s.icon} s={26} color={s.color} />
@@ -2574,16 +2577,16 @@ function RepairGuidePage({ onNav }) {
   return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
     <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Guide</span></div>
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Réparer ou racheter : le guide complet</h1></div>
-    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.7 }}>Vous hésitez entre faire réparer votre appareil ou le remplacer ? Ce guide vous aide à prendre la bonne décision selon votre situation.</p>
+    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.7 }}>Vous hésitez entre faire réparer votre appareil ou le remplacer ? Ce guide vous aide à prendre la bonne décision selon votre panne, l’âge de l’appareil et le coût.</p>
 
     {/* Decision criteria */}
     <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 12 }}>Les critères de décision</h2>
     <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
       {[
-        { icon: "money", title: "Le coût de réparation", desc: "Si la réparation coûte moins de 30% du prix neuf, c'est presque toujours le meilleur choix. Entre 30% et 50%, considérez l'état général de l'appareil. Au-delà de 50%, le remplacement est souvent plus sage." },
-        { icon: "calendar", title: "L'âge de l'appareil", desc: "Un appareil de moins de 3 ans mérite généralement d'être réparé. Entre 3 et 7 ans, cela dépend de la panne. Au-delà de 7 ans, le reconditionné ou le neuf peuvent être plus pertinents." },
-        { icon: "tool", title: "La difficulté technique", desc: "Les pannes faciles (batterie, filtre, joint) sont idéales pour le DIY. Les pannes moyennes nécessitent un bon tutoriel. Les pannes complexes demandent un professionnel." },
-        { icon: "leaf", title: "L'impact écologique", desc: "Réparer un smartphone évite ~70kg de CO₂. Réparer un lave-linge évite ~200kg de CO₂. L'impact est toujours positif : moins de ressources, moins de déchets, moins d'émissions." },
+        { icon: "money", title: "Le coût de réparation", desc: "Comparez le devis à la valeur d'un appareil neuf ou reconditionné. Une réparation peu coûteuse (pièce d'usure, panne courante) reste presque toujours rentable. Quand le devis s'approche du prix du neuf, le remplacement devient plus logique." },
+        { icon: "calendar", title: "L'âge de l'appareil", desc: "Un appareil récent a encore une longue durée de vie devant lui — la réparation maximise votre investissement. Au-delà de 7 à 10 ans, les pièces se raréfient et les modèles récents offrent souvent plus de performance ou d'économies d'énergie." },
+        { icon: "tool", title: "La difficulté technique", desc: "Batterie, filtre, joint : ces pannes sont souvent réparables en DIY avec un tutoriel. Les interventions plus lourdes (carte électronique, démontage complexe) demandent un professionnel — pensez au bonus QualiRépar." },
+        { icon: "leaf", title: "L'impact écologique", desc: "Chaque appareil réparé, c'est un appareil de moins à produire et à recycler. Réparer un smartphone évite environ 70 kg de CO₂ ; un lave-linge, ~200 kg. L'impact est concret, sans être miraculeux." },
       ].map((c, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
         <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
           <Icon name={c.icon} s={18} color={ACCENT} />
@@ -2599,10 +2602,10 @@ function RepairGuidePage({ onNav }) {
         <Icon name="check" s={16} color={GREEN} /> Quand réparer ?
       </h2>
       <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}><strong>Coût inférieur à 30% du neuf :</strong> la réparation est presque toujours rentable. Vous gardez un appareil fonctionnel et vous réalisez une économie importante.</p>
-        <p style={{ marginBottom: 6 }}><strong>Panne simple et courante :</strong> écran cassé, batterie usée, pompe de vidange HS, joint de porte abîmé. Ce sont les pannes les plus fréquentes et les mieux documentées.</p>
-        <p style={{ marginBottom: 6 }}><strong>Appareil récent (&lt; 3 ans) :</strong> il a encore une longue durée de vie devant lui. La réparation maximise votre investissement initial.</p>
-        <p><strong>Pièces disponibles :</strong> si les pièces existent chez SOSav, Spareka ou Amazon, la réparation est viable. Compare. vérifie ça pour vous.</p>
+        <p style={{ marginBottom: 6 }}><strong>Devis raisonnable :</strong> quand la réparation reste bien en dessous du prix d’un neuf ou d’un reconditionné, c’est presque toujours le meilleur choix. Vous gardez un appareil fonctionnel et vous réalisez une vraie économie.</p>
+        <p style={{ marginBottom: 6 }}><strong>Panne simple et courante :</strong> écran cassé, batterie usée, pompe de vidange HS, joint de porte abîmé. Ces pannes sont fréquentes, bien documentées et les pièces circulent.</p>
+        <p style={{ marginBottom: 6 }}><strong>Appareil récent :</strong> un produit de moins de 3 à 5 ans a encore une longue durée de vie devant lui. La réparation maximise votre investissement initial.</p>
+        <p><strong>Pièces disponibles :</strong> si les pièces existent (Spareka, Amazon, ManoMano), la réparation est viable. Compare. vous aide à estimer le coût et à trouver les références.</p>
       </div>
     </div>
 
@@ -2612,10 +2615,10 @@ function RepairGuidePage({ onNav }) {
         <Icon name="swap" s={16} color="#DC2626" /> Quand remplacer ?
       </h2>
       <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}><strong>Coût supérieur à 50% du neuf :</strong> la réparation n'est plus rentable. Préférez un modèle reconditionné (économie de 30-40% vs neuf) ou neuf.</p>
-        <p style={{ marginBottom: 6 }}><strong>Pannes multiples :</strong> si votre appareil cumule plusieurs problèmes, le coût total de réparation peut vite dépasser le seuil de rentabilité.</p>
-        <p style={{ marginBottom: 6 }}><strong>Appareil obsolète (&gt; 7 ans) :</strong> les pièces sont parfois introuvables, et les nouvelles générations sont significativement plus performantes ou économes.</p>
-        <p><strong>Panne de carte mère / composant critique :</strong> ces réparations sont coûteuses et risquées. Le remplacement est souvent plus sûr.</p>
+        <p style={{ marginBottom: 6 }}><strong>Devis qui s’approche du neuf :</strong> quand la réparation coûte presque autant qu’un appareil neuf ou reconditionné, le remplacement devient plus logique. Le reconditionné offre souvent un bon compromis (garantie, prix réduit).</p>
+        <p style={{ marginBottom: 6 }}><strong>Pannes multiples :</strong> si votre appareil cumule plusieurs problèmes, le coût total peut vite dépasser le seuil de rentabilité. Un seul devis global vous aidera à trancher.</p>
+        <p style={{ marginBottom: 6 }}><strong>Appareil obsolète :</strong> au-delà de 7 à 10 ans, les pièces se raréfient. Les modèles récents sont souvent plus performants, plus économes ou plus sûrs.</p>
+        <p><strong>Carte mère ou composant critique HS :</strong> ces réparations sont coûteuses et la fiabilité n'est pas toujours garantie. Le remplacement est souvent plus rassurant.</p>
       </div>
     </div>
 
@@ -2625,8 +2628,8 @@ function RepairGuidePage({ onNav }) {
         <Icon name="recycle" s={16} color={AMBER} /> L'option reconditionné / occasion
       </h2>
       <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}>Le reconditionné est un excellent compromis. Garanti 12 à 24 mois, testé et remis à neuf, il offre un appareil quasi-neuf à prix réduit (-30 à -50%).</p>
-        <p>Compare. référence les meilleurs vendeurs : Back Market, Amazon Renewed, Certideal pour l'électronique, Rakuten et Cdiscount pour l'électroménager et l'occasion.</p>
+        <p style={{ marginBottom: 6 }}>Quand la réparation coûte trop cher mais que le neuf vous semble excessif, le reconditionné fait souvent sens. Garanti 12 à 24 mois, testé et remis à neuf, il offre un appareil quasi-neuf à prix réduit. Très développé pour la tech (smartphones, consoles, PC), moins pour l'électroménager.</p>
+        <p>Compare. référence Back Market, Amazon Renewed, Rakuten et Cdiscount pour comparer les offres selon votre produit.</p>
       </div>
     </div>
 
@@ -2639,6 +2642,28 @@ function RepairGuidePage({ onNav }) {
         <p style={{ marginBottom: 6 }}>L'État français propose une aide de <strong>10 à 45 €</strong> sur la réparation d'appareils électriques et électroniques. Cette aide est déduite directement chez un réparateur labellisé QualiRépar.</p>
         <p style={{ marginBottom: 6 }}><strong>Comment en bénéficier ?</strong> Aucune démarche : rendez-vous chez un réparateur agréé QualiRépar et la réduction est appliquée automatiquement sur la facture.</p>
         <p><strong>Appareils éligibles :</strong> smartphones, tablettes, ordinateurs, TV, consoles, électroménager, aspirateurs, machines à café, etc.</p>
+      </div>
+    </div>
+
+    {/* Maillage interne — guides par type */}
+    <div style={{ background: "#F8FAFC", borderRadius: 8, border: "1px solid #E5E3DE", padding: "18px 20px", marginBottom: 28 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 10 }}>Guides par type de produit</h3>
+      <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 12, lineHeight: 1.5 }}>Consultez nos recommandations spécifiques : symptômes, pannes courantes et verdict selon le produit.</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {[
+          { catId: "electromenager", productType: "Lave-linge" },
+          { catId: "electromenager", productType: "Lave-vaisselle" },
+          { catId: "electromenager", productType: "Réfrigérateur" },
+          { catId: "electromenager", productType: "Sèche-linge" },
+          { catId: "electromenager", productType: "Four" },
+          { catId: "electromenager", productType: "Plaque induction" },
+          { catId: "smartphones", productType: "Smartphone" },
+          { catId: "consoles", productType: "Console de salon" },
+          { catId: "plomberie", productType: "Chauffe-eau" },
+          { catId: "ordinateurs", productType: "PC Portable" },
+        ].map(({ catId, productType }) => (
+          <button key={productType} type="button" onClick={() => onNav("cat-type", { catId, productType })} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #E0DDD5", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer", fontFamily: F }} onMouseEnter={e => { e.currentTarget.style.background = ACCENT + "12"; e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = ACCENT; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E0DDD5"; e.currentTarget.style.color = "#374151"; }}>{productType}</button>
+        ))}
       </div>
     </div>
 
@@ -2657,9 +2682,9 @@ function AboutPage({ onNav }) {
     <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>À propos</span></div>
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>À propos de Compare.</h1></div>
     <div style={{ fontSize: 14, color: "#374151", lineHeight: 1.8 }}>
-      <p style={{ marginBottom: 12 }}>Basés à <strong>Paris</strong>, nous avons créé Compare. avec une mission simple : aider chaque personne à faire le meilleur choix entre <strong>réparer</strong> un appareil, l'acheter <strong>d'occasion</strong> ou le racheter <strong>neuf</strong>.</p>
-      <p style={{ marginBottom: 12 }}>Notre objectif est de rendre la réparation accessible à tous, en comparant les coûts de manière transparente et en vous orientant vers les meilleures solutions — que ce soit un tutoriel, un réparateur professionnel ou un marchand de confiance.</p>
-      <p style={{ marginBottom: 12 }}>Nous croyons qu'un appareil réparé, c'est un appareil de moins dans une décharge. Chaque réparation compte pour la planète, et chaque euro économisé compte pour vous.</p>
+      <p style={{ marginBottom: 12 }}>Basés à Paris, nous avons créé Compare. pour répondre à une question que tout le monde se pose : <strong>réparer, acheter d’occasion ou racheter neuf ?</strong> Pas de réponse toute faite — tout dépend de la panne, de l’âge de l’appareil et du coût.</p>
+      <p style={{ marginBottom: 12 }}>Notre objectif : vous donner les éléments pour trancher en 30 secondes. Coûts indicatifs, verdict clair, liens vers les tutoriels, pièces et marchands. Que vous soyez bricoleur ou que vous préfériez confier à un pro, vous savez où vous en êtes.</p>
+      <p style={{ marginBottom: 12 }}>Un appareil réparé, c’est un appareil de moins à produire et à recycler. Chaque réparation compte — et chaque euro économisé aussi.</p>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 20 }}>
       {[{ n: ITEMS.length + "+", l: "Produits référencés" }, { n: CATS.length, l: "Catégories" }, { n: "100%", l: "Gratuit" }].map((s, i) =>
@@ -2987,15 +3012,15 @@ export default function App() {
       <section style={{ padding: "40px 20px 48px", maxWidth: 860, margin: "0 auto", background: "linear-gradient(180deg, #fff 0%, #FAFAF8 100%)", borderRadius: "20px 20px 0 0", marginTop: -8 }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111", textAlign: "center", marginBottom: 20 }}>Questions fréquentes</h2>
         {[
-          { q: "Comment fonctionne Compare. ?", a: "Recherchez votre appareil, sélectionnez la panne et comparez instantanément les 3 options : réparer, acheter reconditionné ou racheter neuf. Notre algorithme calcule les coûts et vous recommande la meilleure solution." },
-          { q: "Les prix affichés sont-ils fiables ?", a: "Ce sont des estimations basées sur les tarifs moyens en France. Les prix réels peuvent varier selon le prestataire et votre localisation. Ils incluent pièces et main d'œuvre pour la réparation." },
-          { q: "C'est quoi le bonus QualiRépar ?", a: "C'est une aide de l'État de 10 à 45 € déduite directement chez un réparateur labellisé QualiRépar. Aucune démarche, la réduction est appliquée automatiquement." },
-          { q: "Compare. est-il gratuit ?", a: "Oui, 100% gratuit. Nous sommes rémunérés par des commissions d'affiliation lorsque vous achetez via nos liens, sans aucun surcoût pour vous." },
-          { q: "Puis-je cumuler plusieurs pannes ?", a: "Oui ! Sur chaque page produit, cliquez sur « Plusieurs problèmes ? » pour activer le mode cumul et voir le coût total de toutes vos réparations." },
-          { q: "Comment sont calculées les estimations de réparation ?", a: "Nous nous appuyons sur les tarifs moyens des pièces détachées et de la main d'œuvre en France, ainsi que sur les tutoriels vidéo et les retours de réparateurs. Les fourchettes indiquent un ordre de grandeur réaliste." },
-          { q: "Puis-je suggérer un produit à ajouter ?", a: "Oui ! Utilisez la page Contact pour nous envoyer votre suggestion. Nous examinons chaque demande et ajoutons les appareils les plus demandés." },
-          { q: "Les liens d'achat sont-ils sécurisés ?", a: "Oui. Nous redirigeons vers des marchands reconnus (Amazon, Back Market, Fnac, etc.). Vous achetez directement chez eux, nous ne stockons aucune donnée de paiement." },
-          { q: "Compare. compare-t-il les vrais prix en temps réel ?", a: "Les prix neuf et reconditionné sont indicatifs (basés sur les tarifs habituels). Pour les prix exacts, cliquez sur les liens pour voir les offres actuelles sur chaque site partenaire." },
+          { q: "Comment fonctionne Compare. ?", a: "Tapez le nom de votre appareil, choisissez la panne, et Compare. affiche côte à côte : coût de réparation, prix reconditionné et prix neuf. Un verdict vous indique l’option la plus logique. Le tout en une trentaine de secondes." },
+          { q: "Les prix affichés sont-ils fiables ?", a: "Ce sont des fourchettes basées sur les tarifs moyens en France (pièces + main d’œuvre). Ils varient selon le réparateur et la région. À utiliser comme ordre de grandeur — un devis reste la référence." },
+          { q: "C'est quoi le bonus QualiRépar ?", a: "Une aide de l’État (10 à 45 €) déduite automatiquement chez un réparateur labellisé QualiRépar. Pas de dossier : la réduction est appliquée sur la facture." },
+          { q: "Compare. est-il gratuit ?", a: "Oui, 100 % gratuit. Nous sommes rémunérés par des commissions d’affiliation lorsque vous achetez via nos liens — sans surcoût pour vous." },
+          { q: "Puis-je cumuler plusieurs pannes ?", a: "Oui. Sur chaque page produit, cliquez sur « Plusieurs problèmes ? » pour voir le coût total de toutes vos réparations." },
+          { q: "Comment sont calculées les estimations de réparation ?", a: "Nous nous appuyons sur les tarifs moyens des pièces et de la main d’œuvre en France, les tutoriels vidéo et les retours de réparateurs. Les fourchettes donnent un ordre de grandeur réaliste." },
+          { q: "Puis-je suggérer un produit à ajouter ?", a: "Oui. Utilisez la page Contact pour nous envoyer votre suggestion. Nous intégrons les appareils les plus demandés." },
+          { q: "Les liens d'achat sont-ils sécurisés ?", a: "Oui. Nous redirigeons vers des marchands reconnus (Amazon, Back Market, Fnac, etc.). Vous achetez directement chez eux — nous ne stockons aucune donnée de paiement." },
+          { q: "Compare. compare-t-il les vrais prix en temps réel ?", a: "Les prix neuf et reconditionné sont indicatifs. Pour les prix exacts, cliquez sur les liens pour voir les offres actuelles sur chaque site partenaire." },
         ].map((f, i) => <details key={i} style={{ background: "#fff", borderRadius: 10, marginBottom: 6, border: "1px solid #E8E6E2", transition: "all .2s ease" }}>
           <summary style={{ padding: "14px 18px", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "#111" }}>{f.q}</summary>
           <p style={{ padding: "0 18px 14px", fontSize: 13, color: "#6B7280", lineHeight: 1.7 }}>{f.a}</p>
@@ -3003,8 +3028,8 @@ export default function App() {
         <div style={{ textAlign: "center", marginTop: 16, marginBottom: 28 }}><button type="button" onClick={() => nav("faq")} style={{ fontSize: 13, fontWeight: 600, color: GREEN, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit" }}>Voir toutes les questions fréquentes →</button></div>
         <div style={{ background: "#fff", border: "1px solid #E8E6E2", borderRadius: 14, padding: 28, marginTop: 24, boxShadow: "0 2px 12px rgba(0,0,0,.04)" }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: ACCENT, marginBottom: 12 }}>Qui sommes-nous ?</h2>
-          <p style={{ fontSize: 14, color: "#555", lineHeight: 1.7, marginBottom: 10 }}>Basés à Paris, nous avons créé Compare. pour aider chaque personne à faire le meilleur choix entre réparer, acheter d'occasion ou racheter neuf.</p>
-          <p style={{ fontSize: 14, color: "#555", lineHeight: 1.7, marginBottom: 0 }}>Chaque appareil réparé, c'est un appareil de moins en décharge, des ressources préservées et des émissions de CO₂ évitées.</p>
+          <p style={{ fontSize: 14, color: "#555", lineHeight: 1.7, marginBottom: 10 }}>Basés à Paris, nous avons créé Compare. pour aider chacun à faire le meilleur choix entre réparer, acheter d’occasion ou racheter neuf.</p>
+          <p style={{ fontSize: 14, color: "#555", lineHeight: 1.7, marginBottom: 0 }}>Chaque appareil réparé, c’est un appareil de moins en décharge, des ressources préservées et des émissions de CO₂ évitées.</p>
           <button type="button" onClick={() => nav("about")} style={{ display: "inline-block", marginTop: 14, fontSize: 14, fontWeight: 600, color: GREEN, cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit" }}>En savoir plus sur Compare. →</button>
         </div>
       </section>

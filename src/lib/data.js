@@ -885,96 +885,148 @@ export const TUTORIAL_STEPS_BY_PRODUCT = {
 
 export const WHEN_REPAIR_SPEC = {
   "Lave-linge": {
-    reparer: "Pour un lave-linge, la réparation est pertinente quand la panne concerne une pièce d'usure classique : joint de hublot, pompe de vidange, courroie ou charbon moteur. Le coût reste souvent sous 30 % du neuf. Les roulements sont plus délicats (démontage du tambour) mais réparables par un pro.",
-    remplacer: "Remplacer si la carte électronique est HS (coût prohibitif), si les roulements ont endommagé le bloc tambour, ou si l'appareil a plus de 10 ans. L'occasion/reconditionné est rare pour le gros électroménager — le neuf avec garantie reste la référence.",
+    reparer: "Fuit sous la machine, ne s'essore plus, tambour qui cogne ou fait un bruit métallique ? Ces symptômes pointent souvent vers une pièce d'usure : joint de hublot, pompe de vidange, courroie ou charbon moteur. Ces réparations restent abordables et un pro les réalise couramment. Les roulements (bruit de roulement au tambour) sont plus lourds à changer mais faisables — à condition que le bloc tambour ne soit pas endommagé.",
+    remplacer: "Si la carte électronique est HS, le devis dépasse souvent le prix d'un lave-linge d'entrée de gamme. Même logique si les roulements ont « mangé » le tambour. Au-delà de 10 ans, les pièces se raréfient et le neuf avec garantie devient plus rassurant. L'occasion existe peu pour le gros électroménager.",
   },
   "Lave-vaisselle": {
-    reparer: "Pour un lave-vaisselle, les pannes courantes (pompe de cyclage, joint de porte, bras de lavage) sont souvent réparables à moindre coût. La résistance et la pompe de vidange sont accessibles. Vérifier la disponibilité des pièces avant de décider.",
-    remplacer: "Remplacer si la carte électronique est HS ou si la cuve fuit. Un lave-vaisselle de plus de 8 ans avec une panne majeure justifie souvent le remplacement par du neuf.",
+    reparer: "Eau qui stagne au fond, porte qui fuit, vaisselle mal rincée ? La pompe de cyclage, le joint de porte et les bras de lavage sont les pannes les plus fréquentes — et les moins chères à corriger. La résistance et la pompe de vidange sont aussi accessibles. Avant de jeter l'appareil, faites estimer le coût : pour ces pièces, la réparation tient souvent la route.",
+    remplacer: "Carte électronique HS ou cuve qui fuit : là, le remplacement est généralement plus logique. Un lave-vaisselle de plus de 8 ans avec une panne majeure justifie rarement une grosse réparation. Le neuf reste la norme pour ce type d'appareil.",
   },
   "Réfrigérateur": {
-    reparer: "Pour un réfrigérateur, le joint de porte, le thermostat et le ventilateur sont réparables. Un compresseur HS est en revanche rarement rentable à remplacer — le coût dépasse souvent 50 % du neuf.",
-    remplacer: "Remplacer si le compresseur est HS, si la fuite de gaz est avérée, ou si l'appareil a plus de 12 ans. Le reconditionné est peu courant — privilégier le neuf avec garantie constructeur.",
+    reparer: "Ne refroidit plus, givre excessif, lumière qui ne s'allume plus ? Le joint de porte, le thermostat et le ventilateur se changent sans trop de difficulté. En revanche, un compresseur HS coûte cher : le devis dépasse souvent la moitié du prix d'un frigo neuf, et la fiabilité n'est pas garantie.",
+    remplacer: "Compresseur HS, fuite de gaz confirmée, ou appareil de plus de 12 ans : dans ces cas, le neuf s'impose. Le reconditionné existe peu pour les réfrigérateurs — la garantie constructeur reste la référence.",
+  },
+  "Sèche-linge": {
+    reparer: "Ne sèche plus, fait du bruit, porte qui fuit ? La résistance, le condensateur, le joint de porte et le filtre à charpie sont des pièces d'usure courantes. La courroie du tambour se change aussi. Ces réparations restent abordables si l'appareil a moins de 8 ans.",
+    remplacer: "Carte électronique HS, moteur ou compresseur (condensation) HS : le devis grimpe vite. Un sèche-linge de plus de 10 ans avec panne lourde justifie rarement la réparation. Le neuf reste la norme.",
+  },
+  "Congélateur": {
+    reparer: "Ne congèle plus, givre anormal, lumière HS ? Même logique que le réfrigérateur : joint, thermostat, ventilateur se changent. Le compresseur HS, en revanche, coûte souvent plus de la moitié du prix neuf.",
+    remplacer: "Compresseur HS, fuite de gaz, ou appareil de plus de 12 ans : le remplacement s'impose. Le reconditionné existe peu pour les congélateurs.",
+  },
+  "Four": {
+    reparer: "Ne chauffe plus, porte qui ne ferme plus, résistance qui grille ? La résistance, le joint de porte et le thermostat se changent. Les fours encastrables et les fours pose libre ont des pièces souvent disponibles. Une résistance HS est une panne courante et réparable.",
+    remplacer: "Carte électronique HS, chambre de cuisson endommagée, ou four de plus de 12 ans avec panne lourde : le neuf devient plus logique. Les fours se déprécient moins vite que l'électroménager blanc.",
+  },
+  "Four encastrable": {
+    reparer: "Même logique que le four classique : résistance, joint, thermostat. Les pièces sont spécifiques au modèle — vérifier la disponibilité. Un four encastrable récent se répare souvent à coût raisonnable.",
+    remplacer: "Carte électronique HS ou four de plus de 10 ans avec panne majeure : le remplacement est souvent préférable. L'encastrable impose des contraintes de dimensions.",
+  },
+  "Micro-ondes": {
+    reparer: "Ne chauffe plus, plateau qui ne tourne plus, porte qui ne ferme plus ? Le magnétron (élément chauffant) et le moteur du plateau se changent. Le micro-ondes est l'un des appareils les plus simples à réparer — et les moins chers à remplacer. À évaluer selon le modèle.",
+    remplacer: "Carte électronique HS ou micro-ondes d'entrée de gamme : le neuf coûte souvent moins cher qu'une réparation. Les micro-ondes se déprécient vite.",
+  },
+  "Aspirateur balai": {
+    reparer: "Batterie qui tient plus, brosse qui ne tourne plus, moteur qui siffle ? La batterie et la brosse se changent facilement. Le moteur est plus délicat mais parfois réparable. Pour un aspirateur milieu de gamme, la réparation vaut souvent le coup.",
+    remplacer: "Moteur HS sur un modèle d'entrée de gamme, ou aspirateur de plus de 5 ans avec plusieurs pannes : le neuf ou le reconditionné peuvent être plus logiques. Les aspirateurs balais évoluent vite (autonomie, fonction serpillère).",
+  },
+  "Aspirateur robot": {
+    reparer: "Batterie qui tient plus, brosse usée, roue qui patine ? Ces pièces se changent et restent disponibles pour la plupart des modèles. La station de charge peut aussi être réparée. Pertinent si le robot a moins de 4 ans.",
+    remplacer: "Capteurs HS, carte électronique défaillante, ou robot de plus de 5 ans : les modèles récents offrent plus de fonctionnalités (cartographie, serpillère) pour un prix proche du neuf. Le reconditionné existe peu.",
   },
   "Plaque induction": {
-    reparer: "Pour une plaque induction, seule une panne de foyer isolé ou de ventilateur peut être réparée à coût raisonnable. La plaque vitrocéramique fissurée ou la carte de puissance HS rendent la réparation peu rentable.",
-    remplacer: "Remplacer si la plaque est fissurée (risque électrique) ou si la carte électronique est HS. Les plaques de cuisson se trouvent peu en reconditionné — le neuf reste la norme.",
+    reparer: "Une zone qui ne chauffe plus, des touches qui ne répondent plus ? Le module de la zone défaillante se change, tout comme la carte électronique si les pièces sont encore au catalogue. Le coût varie selon la marque — une seule zone HS reste souvent réparable à un prix correct. La plaque fissurée, en revanche, impose le remplacement pour des raisons de sécurité.",
+    remplacer: "Plaque fissurée ou carte mère défaillante : le devis grimpe vite. Une plaque de plus de 8 ans avec panne électronique justifie souvent le neuf. Les plaques de cuisson se trouvent peu en reconditionné.",
   },
   "Plaque vitrocéramique": {
-    reparer: "Pour une plaque vitrocéramique, un foyer qui ne chauffe plus peut parfois être réparé (résistance, connexion). La plaque fissurée impose le remplacement pour des raisons de sécurité.",
-    remplacer: "Remplacer si la plaque est cassée ou si la carte électronique est HS. Le neuf est la référence pour ce type d'appareil.",
+    reparer: "Un foyer qui ne chauffe plus, une vitre fissurée ? Les résistances (radiantes ou halogènes) se changent pièce par pièce. La vitre peut être remplacée si le modèle est encore référencé. Une seule zone concernée = réparation souvent rentable. La plaque cassée impose le remplacement.",
+    remplacer: "Plusieurs zones HS ou vitre cassée sur un modèle ancien : si les pièces sont introuvables, le remplacement s'impose. Le neuf reste la référence pour ce type d'appareil.",
   },
   "Chauffe-eau": {
-    reparer: "Pour un chauffe-eau, la résistance, le thermostat, l'anode et le groupe de sécurité sont des pièces d'usure courantes et remplaçables. Une fuite sur le corps du ballon impose en revanche le remplacement.",
-    remplacer: "Remplacer si le ballon fuit, si la cuve est entartrée (eau rouillée), ou si l'appareil a plus de 15 ans. Un pro peut diagnostiquer rapidement.",
+    reparer: "Plus d'eau chaude, fuite au groupe de sécurité, eau rouillée ? L'anode, le thermostat et le groupe de sécurité sont des pièces d'usure qu'un plombier change couramment. La résistance aussi. Une fuite au groupe de sécurité est l'une des pannes les plus fréquentes — et des moins chères à corriger.",
+    remplacer: "Cuve percée (corrosion visible, fuite en bas du ballon) : pas de réparation possible. Au-delà de 15 ans avec une panne majeure, ou pièces introuvables, le remplacement est la seule option.",
   },
   "Chaudière gaz": {
-    reparer: "Pour une chaudière gaz, les interventions (carte électronique, circulateur, sonde) relèvent quasi exclusivement du professionnel agréé. La réparation est pertinente si le coût reste sous 30 % du neuf et que l'appareil est récent.",
-    remplacer: "Remplacer si la chaudière a plus de 15 ans, si l'échangeur est percé, ou si la réparation dépasse 40 % du prix d'une chaudière neuve. Obligation légale de faire intervenir un pro qualifié.",
+    reparer: "Pas de chauffage, pas d'eau chaude, code défaut affiché ? Électrovanne, circulateur, pressostat, sonde : ces pannes sont courantes et réparables par un pro qualifié. Un entretien annuel limite les pannes et prolonge la durée de vie. La réparation tient la route si l'appareil a moins de 12 ans.",
+    remplacer: "Chambre de combustion fissurée, échangeur percé, chaudière de plus de 15 ans avec panne lourde, ou pièces obsolètes : le remplacement est recommandé. Les anciennes chaudières sont aussi moins performantes. Obligation légale : faire intervenir un pro qualifié.",
   },
   "Robinet / Mitigeur": {
-    reparer: "Pour un robinet ou mitigeur, la cartouche, le joint et le flexible sont des pièces standard facilement remplaçables. La réparation est presque toujours rentable — évitez de remplacer tout le robinet pour une fuite au bec.",
-    remplacer: "Remplacer si le corps du robinet est fêlé, si les filetages sont usés, ou si le modèle n'existe plus (pièces introuvables).",
+    reparer: "Fuite au bec, goutte à goutte, mitigeur qui fuit à la base ? Joint, cartouche ou flexible : ces pièces se changent sans démonter tout l'équipement. Un plombier (ou un bricoleur averti) corrige souvent la panne pour quelques dizaines d'euros. La réparation est presque toujours rentable.",
+    remplacer: "Corps fissuré, filetages usés, pièces introuvables (modèle ancien ou marque exotique), ou envie de passer à un mitigeur plus moderne : dans ces cas, le remplacement est plus simple.",
   },
   "Tondeuse": {
-    reparer: "Pour une tondeuse thermique, la lame, le filtre à air, la bougie et le câble de débrayage sont des pièces d'usure courantes. Une tondeuse électrique : câble, interrupteur, moteur (si disponible).",
-    remplacer: "Remplacer si le bloc moteur est HS (thermique) ou si la tondeuse a plus de 10 ans avec une panne coûteuse. L'occasion est courante pour le jardin.",
+    reparer: "Lame abîmée, moteur qui tousse, câble d'embrayage qui lâche ? Sur une thermique : lame, filtre, bougie, câble — pièces d'usure classiques. Sur une électrique : câble et moteur se changent si les pièces sont au catalogue. Ces réparations restent courantes.",
+    remplacer: "Moteur HS sur une tondeuse de plus de 8 ans : le coût de la pièce et de la main d'œuvre dépasse souvent le prix d'une machine d'entrée de gamme. L'occasion est courante pour le jardin.",
   },
   "Tondeuse robot": {
-    reparer: "Pour une tondeuse robot, la batterie et les lames sont remplaçables. Les capteurs et la carte électronique relèvent du SAV constructeur — vérifier la garantie et les pièces disponibles.",
-    remplacer: "Remplacer si la carte est HS ou si le modèle n'est plus supporté (pièces introuvables). Le reconditionné existe peu — le neuf reste la référence.",
+    reparer: "Batterie qui ne tient plus, lames usées, roues qui patinent ? Ces pièces se changent et restent disponibles pour la plupart des modèles récents. La carte électronique peut être réparée si le robot n'est pas trop ancien — vérifier la disponibilité des pièces.",
+    remplacer: "Carte électronique HS sur un modèle de plus de 5 ans, ou batterie à remplacer pour un coût proche du neuf : le remplacement est souvent plus rentable. Le reconditionné existe peu — le neuf reste la référence.",
   },
-  // Tech — personnalisés par produit
+  // Tech — spécifique au modèle et à la panne
   Smartphone: {
-    reparer: "Pour un smartphone, la réparation est pertinente quand la panne est courante (écran, batterie, connecteur) et que le coût reste sous 30 % du neuf. Les pièces sont disponibles et de nombreux tutoriels existent.",
-    remplacer: "Remplacer si le coût dépasse 40 % du neuf, si plusieurs pannes s'accumulent, ou si l'appareil a plus de 5 ans. Le reconditionné est très en vogue : même marque, garantie, prix réduit.",
+    reparer: "Écran cassé, batterie qui tient plus la charge, connecteur de charge défaillant ? Ces pannes sont courantes et les pièces circulent. Les tutoriels abondent pour iPhone et Galaxy. Si le devis reste raisonnable et que l'appareil a moins de 5 ans, la réparation vaut souvent le coup — surtout pour un modèle milieu ou haut de gamme.",
+    remplacer: "Plusieurs pannes cumulées, appareil de plus de 5 ans, ou devis qui s'approche du prix d'un reconditionné : dans ces cas, le remplacement est plus logique. Le reconditionné est très développé — même marque, garantie, prix réduit.",
   },
   Tablette: {
-    reparer: "Pour une tablette, l'écran et la batterie sont les pannes les plus réparables. Le coût doit rester sous 35 % du neuf. Les tutoriels vidéo aident pour les modèles populaires.",
-    remplacer: "Remplacer si l'écran est trop cher à remplacer (souvent 40–50 % du neuf) ou si la tablette a plus de 6 ans. Le reconditionné existe pour iPad et Galaxy Tab.",
+    reparer: "Écran fissuré, batterie qui se vide trop vite ? L'écran coûte cher (souvent 40–50 % du neuf) mais reste réparable. La batterie, elle, se change à moindre coût. Pour un iPad ou une Galaxy Tab récente, les tutoriels et pièces existent. À évaluer selon le modèle exact.",
+    remplacer: "Tablette de plus de 6 ans, écran trop cher à remplacer, ou panne de carte mère : le reconditionné (iPad, Galaxy Tab) offre une alternative crédible. Les tablettes se renouvellent moins vite que les smartphones.",
   },
   "PC Portable": {
-    reparer: "Pour un PC portable, batterie, clavier, SSD et ventilateur sont souvent réparables en DIY. La réparation est pertinente si le coût reste sous 30 % du neuf et que l'appareil a moins de 6 ans.",
-    remplacer: "Remplacer si la carte mère est HS, si l'écran coûte trop cher, ou si le portable a plus de 7 ans. Le reconditionné professionnel (ThinkPad, Latitude) offre un bon rapport qualité/prix.",
+    reparer: "Batterie qui tient plus, clavier qui double des touches, ventilateur bruyant, SSD lent ? Ces pannes sont souvent réparables en DIY ou chez un réparateur. Les composants (RAM, disque) sont modulaires sur la plupart des portables. Pertinent si l'appareil a moins de 6 ans et que la panne est ciblée.",
+    remplacer: "Carte mère HS, écran cassé sur un modèle ancien, ou portable de plus de 7 ans : le reconditionné pro (ThinkPad, Latitude, MacBook) offre un bon rapport qualité/prix. Les pièces d'occasion circulent aussi.",
   },
   "PC Bureau": {
-    reparer: "Pour un PC fixe, la réparation est souvent simple : alimentation, RAM, disque. Les composants sont modulaires et facilement remplaçables.",
-    remplacer: "Remplacer si la carte mère ou le processeur est HS, ou si l'âge dépasse 8 ans. L'occasion est courante pour les PC bureaux.",
+    reparer: "Alimentation qui lâche, RAM défaillante, disque dur en panne ? Un PC fixe est le plus réparable des ordinateurs : composants modulaires, accès facile. La réparation est souvent simple et rentable. Même une carte mère se change si le boîtier et le reste valent le coup.",
+    remplacer: "Processeur HS (rare) ou PC de plus de 8 ans avec panne lourde : l'occasion est courante pour les tours. Un PC bureau d'occasion peut encore tenir plusieurs années.",
   },
   "All-in-One": {
-    reparer: "Pour un All-in-One, la réparation est plus délicate : composants intégrés, écran collé. Pertinent uniquement pour des pannes simples (RAM, disque) à coût raisonnable.",
-    remplacer: "Remplacer si l'écran ou la carte mère est HS — le coût dépasse souvent 50 % du neuf. Le reconditionné existe pour iMac et équivalents.",
+    reparer: "RAM ou disque défaillant : parfois accessible et réparable. Pour le reste, les composants sont intégrés et l'écran est souvent collé — la réparation devient délicate. Pertinent uniquement pour des pannes simples à coût maîtrisé.",
+    remplacer: "Écran ou carte mère HS : le devis dépasse souvent la moitié du prix neuf. Le reconditionné existe pour iMac et équivalents. Les All-in-One sont moins réparables que les tours.",
   },
   Téléviseur: {
-    reparer: "Pour une TV, seules les pannes mineures (carte alimentation, rétroéclairage) sont parfois réparables. La dalle cassée impose le remplacement.",
-    remplacer: "Remplacer si la dalle est endommagée (coût prohibitif) ou si la TV a plus de 8 ans. Les TV se déprécient vite — le neuf offre souvent un meilleur rapport qualité/prix.",
+    reparer: "TV qui ne s'allume plus, image qui clignote, bandes sombres ? La carte d'alimentation et le rétroéclairage LED se changent parfois à un prix correct. La dalle cassée, en revanche, coûte une fortune — souvent plus chère qu'une TV neuve équivalente.",
+    remplacer: "Dalle endommagée (impact, ligne morte, tache) : pas de réparation rentable. TV de plus de 8 ans avec panne électronique : les modèles récents offrent souvent un meilleur rapport qualité/prix (4K, HDR, smart TV).",
   },
   "Console de salon": {
-    reparer: "Pour une console, ventilateur, lecteur disque et alimentation sont réparables. Pertinent si le coût reste sous 35 % du neuf et que la console est récente.",
-    remplacer: "Remplacer si la carte mère est HS ou si la console a plus de 6 ans. Le reconditionné est très courant pour les consoles de jeu.",
+    reparer: "Ventilateur bruyant, lecteur disque qui ne lit plus, alimentation HS ? Ces pannes sont réparables et les pièces circulent pour PS5, Xbox, Switch. Si la console a moins de 5 ans et que la panne est isolée, la réparation tient la route.",
+    remplacer: "Carte mère HS ou console de plus de 6 ans avec panne lourde : le reconditionné est très développé. Les consoles de jeu se revendent bien — une occasion garantie peut être plus logique qu'une grosse réparation.",
   },
   "Console portable": {
-    reparer: "Pour une console portable (Switch, Steam Deck), écran et batterie sont les pannes les plus réparables. Les tutoriels existent pour les modèles populaires.",
-    remplacer: "Remplacer si l'écran ou la carte mère est HS. Le reconditionné est courant pour la Switch.",
+    reparer: "Écran cassé, batterie qui tient plus, stick drift ? Sur Switch et Steam Deck, les tutoriels et pièces existent. L'écran coûte cher mais reste réparable. La batterie et les sticks sont plus abordables.",
+    remplacer: "Carte mère HS ou écran trop cher sur un modèle ancien : le reconditionné est courant pour la Switch. Les consoles portables évoluent moins vite que les smartphones.",
   },
   Manette: {
-    reparer: "Pour une manette, le stick drift et les boutons sont souvent réparables en DIY. Coût faible, tutoriels nombreux.",
-    remplacer: "Remplacer si la réparation échoue ou si la manette est très usée. Les manettes neuves restent abordables.",
+    reparer: "Stick drift, bouton qui ne répond plus, gâchette qui coince ? Les manettes se démontent facilement. Les sticks et boutons se changent, les tutoriels sont nombreux. Coût faible — la réparation vaut presque toujours le coup avant de racheter.",
+    remplacer: "Réparation qui échoue, manette très usée (grip qui part, coque abîmée) : une manette neuve reste abordable. L'occasion existe aussi pour les manettes premium.",
   },
   "Écouteurs sans fil": {
-    reparer: "Pour des écouteurs sans fil, la réparation est rarement rentable : composants miniaturisés, soudure délicate. La batterie peut parfois être changée sur certains modèles.",
-    remplacer: "Remplacer dans la plupart des cas. Le reconditionné existe pour AirPods et équivalents.",
+    reparer: "Batterie qui tient plus, son d'un seul côté, grille bouchée ? Les composants sont miniaturisés et la soudure est délicate. La batterie peut parfois être changée sur certains modèles (AirPods Pro 2, etc.) mais le coût s'approche souvent du reconditionné.",
+    remplacer: "Dans la plupart des cas, le remplacement est plus logique. Le reconditionné existe pour AirPods et équivalents — garantie, prix réduit. Les écouteurs sans fil ont une durée de vie limitée par la batterie.",
   },
   "Casque audio": {
-    reparer: "Pour un casque, les coussinets et le câble sont facilement remplaçables. La réparation est pertinente si le coût reste sous 25 % du neuf.",
-    remplacer: "Remplacer si le driver ou la carte Bluetooth est HS. Le reconditionné est courant pour les casques premium.",
+    reparer: "Coussinets usés, câble qui craque, arceau qui se desserre ? Ces pièces se changent facilement. Les coussinets et câbles sont des consommables. Pour un casque milieu ou haut de gamme, la réparation reste souvent rentable.",
+    remplacer: "Driver HS, carte Bluetooth défaillante : là, la réparation devient compliquée. Le reconditionné est courant pour les casques premium (Sony, Bose, Sennheiser).",
   },
   "Vélo électrique": {
-    reparer: "Pour un VAE, batterie et moteur sont les pièces les plus coûteuses. Le reste (freins, câbles, pneus) est souvent réparable en DIY ou chez un vélociste.",
-    remplacer: "Remplacer si la batterie ou le moteur est HS et que le coût dépasse 40 % du neuf. L'occasion est courante pour les vélos électriques.",
+    reparer: "Batterie qui tient moins, freins à régler, pneu crevé, chaîne usée ? Tout ce qui n'est pas batterie ou moteur se répare souvent en DIY ou chez un vélociste. La batterie se change si le coût reste raisonnable — les modèles récents ont des packs plus abordables.",
+    remplacer: "Moteur HS ou batterie à remplacer pour un coût proche du neuf : le VAE d'occasion peut être une alternative. Les vélos électriques se revendent — un modèle récent d'occasion avec batterie garantie peut tenir la route.",
   },
   "Montre connectée": {
-    reparer: "Pour une montre connectée, la réparation est rarement rentable : composants miniaturisés, étanchéité à préserver. La batterie peut parfois être changée sur certains modèles.",
-    remplacer: "Remplacer dans la plupart des cas. Le reconditionné existe pour Apple Watch et Galaxy Watch.",
+    reparer: "Batterie qui tient plus, bracelet usé ? Le bracelet se change en quelques secondes. La batterie, sur certains modèles (Apple Watch, Galaxy Watch), peut être remplacée par un pro — mais le coût s'approche souvent du reconditionné.",
+    remplacer: "Écran cassé, capteurs HS, ou montre de plus de 4 ans : le reconditionné existe pour Apple Watch et Galaxy Watch. Les montres connectées ont une durée de vie limitée par la batterie et les mises à jour.",
+  },
+  "WC / Toilettes": {
+    reparer: "Chasse qui fuit, bouton qui ne fonctionne plus, joint qui laisse passer l'eau ? Le mécanisme de chasse (clapet, flotteur, joint) se change facilement. Les pièces sont standard et peu chères. Un plombier corrige souvent la panne en moins d'une heure.",
+    remplacer: "Cuvette fissurée, porcelaine cassée, ou WC très ancien avec fuite récurrente : le remplacement est plus simple. Les WC modernes (double commande, économie d'eau) offrent un confort accru.",
+  },
+  "Colonne de douche": {
+    reparer: "Fuite au flexible, mitigeur qui goutte, douchette qui ne tient plus ? Cartouche, joints et flexibles se changent. Les colonnes de douche ont des pièces souvent standard. La réparation reste rentable si le corps n'est pas endommagé.",
+    remplacer: "Corps fissuré, pièces introuvables (modèle ancien), ou envie de moderniser : le remplacement s'impose. Les colonnes évoluent (effet pluie, jets massants).",
+  },
+  "Ballon thermodynamique": {
+    reparer: "Plus d'eau chaude, fuite, bruit anormal ? La résistance, le thermostat et le groupe de sécurité se changent. Le compresseur (PAC intégrée) peut être réparé par un pro si les pièces sont disponibles. Pertinent si l'appareil a moins de 10 ans.",
+    remplacer: "Cuve percée, compresseur HS, ou ballon de plus de 12 ans : le remplacement est recommandé. Les ballons thermodynamiques récents sont plus performants. Faire intervenir un pro qualifié.",
+  },
+  "Taille-haie": {
+    reparer: "Lames qui coupent mal, câble qui lâche, moteur qui tousse ? Les lames et le câble se changent. Le moteur (thermique ou électrique) peut être réparé si les pièces existent. Ces pannes sont courantes sur les taille-haies.",
+    remplacer: "Moteur HS sur un taille-haie de plus de 8 ans : le coût dépasse souvent le prix d'un appareil d'entrée de gamme. L'occasion existe pour le jardin.",
+  },
+  "Nettoyeur haute pression": {
+    reparer: "Lance qui fuit, pistolet qui ne tient plus la pression, moteur qui s'arrête ? La lance, le pistolet et les joints se changent facilement. La pompe est plus délicate mais parfois réparable. Pour un nettoyeur milieu de gamme, la réparation vaut le coup.",
+    remplacer: "Pompe HS ou moteur HS sur un modèle d'entrée de gamme : le neuf coûte souvent moins cher. Les nettoyeurs haute pression se déprécient vite.",
+  },
+  "Trottinette électrique": {
+    reparer: "Batterie qui tient plus, pneu crevé, frein qui ne répond plus ? La batterie se change si le coût reste raisonnable. Les pneus et freins sont des pièces d'usure. Le contrôleur peut être réparé par un pro. Pertinent si la trottinette a moins de 4 ans.",
+    remplacer: "Contrôleur HS, batterie à remplacer pour un coût proche du neuf, ou trottinette de plus de 5 ans : le reconditionné existe. Les modèles récents offrent plus d'autonomie et de sécurité.",
   },
 }

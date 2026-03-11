@@ -55,18 +55,18 @@ export function getVerdict(issues, item) {
   const age = new Date().getFullYear() - item.year;
   const isReconEnVogue = TECH_CATS.includes(item.category);
   const remplacerWhy = isReconEnVogue
-    ? `Le coût de réparation (${Math.round(ratio*100)}% du neuf) rend le remplacement plus adapté. Pour les ${item.productType.toLowerCase()}s, le reconditionné est très en vogue : comparez ~${reconPrice} € (${sl}) et ${item.priceNew} € (neuf).`
-    : `Le coût de réparation (${Math.round(ratio*100)}% du neuf) rend le remplacement plus adapté. Pour ce type de produit (${item.productType}), le reconditionné est moins courant — le neuf (${item.priceNew} €) reste souvent la référence.`;
+    ? `Le devis s’approche du prix du neuf. Pour les ${item.productType.toLowerCase()}s, le reconditionné est une alternative crédible : ~${reconPrice} € (${sl}) contre ${item.priceNew} € (neuf). Comparez les offres avant de trancher.`
+    : `Le devis s’approche du prix du neuf. Pour ce type de produit (${item.productType}), le reconditionné est moins courant — le neuf (${item.priceNew} €) reste souvent la référence.`;
   if (repairFeasibility === "peu_realiste") {
-    if (ratio < .25) return { v: "remplacer", label: "Remplacer", color: AMBER, icon: "swap", pertinence: "Réparation peu réaliste sans pro", why: `L'intervention nécessite un professionnel. Le remplacement est plus simple. ${isReconEnVogue ? `Pour les ${item.productType.toLowerCase()}s, le reconditionné est très en vogue (~${reconPrice} €).` : `Pour ce type de produit, comparez ${sl} et neuf selon la disponibilité.`}`, tip: "Remplacer", repairFeasibility };
+    if (ratio < .25) return { v: "remplacer", label: "Remplacer", color: AMBER, icon: "swap", pertinence: "Réparation peu réaliste sans pro", why: `L’intervention nécessite un professionnel. Le remplacement est plus simple. ${isReconEnVogue ? `Pour les ${item.productType.toLowerCase()}s, le reconditionné est une option à considérer (~${reconPrice} €).` : `Pour ce type de produit, comparez ${sl} et neuf selon la disponibilité.`}`, tip: "Remplacer", repairFeasibility };
     return { v: "remplacer", label: "Remplacer", color: "#DC2626", icon: "swap", pertinence: "Remplacement recommandé", why: remplacerWhy, tip: "Remplacer", repairFeasibility };
   }
   if (repairFeasibility === "technique") {
-    if (ratio < .07) return { v: "reparer", label: "Réparer", color: GREEN, icon: "tool", pertinence: "Réparation possible mais technique", why: `Coût très bas (${Math.round(ratio*100)}% du neuf). À envisager si vous êtes équipé ; sinon le ${sl} (~${reconPrice} €) reste plus sûr.`, tip: "À envisager si équipé", repairFeasibility };
+    if (ratio < .07) return { v: "reparer", label: "Réparer", color: GREEN, icon: "tool", pertinence: "Réparation possible mais technique", why: `Coût très bas. À envisager si vous êtes équipé ; sinon le ${sl} (~${reconPrice} €) reste plus sûr.`, tip: "À envisager si équipé", repairFeasibility };
     return { v: "remplacer", label: "Remplacer", color: AMBER, icon: "swap", pertinence: "Remplacement préférable", why: remplacerWhy, tip: "Remplacer", repairFeasibility };
   }
-  if (ratio < .15) return { v: "reparer", label: "Réparer", color: GREEN, icon: "check", pertinence: "Très rentable à réparer", why: `La réparation ne coûte que ${Math.round(ratio*100)}% du prix neuf, soit une économie d'environ ${Math.round(savings)} € par rapport au neuf et au ${sl}. C'est l'option la plus avantageuse.`, tip: "Économie maximale", repairFeasibility };
-  if (ratio < .30) return { v: "reparer", label: "Réparer", color: GREEN, icon: "tool", pertinence: "Réparer si bon état général", why: `Le coût de réparation reste raisonnable (${Math.round(ratio*100)}% du neuf). Si votre appareil est en bon état (${item.year}, ${age} an${age > 1 ? "s" : ""}), la réparation est un bon compromis par rapport au ${sl} ou au neuf.`, tip: "Bon compromis", repairFeasibility };
+  if (ratio < .15) return { v: "reparer", label: "Réparer", color: GREEN, icon: "check", pertinence: "Très rentable à réparer", why: `La réparation reste bien en dessous du prix neuf — économie d’environ ${Math.round(savings)} € par rapport au neuf et au ${sl}. C’est l’option la plus avantageuse.`, tip: "Économie maximale", repairFeasibility };
+  if (ratio < .30) return { v: "reparer", label: "Réparer", color: GREEN, icon: "tool", pertinence: "Réparer si bon état général", why: `Le coût de réparation reste raisonnable. Si votre appareil est en bon état (${item.year}, ${age} an${age > 1 ? "s" : ""}), la réparation est un bon compromis par rapport au ${sl} ou au neuf.`, tip: "Bon compromis", repairFeasibility };
   if (ratio < .45) return { v: "remplacer", label: "Remplacer", color: AMBER, icon: "swap", pertinence: "Réparation possible mais coûteuse", why: remplacerWhy, tip: "Remplacer", repairFeasibility };
   return { v: "remplacer", label: "Remplacer", color: "#DC2626", icon: "swap", pertinence: "Remplacement recommandé", why: remplacerWhy, tip: "Remplacer", repairFeasibility };
 }
@@ -102,7 +102,7 @@ export function getRepairEstimate(issues, item) {
   if (age > 6) confidence -= 10;
   confidence = Math.max(15, Math.min(95, confidence));
   const productLabel = item ? `${item.productType} ${item.brand}` : "ce type d'appareil";
-  const explanation = `Estimation basée sur le prix des pièces (${partTotal} €), la difficulté et le temps estimé pour un ${productLabel}. Les fourchettes tiennent compte de la variabilité des tarifs (enseignes, région). Prix indicatifs pièces + main d'œuvre.`;
+  const explanation = `Estimation basée sur le prix des pièces (${partTotal} €), la difficulté et le temps estimé pour un ${productLabel}. Les tarifs varient selon l'enseigne et la région. Demandez un devis pour confirmer.`;
   return { min, max, median, confidence, explanation, partTotal };
 }
 
