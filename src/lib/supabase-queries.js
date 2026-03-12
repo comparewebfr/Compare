@@ -98,6 +98,34 @@ export async function getOffersForNeuf(productSlug) {
 }
 
 /**
+ * Récupère les offres "pièces de réparation" pour un produit.
+ * Filtre sur condition = parts.
+ * Colonnes attendues : merchant, condition, issue_type, url
+ */
+export async function getOffersForParts(productSlug) {
+  const supabase = getSupabase();
+  if (!supabase) return { data: [], error: new Error("Supabase non configuré") };
+
+  const { data: product, error: productErr } = await getProductBySlug(productSlug);
+  if (productErr || !product) return { data: [], error: productErr };
+
+  const { data: offers, error } = await supabase
+    .from("offers")
+    .select("*")
+    .eq("product_id", product.id);
+
+  if (error) return { data: [], error };
+
+  const partsConditions = ["parts", "pièces", "pieces", "reparation", "réparation"];
+  const filtered = (offers ?? []).filter((o) => {
+    const c = (o.condition ?? o.product_condition ?? "").toLowerCase();
+    return partsConditions.some((term) => c.includes(term));
+  });
+
+  return { data: filtered, error: null };
+}
+
+/**
  * Récupère les offres "occasion/reconditionné" pour un produit.
  * Filtre sur condition = refurbished, occasion, occ, etc.
  */

@@ -20,7 +20,7 @@ import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
-import { getOffersForNeuf, getOffersForOcc } from "../lib/supabase-queries";
+import { getOffersForNeuf, getOffersForOcc, getOffersForParts } from "../lib/supabase-queries";
 import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
 import { useImageLightbox } from "../lib/image-lightbox-context";
@@ -525,6 +525,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
   const [selPannes, setSelPannes] = useState([]);
   const [cumul, setCumul] = useState(false);
   const [place, setPlace] = useState("");
+  const [partsOffers, setPartsOffers] = useState(null);
   const isMobile = useIsMobile();
   useEffect(() => {
     if (fallbackIssues.length > 0) {
@@ -532,6 +533,14 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
       setSelPannes(p => p.length === 0 ? [first.id ?? first.name] : p);
     }
   }, [catId, productType]);
+  useEffect(() => {
+    if (!sampleItem) return;
+    let cancelled = false;
+    getOffersForParts(getProductSlug(sampleItem)).then(({ data }) => {
+      if (!cancelled) setPartsOffers(data ?? []);
+    });
+    return () => { cancelled = true; };
+  }, [catId, productType, sampleItem?.id]);
   const togglePanne = (iss) => {
     const id = iss.id ?? iss.name;
     if (cumul) {
@@ -542,13 +551,38 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
   };
 
   const activeIssues = fallbackIssues.filter(iss => selPannes.includes(iss.id ?? iss.name));
+  const partsPriceByIssue = useMemo(() => {
+    const offers = Array.isArray(partsOffers) ? partsOffers : [];
+    const map = {};
+    for (const o of offers) {
+      const slug = (o.issue_type ?? "").toLowerCase().replace(/_/g, "-");
+      if (!slug) continue;
+      const p = o.price_amount != null ? Math.round(Number(o.price_amount)) : null;
+      if (p != null && (map[slug] == null || p < map[slug])) map[slug] = p;
+    }
+    return map;
+  }, [partsOffers]);
+  const enrichedActiveIssues = useMemo(() => {
+    return activeIssues.map((i) => {
+      const slug = slugify(i.name);
+      const supabasePartPrice = partsPriceByIssue[slug] ?? partsPriceByIssue[slug.replace(/-/g, "_")];
+      if (supabasePartPrice == null) return i;
+      const delta = supabasePartPrice - (i.partPrice || 0);
+      return {
+        ...i,
+        partPrice: supabasePartPrice,
+        repairMin: Math.max(5, Math.round((i.repairMin || 0) + delta)),
+        repairMax: Math.max(10, Math.round((i.repairMax || 0) + delta)),
+      };
+    });
+  }, [activeIssues, partsPriceByIssue]);
   const refItem = sampleItem || items[0] || { id: 0, category: catId, productType, priceNew: avgPrice || 250, year: new Date().getFullYear() - 3, brand: "Référence", name: "Moyenne" };
-  const repairEst = refItem && activeIssues.length ? getRepairEstimate(activeIssues, refItem) : null;
-  const tMin = repairEst?.min ?? activeIssues.reduce((s, i) => s + (i.repairMin || 0), 0);
-  const tMax = repairEst?.max ?? activeIssues.reduce((s, i) => s + (i.repairMax || 0), 0);
-  const tPart = activeIssues.reduce((s, i) => s + (i.partPrice || 0), 0);
+  const repairEst = refItem && enrichedActiveIssues.length ? getRepairEstimate(enrichedActiveIssues, refItem) : null;
+  const tMin = repairEst?.min ?? enrichedActiveIssues.reduce((s, i) => s + (i.repairMin || 0), 0);
+  const tMax = repairEst?.max ?? enrichedActiveIssues.reduce((s, i) => s + (i.repairMax || 0), 0);
+  const tPart = enrichedActiveIssues.reduce((s, i) => s + (i.partPrice || 0), 0);
   const recon = refItem ? Math.round(refItem.priceNew * (OCC_CATS.includes(catId) ? .55 : .62)) : 0;
-  const v = refItem && activeIssues.length ? getVerdict(activeIssues, refItem) : null;
+  const v = refItem && enrichedActiveIssues.length ? getVerdict(enrichedActiveIssues, refItem) : null;
   const timeInfo = activeIssues.length ? getCumulTimeInfo(activeIssues) : { diyLabel: "—", diyFeasible: false };
   const sl = shLabel(catId);
   const retPcs = getRet(catId, "pcs");
@@ -562,7 +596,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
   const remplacerBase = spec?.remplacer || `Remplacer si la réparation dépasse 40 % du prix neuf, si l'appareil a plus de 10 ans, ou si les pièces sont introuvables.`;
   const panneNames = activeIssues.map(i => i.name).join(", ");
   const reparerPersonalized = activeIssues.length
-    ? `${reparerBase} Pour la panne « ${panneNames} », le coût estimé est de ${tMin}–${tMax} € (soit ${Math.round((tMin + tMax) / 2 / (refItem?.priceNew || avgPrice || 1) * 100)} % du neuf). Un appareil récent (< 5 ans) avec cette panne mérite souvent la réparation.`
+    ? `${reparerBase} Pour la panne « ${panneNames} », le coût estimé est de ${tPart}–${tMax} € (pièces seules à pro, soit ${Math.round((tPart + tMax) / 2 / (refItem?.priceNew || avgPrice || 1) * 100)} % du neuf). Un appareil récent (< 5 ans) avec cette panne mérite souvent la réparation.`
     : `${reparerBase} Prenez en compte l'âge de l'appareil, la garantie restante et la disponibilité des pièces.`;
   const remplacerPersonalized = activeIssues.length
     ? `${remplacerBase} Pour « ${panneNames} », si le coût dépasse ${Math.round((refItem?.priceNew || avgPrice) * .4)} € ou si l'appareil a plus de 10 ans, le remplacement est souvent plus logique.`
@@ -659,15 +693,15 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
             const neuf = refItem?.priceNew || avgPrice;
             const econRep = activeIssues.length ? neuf - tMax : null;
             const econRecon = neuf - recon;
-            const econRepLabel = econRep !== null ? (econRep > 0 ? `Économisez jusqu'à ${econRep} €` : econRep < 0 ? `Surcoût ${Math.abs(econRep)} €` : "—") : "—";
-            const econReconLabel = econRecon > 0 ? `Économisez ${econRecon} €` : "—";
+            const econRepLabel = econRep !== null ? (econRep > 0 ? `Économisez jusqu'à ${Math.round(econRep)} €` : econRep < 0 ? `Surcoût ${Math.round(Math.abs(econRep))} €` : "—") : "—";
+            const econReconLabel = econRecon > 0 ? `Économisez ${Math.round(econRecon)} €` : "—";
             const diffLabel = activeIssues.length ? (activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile") : "—";
-            const priceRep = activeIssues.length ? `${tMin}–${tMax} €` : "Variable";
-            const priceNeuf = neuf ? `${neuf} €` : "Variable";
+            const priceRep = activeIssues.length ? `${Math.round(tPart)}–${Math.round(tMax)} €` : "Variable";
+            const priceNeuf = neuf ? `${Math.round(neuf)} €` : "Variable";
             const bestChoiceBanner = v?.v === "reparer" && econRep > 0
-              ? { label: "Réparer", econ: `Économisez jusqu'à ${econRep} €`, color: GREEN }
+              ? { label: "Réparer", econ: `Économisez jusqu'à ${Math.round(econRep)} €`, color: GREEN }
               : v?.v === "remplacer" && econRecon > 0
-              ? { label: sl, econ: `Économisez ${econRecon} €`, color: AMBER }
+              ? { label: sl, econ: `Économisez ${Math.round(econRecon)} €`, color: AMBER }
               : null;
             if (isMobile) {
               return <>
@@ -694,7 +728,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
                     <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{priceRep}</div>
                     <div style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{econRepLabel}</div>
                     {activeIssues.length > 0 && <>
-                      <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {tPart} €</div>
+                      <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {Math.round(tPart)} €</div>
                       <div style={{ fontSize: 11, color: "#6B7280" }}>Temps (réparation autonome) : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
                     </>}
                     <div style={{ fontSize: 11, color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : "#6B7280" }}>Difficulté : {diffLabel}</div>
@@ -724,7 +758,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
             const tableRows = [
               { l: "Prix", r: priceRep, o: `~${recon} €`, n: priceNeuf, bold: true },
               { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
-              { l: "Pièce seule", r: activeIssues.length ? `${tPart} €` : "—", o: "—", n: "—" },
+              { l: "Pièce seule", r: activeIssues.length ? `${Math.round(tPart)} €` : "—", o: "—", n: "—" },
               { l: "Temps (réparation autonome)", r: activeIssues.length ? (timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis") : "—", o: "—", n: "—" },
               { l: "Difficulté", r: diffLabel, o: "—", n: "—", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
               { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
@@ -775,7 +809,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="grid-3">
             {[
-              { key: "reparer", color: GREEN, label: "Réparer", price: activeIssues.length ? `${tMin}–${tMax} €` : "Variable", sub: "pièces + tutoriels", icon: "tool", top: v?.v === "reparer", action: () => onNav("repair", { catId, productType }) },
+              { key: "reparer", color: GREEN, label: "Réparer", price: activeIssues.length ? `${Math.round(tPart)}–${Math.round(tMax)} €` : "Variable", sub: "pièces + tutoriels", icon: "tool", top: v?.v === "reparer", action: () => onNav("repair", { catId, productType }) },
               { key: "occ", color: AMBER, label: sl, price: `~${recon} €`, sub: "garanti 12–24 mois", icon: "recycle", top: v?.v === "remplacer", action: () => onNav("models-list", { catId, productType, affType: "occ" }) },
               { key: "neuf", color: "#DC2626", label: "Neuf", price: avgPrice ? `~${avgPrice} €` : "Variable", sub: "Amazon, Leroy Merlin, Darty…", icon: "cart", top: v?.v === "remplacer", action: () => onNav("models-list", { catId, productType, affType: "neuf" }) },
             ].map(o => (
@@ -806,7 +840,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
                 const timeLabel = iss.time ? formatSingleTime(iss.time) : "Variable";
                 const tutoSteps = getTutorialSteps(productType);
                 const ytQuery = getYoutubeRepairQuery(productType, iss.name);
-                const partBase = iss.partPrice || 30;
+                const partBase = Math.round(iss.partPrice || 30);
                 return (
                   <div key={i} style={{ marginBottom: i < activeIssues.length - 1 ? 24 : 0 }}>
                     <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111", margin: "0 0 12px" }}>{iss.name}</h3>
@@ -1020,8 +1054,19 @@ function RepairPage({ catId, productType, onNav }) {
   }));
   const [selPannes, setSelPannes] = useState(() => fallbackIssues.length ? [fallbackIssues[0].id ?? fallbackIssues[0].name] : []);
   const [place, setPlace] = useState("");
+  const [partsOffers, setPartsOffers] = useState(null);
   const typeLower = productType.toLowerCase();
   const retPcs = getRet(catId, "pcs");
+  const sampleItem = items[0];
+
+  useEffect(() => {
+    if (!sampleItem) return;
+    let cancelled = false;
+    getOffersForParts(getProductSlug(sampleItem)).then(({ data }) => {
+      if (!cancelled) setPartsOffers(data ?? []);
+    });
+    return () => { cancelled = true; };
+  }, [catId, productType, sampleItem?.id]);
 
   const activeIssues = fallbackIssues.filter(iss => selPannes.includes(iss.id ?? iss.name));
   const togglePanne = (iss) => {
@@ -1066,15 +1111,31 @@ function RepairPage({ catId, productType, onNav }) {
           const ytQuery = getYoutubeRepairQuery(productType, iss.name);
           const timeLabel = iss.time ? formatSingleTime(iss.time) : "Variable";
           const tutoSteps = getTutorialSteps(productType);
-          const partBase = iss.partPrice || 30;
+          const partBase = Math.round(iss.partPrice || 30);
           const partOff = [-0.05, 0, 0.08, 0.12];
+          const issueSlug = slugify(iss.name);
+          const offers = Array.isArray(partsOffers) ? partsOffers : [];
+          const findOfferForParts = (r) => {
+            if (!offers.length) return null;
+            const m = (o) => (o.merchant ?? o.retailer ?? "").toLowerCase();
+            return offers.find(
+              (o) => m(o) && (m(o).includes(r.n.toLowerCase()) || r.n.toLowerCase().includes(m(o))) && ((o.issue_type ?? "").toLowerCase() === issueSlug || (o.issue_type ?? "").toLowerCase().replace(/_/g, "-") === issueSlug)
+            );
+          };
           const retsWithPrice = retPcs.map((r, idx) => ({ r, price: Math.round(partBase * (1 + (partOff[idx] ?? 0))) }));
-          const sortedRets = [...retsWithPrice].sort((a, b) => a.price - b.price);
+          const merged = retsWithPrice.map(({ r, price: fallbackPrice }) => {
+            const offer = findOfferForParts(r);
+            const price = offer?.price_amount != null ? Math.round(Number(offer.price_amount)) : Math.round(fallbackPrice);
+            const url = offer?.url?.trim() || buildRetailerUrlForParts(r, productType, iss.name);
+            return { r, offer, price, url };
+          });
+          const sortedRets = [...merged].sort((a, b) => a.price - b.price);
+          const partDisplay = sortedRets[0]?.price != null && sortedRets[0].price > 0 ? Math.round(sortedRets[0].price) : partBase;
           return (
             <div key={i} style={{ background: "#fff", border: "1px solid #E5E3DE", borderRadius: 14, padding: 24, marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
               <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", margin: "0 0 16px" }}>{iss.name}</h2>
               <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6B7280", marginBottom: 16, flexWrap: "wrap" }}>
-                <span><Icon name="money" s={14} color="#9CA3AF" /> Pièce : ~{partBase} €</span>
+                <span><Icon name="money" s={14} color="#9CA3AF" /> Pièce : {sortedRets.some(x => x.price > 0) ? `${partDisplay} €` : `~${partBase} €`}</span>
                 <span><Icon name="tool" s={14} color="#9CA3AF" /> Difficulté : {iss.diff === "facile" ? "Facile" : iss.diff === "moyen" ? "Moyen" : "Difficile"}</span>
                 <span><Icon name="clock" s={14} color="#9CA3AF" /> Durée : {timeLabel}</span>
               </div>
@@ -1089,10 +1150,11 @@ function RepairPage({ catId, productType, onNav }) {
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 12 }}>Pièces à acheter</div>
                 <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 14 }}>Comparez les prix chez les prestataires.</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {sortedRets.map(({ r, price }, rank) => {
+                  {sortedRets.map(({ r, offer, price, url }, rank) => {
                     const isBest = rank === 0;
+                    const priceStr = price > 0 ? `${Math.round(price)} €` : `~${partBase} €`;
                     return (
-                      <a key={r.n} href={buildRetailerUrlForParts(r, productType, iss.name)} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
+                      <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
                         background: "#fff", border: isBest ? "2px solid #111" : "1px solid #E5E3DE", borderRadius: 12, padding: "16px 18px",
                         display: "flex", alignItems: "center", gap: 16, cursor: "pointer", boxShadow: isBest ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)",
                         textDecoration: "none", color: "inherit",
@@ -1101,12 +1163,12 @@ function RepairPage({ catId, productType, onNav }) {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                             <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
-                            {isBest && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+                            {isBest && price > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
                           </div>
                           <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{r.t}</div>
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{price} €</div>
+                          <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{priceStr}</div>
                           <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>Voir l'offre</div>
                         </div>
                         <div style={{ padding: "10px 18px", borderRadius: 8, background: r.c || "#111", color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}>Voir l'offre →</div>
@@ -1359,6 +1421,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const [reviews, setReviews] = useState([]);
   const [minNeufPrice, setMinNeufPrice] = useState(null);
   const [minOccPrice, setMinOccPrice] = useState(null);
+  const [partsOffers, setPartsOffers] = useState(null);
   const [deviceUsé, setDeviceUsé] = useState(null);
   const [isBricoleur, setIsBricoleur] = useState(null);
   const cat = item ? CATS.find(c => c.id === item.category) : null;
@@ -1371,16 +1434,21 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   }, [itemId, initialIssueId]);
   useEffect(() => { setDeviceUsé(null); setIsBricoleur(null); }, [itemId]);
 
-  // Charger les prix min des offres affiliées (neuf + occasion) pour affichage
+  // Charger les prix des offres affiliées (neuf + occasion + pièces) pour affichage et calculs
   useEffect(() => {
     if (!item) return;
     let cancelled = false;
-    Promise.all([getOffersForNeuf(getProductSlug(item)), getOffersForOcc(getProductSlug(item))]).then(([neufRes, occRes]) => {
+    Promise.all([
+      getOffersForNeuf(getProductSlug(item)),
+      getOffersForOcc(getProductSlug(item)),
+      getOffersForParts(getProductSlug(item)),
+    ]).then(([neufRes, occRes, partsRes]) => {
       if (cancelled) return;
-      const neufMin = neufRes.data?.[0]?.price_amount != null ? Number(neufRes.data[0].price_amount) : null;
-      const occMin = occRes.data?.[0]?.price_amount != null ? Number(occRes.data[0].price_amount) : null;
+      const neufMin = neufRes.data?.[0]?.price_amount != null ? Math.round(Number(neufRes.data[0].price_amount)) : null;
+      const occMin = occRes.data?.[0]?.price_amount != null ? Math.round(Number(occRes.data[0].price_amount)) : null;
       setMinNeufPrice(neufMin);
       setMinOccPrice(occMin);
+      setPartsOffers(partsRes.data ?? []);
     });
     return () => { cancelled = true; };
   }, [item?.id]);
@@ -1388,14 +1456,43 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   if (!item) return <div style={{ padding: 80, textAlign: "center", fontFamily: F }}>Produit non trouvé</div>;
 
   const activeIssues = cumul ? issues.filter(i => selMulti.includes(i.id)) : [issues.find(i => i.id === selIssue)].filter(Boolean);
-  const repairEst = activeIssues.length ? getRepairEstimate(activeIssues, item) : null;
-  const tMin = repairEst?.min ?? activeIssues.reduce((s, i) => s + i.repairMin, 0);
-  const tMax = repairEst?.max ?? activeIssues.reduce((s, i) => s + i.repairMax, 0);
-  const tPart = activeIssues.reduce((s, i) => s + i.partPrice, 0);
+
+  // Enrichir les issues avec les prix pièces Supabase (min par type de panne)
+  const partsPriceByIssue = useMemo(() => {
+    const offers = Array.isArray(partsOffers) ? partsOffers : [];
+    const map = {};
+    for (const o of offers) {
+      const slug = (o.issue_type ?? "").toLowerCase().replace(/_/g, "-");
+      if (!slug) continue;
+      const p = o.price_amount != null ? Math.round(Number(o.price_amount)) : null;
+      if (p != null && (map[slug] == null || p < map[slug])) map[slug] = p;
+    }
+    return map;
+  }, [partsOffers]);
+
+  const enrichedActiveIssues = useMemo(() => {
+    return activeIssues.map((i) => {
+      const slug = slugify(i.name);
+      const supabasePartPrice = partsPriceByIssue[slug] ?? partsPriceByIssue[slug.replace(/-/g, "_")];
+      if (supabasePartPrice == null) return i;
+      const delta = supabasePartPrice - (i.partPrice || 0);
+      return {
+        ...i,
+        partPrice: supabasePartPrice,
+        repairMin: Math.max(5, Math.round((i.repairMin || 0) + delta)),
+        repairMax: Math.max(10, Math.round((i.repairMax || 0) + delta)),
+      };
+    });
+  }, [activeIssues, partsPriceByIssue]);
+
+  const repairEst = enrichedActiveIssues.length ? getRepairEstimate(enrichedActiveIssues, item) : null;
+  const tMin = repairEst?.min ?? enrichedActiveIssues.reduce((s, i) => s + i.repairMin, 0);
+  const tMax = repairEst?.max ?? enrichedActiveIssues.reduce((s, i) => s + i.repairMax, 0);
+  const tPart = enrichedActiveIssues.reduce((s, i) => s + i.partPrice, 0);
   const reconFallback = activeIssues[0]?.reconPrice || Math.round(item.priceNew * .6);
-  const recon = minOccPrice != null ? minOccPrice : reconFallback;
-  const neufDisplay = minNeufPrice != null ? minNeufPrice : item.priceNew;
-  const v = activeIssues.length ? getVerdict(activeIssues, item, { deviceUsé: deviceUsé === true, isBricoleur: isBricoleur === true, priceNeufOverride: minNeufPrice ?? undefined, priceOccOverride: minOccPrice ?? undefined }) : null;
+  const recon = Math.round(minOccPrice != null ? minOccPrice : reconFallback);
+  const neufDisplay = Math.round(minNeufPrice != null ? minNeufPrice : item.priceNew);
+  const v = enrichedActiveIssues.length ? getVerdict(enrichedActiveIssues, item, { deviceUsé: deviceUsé === true, isBricoleur: isBricoleur === true, priceNeufOverride: minNeufPrice ?? undefined, priceOccOverride: minOccPrice ?? undefined }) : null;
   const timeInfo = getCumulTimeInfo(activeIssues);
   const alts = item ? getAlternatives(item) : null;
   const bestNewer = alts?.newer?.[0] || null;
@@ -1535,10 +1632,10 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             const repairTop = v.v === "reparer";
             return <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
               {[
-                { top: repairTop, color: GREEN, label: "Réparer", price: `${tMin}–${tMax} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
+                { top: repairTop, color: GREEN, label: "Réparer", price: `${Math.round(tPart)}–${Math.round(tMax)} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
                 { top: v.v === "remplacer" && TECH_CATS.includes(item.category), color: AMBER, label: sl, price: minOccPrice != null ? `${recon} €` : `~${recon} €`, sub: TECH_CATS.includes(item.category) ? "Très en vogue (tech)" : "garanti 12 mois", btn: `Voir ${sl.toLowerCase()} →`, aff: "occ" },
                 { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: `${neufDisplay} €`, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer neuf →", aff: "neuf" },
-              ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: activeIssues, affType: o.aff, alts })} className="card-hover" style={{
+              ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: enrichedActiveIssues, affType: o.aff, alts })} className="card-hover" style={{
                 background: "#fff", border: o.top ? `2px solid ${o.color}` : "1px solid #E5E3DE",
                 borderRadius: 12, padding: 14, cursor: "pointer", textAlign: "center",
                 boxShadow: o.top ? `0 3px 14px ${o.color}18` : "0 1px 4px rgba(0,0,0,.05)",
@@ -1636,8 +1733,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             const neuf = neufDisplay;
             const econRep = neuf - tMax;
             const econRecon = neuf - recon;
-            const econRepLabel = econRep > 0 ? `Économisez jusqu'à ${econRep} €` : econRep < 0 ? `Surcoût ${Math.abs(econRep)} €` : "—";
-            const econReconLabel = econRecon > 0 ? `Économisez ${econRecon} €` : "—";
+            const econRepLabel = econRep > 0 ? `Économisez jusqu'à ${Math.round(econRep)} €` : econRep < 0 ? `Surcoût ${Math.round(Math.abs(econRep))} €` : "—";
+            const econReconLabel = econRecon > 0 ? `Économisez ${Math.round(econRecon)} €` : "—";
             const diffLabel = activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile";
             const bestChoiceBanner = v.v === "reparer" && econRep > 0
               ? { label: "Réparer", econ: `Économisez jusqu'à ${econRep} €`, color: GREEN }
@@ -1666,9 +1763,9 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                       <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Réparer</span>
                       {v.v === "reparer" && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: GREEN, color: "#fff" }}>Recommandé</span>}
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{tMin}–{tMax} €</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{Math.round(tPart)}–{Math.round(tMax)} €</div>
                     <div style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{econRepLabel}</div>
-                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {tPart} €</div>
+                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {Math.round(tPart)} €</div>
                     <div style={{ fontSize: 11, color: "#6B7280" }}>Temps (réparation autonome) : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
                     <div style={{ fontSize: 11, color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : "#6B7280" }}>Difficulté : {diffLabel}</div>
                   </div>
@@ -1695,9 +1792,9 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               </>;
             }
             const tableRows = [
-              { l: "Prix", r: `${tMin}–${tMax} €`, o: minOccPrice != null ? `${recon} €` : `~${recon} €`, n: `${neuf} €`, bold: true },
+              { l: "Prix", r: `${Math.round(tPart)}–${Math.round(tMax)} €`, o: minOccPrice != null ? `${recon} €` : `~${recon} €`, n: `${Math.round(neuf)} €`, bold: true },
               { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
-              { l: "Pièce seule", r: `${tPart} €`, o: "—", n: "—" },
+              { l: "Pièce seule", r: `${Math.round(tPart)} €`, o: "—", n: "—" },
               { l: "Temps (réparation autonome)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis", o: "—", n: "—" },
               { l: "Difficulté", r: diffLabel, o: "—", n: "—", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
               { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
@@ -1850,10 +1947,10 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             </div>
           )}
           <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, marginBottom: 16 }}>
-            Pour la panne « {activeIssues.map(i => i.name).join(", ")} » sur votre {item.brand} {item.name} : tutoriel adapté à votre modèle, niveau de difficulté et coût estimé.
+            Pour la panne « {enrichedActiveIssues.map(i => i.name).join(", ")} » sur votre {item.brand} {item.name} : tutoriel adapté à votre modèle, niveau de difficulté et coût estimé.
             {v.v === "reparer" ? " La réparation est l'option la plus économique et écologique dans votre cas." : ""}
           </p>
-          {activeIssues.map(iss => {
+          {enrichedActiveIssues.map(iss => {
             const diffColor = iss.diff === "facile" ? GREEN : iss.diff === "moyen" ? AMBER : "#DC2626";
             const diffStars = iss.diff === "facile" ? 1 : iss.diff === "moyen" ? 2 : 3;
             const diffLabel = iss.diff === "facile" ? "Facile" : iss.diff === "moyen" ? "Moyen" : "Difficile";
@@ -1966,10 +2063,10 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             return <>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
-                  { top: repairTop, color: GREEN, label: "Réparer", price: `${tMin}–${tMax} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
+                  { top: repairTop, color: GREEN, label: "Réparer", price: `${Math.round(tPart)}–${Math.round(tMax)} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
                   { top: v.v === "remplacer" && TECH_CATS.includes(item.category), color: AMBER, label: sl, price: `~${recon} €`, sub: TECH_CATS.includes(item.category) ? "Très en vogue (tech)" : "garanti 12 mois", btn: `Voir ${sl.toLowerCase()} →`, aff: "occ" },
                   { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: `${neufDisplay} €`, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer prix neuf →", aff: "neuf" },
-                ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: activeIssues, affType: o.aff, alts })} className="card-hover" style={{
+                ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: enrichedActiveIssues, affType: o.aff, alts })} className="card-hover" style={{
                   background: "#fff", border: o.top ? `2px solid ${o.color}` : "1px solid #E5E3DE",
                   borderRadius: 12, padding: 14, cursor: "pointer", position: "relative",
                   boxShadow: o.top ? `0 3px 14px ${o.color}18` : "0 1px 4px rgba(0,0,0,.05)",
@@ -2044,8 +2141,8 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   const titles = { neuf: "Acheter neuf", occ: sl, pcs: "Pièces & réparation" };
   const alts = passedAlts || getAlternatives(item);
   // Coût réparation = pièces + main d'œuvre pro (pas seulement les pièces)
-  const repairTotalMin = issues?.reduce((s, i) => s + i.repairMin, 0) ?? 0;
-  const repairTotalMax = issues?.reduce((s, i) => s + i.repairMax, 0) ?? 0;
+  const repairTotalMin = Math.round(issues?.reduce((s, i) => s + i.repairMin, 0) ?? 0);
+  const repairTotalMax = Math.round(issues?.reduce((s, i) => s + i.repairMax, 0) ?? 0);
   const repairAvg = Math.round((repairTotalMin + repairTotalMax) / 2);
   const base = affType === "neuf" ? item.priceNew : affType === "occ" ? (issues?.[0]?.reconPrice || Math.round(item.priceNew * .6)) : (repairAvg || 30);
   const off = [0, -.04, .03, -.06, .05];
@@ -2053,11 +2150,11 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   const retsWithPrice = rets.map((r, idx) => ({ r, price: Math.round(base * (1 + (off[idx] ?? 0))), idx }));
   const sortedRets = [...retsWithPrice].sort((a, b) => a.price - b.price);
 
-  // Chargement offres Supabase pour neuf et occasion (image produit via useProductImage)
+  // Chargement offres Supabase pour neuf, occasion et pièces (image produit via useProductImage)
   useEffect(() => {
-    if ((affType !== "neuf" && affType !== "occ") || !item) return;
+    if ((affType !== "neuf" && affType !== "occ" && affType !== "pcs") || !item) return;
     let cancelled = false;
-    const fetchOffers = affType === "neuf" ? getOffersForNeuf : getOffersForOcc;
+    const fetchOffers = affType === "neuf" ? getOffersForNeuf : affType === "occ" ? getOffersForOcc : getOffersForParts;
     fetchOffers(getProductSlug(item)).then(({ data, error }) => {
       if (!cancelled) setSupabaseOffers(error ? [] : data ?? []);
     });
@@ -2176,7 +2273,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: "0 0 4px" }}>{titles[affType]} — {item.brand} {item.name}</h1>
               <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 8 }}>
-                {isPcs ? `Coût total estimé (pièces + main d'œuvre pro) : ${repairTotalMin}–${repairTotalMax} €` : issues?.map(i => i.name).join(", ")}
+                {isPcs ? `Coût total estimé (pièces + main d'œuvre pro) : ${Math.round(repairTotalMin)}–${Math.round(repairTotalMax)} €` : issues?.map(i => i.name).join(", ")}
               </p>
               <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, maxWidth: 560 }}>
                 Le {item.brand} {item.name} est un {item.productType.toLowerCase()} de {item.year}. Comparez les offres des prestataires ci-dessous.
@@ -2214,7 +2311,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               const timeLabel = iss.time ? formatSingleTime(iss.time) : "Variable";
               const tutoSteps = getTutorialSteps(item.productType);
               const ytQuery = getYoutubeRepairQuery(item.productType, iss.name);
-              const partBase = iss.partPrice || 30;
+              const partBase = Math.round(iss.partPrice || 30);
               const diffLabel = iss.diff === "facile" ? "Facile" : iss.diff === "moyen" ? "Moyen" : "Difficile";
               const diffColor = iss.diff === "facile" ? GREEN : iss.diff === "moyen" ? AMBER : "#DC2626";
               const impossibleSeul = iss.time === "pro";
@@ -2276,16 +2373,17 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             });
             const merged = retsWithPrice.map(({ r, price: fallbackPrice }) => {
               const offer = findOffer(r);
-              const price = offer?.price_amount != null ? Number(offer.price_amount) : fallbackPrice;
+              const price = offer?.price_amount != null ? Math.round(Number(offer.price_amount)) : Math.round(fallbackPrice);
               const affUrl = offer?.url?.trim() || null;
               const url = affUrl || buildRetailerUrl(r, item, affType);
               return { r, offer, price, url };
             });
             const sorted = [...merged].sort((a, b) => a.price - b.price);
-            const imgUrl = productImageUrl?.trim() || null;
+            const productImgUrl = productImageUrl?.trim() || null;
             return sorted.map(({ r, offer, price, url }, rank) => {
               const isBestPrice = rank === 0;
               const priceStr = price > 0 ? `${price} €` : "—";
+              const imgUrl = (offer?.image_url?.trim() || productImgUrl) || null;
               const cardStyle = {
                 background: "#fff",
                 border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
@@ -2295,7 +2393,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               };
               return (
                 <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={cardStyle}>
-                  {/* Image produit Supabase — cliquable pour agrandir */}
+                  {/* Image produit/pièce (offer.image_url ou produit) — cliquable pour agrandir */}
                   <div
                     role="button"
                     tabIndex={0}
@@ -2311,11 +2409,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                     )}
                   </div>
                   <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 0 }}>
-                    {offer?.image_url ? (
-                      <img src={offer.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: "contain", background: "#F3F4F6", flexShrink: 0 }} />
-                    ) : (
-                      <RetailerLogo r={r} size={56} className="retailer-logo" />
-                    )}
+                    <RetailerLogo r={r} size={56} className="retailer-logo" />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
@@ -2336,32 +2430,74 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                 </a>
               );
             });
-          })() : (
-            sortedRets.map(({ r, price }, rank) => {
+          })() : (() => {
+            const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
+            const issueSlugs = (issues ?? []).map((i) => slugify(i.name));
+            const findOfferForParts = (r) => {
+              if (!offers.length || !issueSlugs.length) return null;
+              const m = (o) => (o.merchant ?? o.retailer ?? "").toLowerCase();
+              return offers.find(
+                (o) => m(o) && (m(o).includes(r.n.toLowerCase()) || r.n.toLowerCase().includes(m(o))) && issueSlugs.some((s) => (o.issue_type ?? "").toLowerCase() === s || (o.issue_type ?? "").toLowerCase().replace(/_/g, "-") === s)
+              );
+            };
+            const merged = sortedRets.map(({ r, price: fallbackPrice }) => {
+              const offer = isPcs ? findOfferForParts(r) : null;
+              const price = offer?.price_amount != null ? Math.round(Number(offer.price_amount)) : Math.round(fallbackPrice);
+              let url;
+              if (isPcs && offer?.url?.trim()) {
+                url = offer.url.trim();
+              } else if (isPcs) {
+                url = buildRetailerUrlForParts(r, item.productType, issues?.[0]?.name || "pièce");
+              } else {
+                url = buildRetailerUrl(r, item, affType);
+              }
+              return { r, offer, price, url };
+            });
+            const sorted = [...merged].sort((a, b) => a.price - b.price);
+            const productImgUrl = productImageUrl?.trim() || null;
+            return sorted.map(({ r, offer, price, url }, rank) => {
               const isBestPrice = rank === 0;
-              const url = buildRetailerUrl(r, item, affType);
-              return <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={{
-                background: "#fff",
-                border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
-                borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 18, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit",
-              }}>
-                <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 0 }}>
-                  <RetailerLogo r={r} size={56} className="retailer-logo" />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
-                      {isBestPrice && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+              const priceStr = price > 0 ? `${price} €` : "—";
+              const imgUrl = (offer?.image_url?.trim() || productImgUrl) || null;
+              return (
+                <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={{
+                  background: "#fff",
+                  border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
+                  borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 18, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit",
+                }}>
+                  {/* Image pièce/produit (offer.image_url ou produit) — cliquable pour agrandir */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="offer-product-img"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (imgUrl && lightbox) lightbox.openLightbox(imgUrl); }}
+                    onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && imgUrl && lightbox) { e.preventDefault(); lightbox.openLightbox(imgUrl); } }}
+                    style={{ width: 96, height: 96, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", cursor: imgUrl ? "zoom-in" : "default" }}
+                  >
+                    {imgUrl ? (
+                      <img src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} loading="lazy" />
+                    ) : (
+                      <Icon name="cart" s={28} color="#9CA3AF" style={{ opacity: 0.6 }} />
+                    )}
+                  </div>
+                  <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 0 }}>
+                    <RetailerLogo r={r} size={56} className="retailer-logo" />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
+                        {isBestPrice && price > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
                     </div>
-                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{priceStr}</div>
+                    </div>
                   </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{price} €</div>
-                  </div>
-                </div>
-                <div className="retailer-cta" style={{ padding: "12px 18px", borderRadius: 10, background: r.c || "#111", color: "#fff", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform .2s", flexShrink: 0 }}>Voir l&apos;offre →</div>
-              </a>;
-            })
-          )}
+                  <div className="retailer-cta" style={{ padding: "12px 18px", borderRadius: 10, background: r.c || "#111", color: "#fff", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform .2s", flexShrink: 0 }}>Voir l&apos;offre →</div>
+                </a>
+              );
+            });
+          })()}
         </div>
       </div>
 
