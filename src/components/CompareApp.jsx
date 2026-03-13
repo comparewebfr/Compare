@@ -28,7 +28,7 @@ import { PRODUCT_TYPE_IMAGES } from "../data/product-type-images";
 import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL, BRAND_LOGOS } from "../lib/data";
-import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery, getSmartReplacementRecommendation } from "../lib/helpers";
+import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery, getSmartReplacementRecommendation, getSeoProductName, getSeoQuestionPhrase } from "../lib/helpers";
 import { getOffersForNeuf, getOffersForOcc, getOffersForParts } from "../lib/supabase-queries";
 import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
@@ -45,6 +45,54 @@ function ProductPriceNeuf({ item, fallback = "—" }) {
 // ─── LOGO ───
 function Logo({ s = 32, priority = false }) {
   return <Image src="/logo.png" alt="Compare." width={s} height={s} sizes={`${s}px`} priority={priority} style={{ width: s, height: s, objectFit: "contain", borderRadius: "50%" }} />;
+}
+
+const INFO_LOGO_SIZE = 56;
+const INFO_LOGO_INDICE_SIZE = 70;
+const INFO_BUBBLE = { width: 140, minHeight: 38, padding: "8px 16px", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box" };
+const INFO_BUBBLE_INDICE = { width: 140, minHeight: 44, padding: "10px 18px", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box" };
+
+/** Logo + bulle Indice de réparabilité */
+function RepairabilityLogo({ score }) {
+  const idx = score != null ? Math.min(10, Math.max(0, Number(score))) : null;
+  const variant = idx == null ? 3 : idx <= 1.9 ? 1 : idx <= 3.9 ? 2 : idx <= 5.9 ? 3 : idx <= 7.9 ? 4 : 5;
+  const src = `/reparabilite/logo-indice-${variant}.png`;
+  const c = ["#E30613", "#F16E43", "#FFC107", "#6BCB77", "#2D6A4F"][variant - 1];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+      <div style={{ width: INFO_LOGO_INDICE_SIZE, height: INFO_LOGO_INDICE_SIZE, marginTop: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        <Image src={src} alt="Indice de réparabilité" width={INFO_LOGO_INDICE_SIZE} height={INFO_LOGO_INDICE_SIZE} style={{ width: INFO_LOGO_INDICE_SIZE, height: INFO_LOGO_INDICE_SIZE, objectFit: "contain" }} />
+      </div>
+      {idx != null && (
+        <div style={{ ...INFO_BUBBLE_INDICE, background: c + "22", border: `1px solid ${c}50` }}>
+          <span style={{ fontSize: 20, fontWeight: 800, color: c }}>{(Number.isInteger(idx) ? idx : idx.toFixed(1)).replace(".", ",")}</span><span style={{ fontSize: 14, fontWeight: 600, color: c, opacity: 0.9 }}>/10</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Logo + bulle QualiRépar */
+function QualiReparLogo({ bonusLabel, color }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+      <div style={{ width: INFO_LOGO_SIZE, height: INFO_LOGO_SIZE, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        <Image src="/qualirepar/logo.png" alt="QualiRépar" width={INFO_LOGO_SIZE} height={INFO_LOGO_SIZE} style={{ width: INFO_LOGO_SIZE, height: INFO_LOGO_SIZE, objectFit: "contain" }} />
+      </div>
+      <div style={{ ...INFO_BUBBLE, background: color + "22", border: `1px solid ${color}50` }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color, whiteSpace: "nowrap" }}>{bonusLabel} économisés</span>
+      </div>
+    </div>
+  );
+}
+
+/** Colonne gauche : logo + valeur centrés */
+function InfoCardBlock({ children }) {
+  return (
+    <div style={{ width: 140, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", alignSelf: "stretch" }}>
+      {children}
+    </div>
+  );
 }
 
 // ─── MINIMAL ICONS (decorative, aria-hidden) ───
@@ -927,24 +975,11 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
         {(isRepairabilityEligible(catId) || isQualiReparEligible(catId)) && (
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
             {isRepairabilityEligible(catId) && (
-              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.08)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                  {(() => {
-                    const idx = getRepairabilityIndex(productType);
-                    if (idx != null) {
-                      const hue = Math.round((idx / 10) * 120);
-                      const color = `hsl(${hue}, 55%, 42%)`;
-                      return (
-                        <div style={{ width: 64, height: 64, borderRadius: 16, background: color + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <span style={{ fontSize: 24, fontWeight: 800, color, lineHeight: 1 }}>{idx}</span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color, opacity: 0.9 }}>/10</span>
-                        </div>
-                      );
-                    }
-                    return <div style={{ width: 64, height: 64, borderRadius: 16, background: GREEN + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="tool" s={28} color={GREEN} /></div>;
-                  })()}
+              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.06)" }}>
+                <div style={{ display: "flex", alignItems: "stretch", gap: 16 }}>
+                  <InfoCardBlock><RepairabilityLogo score={getRepairabilityIndex(productType)} /></InfoCardBlock>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#2D6A4F", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Indice de réparabilité</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#111", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Indice de réparabilité</div>
                     <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
                       Note obligatoire sur 10 affichée sur les appareils. Plus elle est élevée, plus l'appareil est conçu pour être réparable. Consultez la fiche produit pour la note de votre modèle.
                     </p>
@@ -956,12 +991,9 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
               const bonus = getQualiReparBonus(productType);
               const bonusLabel = bonus != null ? `${bonus} €` : "15–60 €";
               return (
-                <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                    <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
-                      <span style={{ fontSize: 18, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>{bonusLabel}</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: "#B45309", marginTop: 2 }}>économisés</span>
-                    </div>
+                <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)" }}>
+                  <div style={{ display: "flex", alignItems: "stretch", gap: 16 }}>
+                    <InfoCardBlock><QualiReparLogo bonusLabel={bonusLabel} color={AMBER} /></InfoCardBlock>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Aide de l'État — Bonus QualiRépar</div>
                       <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 10px 0" }}>
@@ -1212,7 +1244,7 @@ function RepairPage({ catId, productType, onNav }) {
                   {sortedRets.map(({ r, offer, price, url }, rank) => {
                     const isBest = rank === 0;
                     const priceStr = price > 0 ? `${Math.round(price)} €` : `~${partBase} €`;
-                    const offerLabel = offer && sampleItem ? buildPartsOfferLabel(offer, sampleItem, iss.name) : `${iss.name} ${sampleItem ? `${sampleItem.brand} ${sampleItem.name}` : productType}`.trim();
+                    const offerLabel = buildPartsOfferLabel(offer, sampleItem, iss.name);
                     const subLabel = `Sur ${r.n}`;
                     return (
                       <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
@@ -1253,24 +1285,11 @@ function RepairPage({ catId, productType, onNav }) {
         {(isRepairabilityEligible(catId) || isQualiReparEligible(catId)) && (
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             {isRepairabilityEligible(catId) && (
-              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.08)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                  {(() => {
-                    const idx = getRepairabilityIndex(productType);
-                    if (idx != null) {
-                      const hue = Math.round((idx / 10) * 120);
-                      const color = `hsl(${hue}, 55%, 42%)`;
-                      return (
-                        <div style={{ width: 64, height: 64, borderRadius: 16, background: color + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <span style={{ fontSize: 24, fontWeight: 800, color, lineHeight: 1 }}>{idx}</span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color, opacity: 0.9 }}>/10</span>
-                        </div>
-                      );
-                    }
-                    return <div style={{ width: 64, height: 64, borderRadius: 16, background: GREEN + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="tool" s={28} color={GREEN} /></div>;
-                  })()}
+              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.06)" }}>
+                <div style={{ display: "flex", alignItems: "stretch", gap: 16 }}>
+                  <InfoCardBlock><RepairabilityLogo score={getRepairabilityIndex(productType)} /></InfoCardBlock>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#2D6A4F", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Indice de réparabilité</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#111", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Indice de réparabilité</div>
                     <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
                       Note obligatoire sur 10 affichée sur les appareils. Plus elle est élevée, plus l'appareil est conçu pour être réparable. Consultez la fiche produit pour la note de votre modèle.
                     </p>
@@ -1282,12 +1301,9 @@ function RepairPage({ catId, productType, onNav }) {
               const bonus = getQualiReparBonus(productType);
               const bonusLabel = bonus != null ? `${bonus} €` : "15–60 €";
               return (
-                <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                    <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
-                      <span style={{ fontSize: 18, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>{bonusLabel}</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: "#B45309", marginTop: 2 }}>économisés</span>
-                    </div>
+                <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)" }}>
+                  <div style={{ display: "flex", alignItems: "stretch", gap: 16 }}>
+                    <InfoCardBlock><QualiReparLogo bonusLabel={bonusLabel} color={AMBER} /></InfoCardBlock>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Aide de l'État — Bonus QualiRépar</div>
                       <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 10px 0" }}>
@@ -1577,10 +1593,16 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
           <ProductImg brand={item.brand} item={item} size={72} />
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: 0 }}>{item.brand} {item.name}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: 0 }}>
+              {!cumul && activeIssues.length === 1 ? `${getSeoProductName(item)} — ${activeIssues[0].name}` : `${item.brand} ${item.name}`}
+            </h1>
             <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>{item.productType} · {item.year} · {neufDisplayText} neuf</p>
           </div>
         </div>
+        {!cumul && activeIssues.length === 1 && v && (() => {
+          const question = getSeoQuestionPhrase(activeIssues[0], item, v);
+          return question ? <p style={{ fontSize: 15, fontWeight: 600, color: "#334155", marginBottom: 16, lineHeight: 1.5 }}>{question}</p> : null;
+        })()}
         <div style={{ background: "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)", borderRadius: 12, padding: "14px 18px", border: "1px solid #E2E8F0", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
             <label style={{ fontSize: 13, fontWeight: 700, color: "#334155", display: "flex", alignItems: "center", gap: 6 }}>
@@ -2547,7 +2569,46 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
         );
       })()}
 
-      {/* 2. Prix — comparer les offres prestataires */}
+      {/* 2. Indice réparabilité & QualiRépar — AVANT les offres (page pièces) */}
+      {isPcs && (isRepairabilityEligible(item.category) || isQualiReparEligible(item.category)) && (
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
+          {isRepairabilityEligible(item.category) && (
+            <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.06)" }}>
+              <div style={{ display: "flex", alignItems: "stretch", gap: 16 }}>
+                <InfoCardBlock><RepairabilityLogo score={getRepairabilityIndex(item.productType, item)} /></InfoCardBlock>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#111", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Indice de réparabilité</div>
+                  <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
+                    Note obligatoire sur 10 affichée sur les appareils. Plus elle est élevée, plus l'appareil est conçu pour être réparable. Consultez la fiche produit pour la note de votre modèle.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          {isQualiReparEligible(item.category) && (() => {
+            const bonus = getQualiReparBonus(item.productType);
+            const bonusLabel = bonus != null ? `${bonus} €` : "15–60 €";
+            return (
+              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(37,99,235,.06)" }}>
+                <div style={{ display: "flex", alignItems: "stretch", gap: 16 }}>
+                  <InfoCardBlock><QualiReparLogo bonusLabel={bonusLabel} color="#2563EB" /></InfoCardBlock>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#2563EB", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Aide de l'État — Bonus QualiRépar</div>
+                    <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 10px 0" }}>
+                      {bonus != null ? `Vous économisez ${bonus} €` : "Jusqu'à 60 € d'économie"} sur la réparation chez un réparateur labellisé. Réduction appliquée sur la facture, aucune démarche.
+                    </p>
+                    <a href={QUALUREPAR_ANNUAIRE_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 700, color: "#2563EB", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      Trouver un réparateur labellisé →
+                    </a>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* 3. Prix — comparer les offres prestataires */}
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
           <Icon name={isPcs ? "tool" : isNeuf ? "cart" : "recycle"} s={18} color={ACCENT} />
@@ -2656,7 +2717,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               const priceStr = price > 0 ? `${price} €` : "—";
               const imgUrl = (offer?.image_url?.trim() || productImgUrl) || null;
               const matchedIssue = offer && issues?.length ? issues.find((i) => slugify(i.name) === (offer.issue_type ?? "").toLowerCase().replace(/_/g, "-")) : null;
-              const offerLabel = offer ? buildPartsOfferLabel(offer, item, matchedIssue?.name) : `${issues?.[0]?.name || "Pièce"} ${item?.brand} ${item?.name}`.trim();
+              const offerLabel = buildPartsOfferLabel(offer, item, matchedIssue?.name ?? issues?.[0]?.name);
               const subLabel = `Pièces détachées sur ${r.n}`;
               return (
                 <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={{
@@ -2699,61 +2760,6 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
           })()}
         </div>
       </div>
-
-      {/* 3. Indice réparabilité & QualiRépar — après les prix */}
-      {isPcs && (isRepairabilityEligible(item.category) || isQualiReparEligible(item.category)) && (
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
-          {isRepairabilityEligible(item.category) && (
-            <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(45,106,79,.08)", overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                {(() => {
-                  const idx = getRepairabilityIndex(item.productType, item);
-                  if (idx != null) {
-                    const hue = Math.round((idx / 10) * 120);
-                    const color = `hsl(${hue}, 55%, 42%)`;
-                    return (
-                      <div style={{ width: 64, height: 64, borderRadius: 16, background: color + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <span style={{ fontSize: 24, fontWeight: 800, color, lineHeight: 1 }}>{idx}</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color, opacity: 0.9 }}>/10</span>
-                      </div>
-                    );
-                  }
-                  return <div style={{ width: 64, height: 64, borderRadius: 16, background: GREEN + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="tool" s={28} color={GREEN} /></div>;
-                })()}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#2D6A4F", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Indice de réparabilité</div>
-                  <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
-                    Note obligatoire sur 10 affichée sur les appareils. Plus elle est élevée, plus l'appareil est conçu pour être réparable. Consultez la fiche produit pour la note de votre modèle.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          {isQualiReparEligible(item.category) && (() => {
-            const bonus = getQualiReparBonus(item.productType);
-            const bonusLabel = bonus != null ? `${bonus} €` : "15–60 €";
-            return (
-              <div style={{ flex: "1 1 280px", background: "#fff", borderRadius: 16, padding: 24, border: "1px solid #E5E3DE", boxShadow: "0 4px 20px rgba(245,158,11,.06)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 16, background: AMBER + "18", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, textAlign: "center" }}>
-                    <span style={{ fontSize: 18, fontWeight: 800, color: AMBER, lineHeight: 1.2 }}>{bonusLabel}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#B45309", marginTop: 2 }}>économisés</span>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Aide de l'État — Bonus QualiRépar</div>
-                    <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 10px 0" }}>
-                      {bonus != null ? `Vous économisez ${bonus} €` : "Jusqu'à 60 € d'économie"} sur la réparation chez un réparateur labellisé. Réduction appliquée sur la facture, aucune démarche.
-                    </p>
-                    <a href={QUALUREPAR_ANNUAIRE_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 700, color: AMBER, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                      Trouver un réparateur labellisé →
-                    </a>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
 
       {/* Trouver un réparateur — pour page pcs */}
       {isPcs && (

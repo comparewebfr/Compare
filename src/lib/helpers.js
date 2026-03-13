@@ -304,25 +304,29 @@ export function buildRetailerUrl(r, item, affType) {
   return `https://www.google.com/search?q=${q}+${r.n}`;
 }
 
-/** Libellé explicite pour une offre pièce/réparation — ex: "Kit réparation batterie iPhone 13", "Écran iPhone 13 compatible" */
+/** Libellé explicite pour une offre pièce — ex: "Écran iPhone 13 compatible", "Batterie iPhone 13". Jamais la panne (écran cassé, batterie HS) dans le titre. */
 export function buildPartsOfferLabel(offer, item, issueName) {
   const product = item ? `${item.brand} ${item.name}`.trim() : "";
-  const slug = (offer?.issue_type ?? "").toLowerCase().replace(/_/g, "-");
-  const issue = (issueName ?? "").trim();
+  const slugFromOffer = (offer?.issue_type ?? "").toLowerCase().replace(/_/g, "-");
+  const slugFromIssue = issueName ? R.slugify(issueName) : "";
+  const slug = slugFromOffer || slugFromIssue;
 
   const partLabels = {
     "ecran-casse": { type: "ecran", part: "Écran" },
     "ecran-fissure": { type: "ecran", part: "Écran" },
     "batterie-usee": { type: "kit", part: "batterie" },
     "batterie-faible": { type: "kit", part: "batterie" },
+    "batterie-hs": { type: "kit", part: "batterie" },
     "batterie-ecouteur-usee": { type: "kit", part: "batterie" },
     "batterie-boitier-usee": { type: "kit", part: "batterie" },
     "camera-avant-face-id": { type: "camera-avant", part: "Caméra avant Face ID" },
     "camera-avant": { type: "camera-avant", part: "Caméra avant" },
+    "camera-avant-hs": { type: "camera-avant", part: "Caméra avant" },
     "camera-arriere-hs": { type: "camera-arriere", part: "Caméra arrière" },
     "camera-arriere": { type: "camera-arriere", part: "Caméra arrière" },
     "connecteur-de-charge": { type: "piece", part: "Connecteur de charge" },
     "connecteur-charge": { type: "piece", part: "Connecteur de charge" },
+    "connecteur-charge-defaillant": { type: "piece", part: "Connecteur de charge" },
     "haut-parleur": { type: "piece", part: "Haut-parleur" },
     "bouton-power-volume": { type: "piece", part: "Boutons volume/power" },
     "vitre-arriere-cassee": { type: "piece", part: "Vitre arrière" },
@@ -334,13 +338,16 @@ export function buildPartsOfferLabel(offer, item, issueName) {
 
   const mapped = partLabels[slug];
   if (mapped) {
-    if (mapped.type === "ecran") return `Écran ${product} compatible`;
+    if (mapped.type === "ecran") return product ? `Écran ${product} compatible` : "Écran compatible";
     if (mapped.type === "kit") return `Kit réparation ${mapped.part} ${product}`;
     if (mapped.type === "kit-outils") return `Kit outils réparation ${product}`;
     if (mapped.type === "camera-avant" || mapped.type === "camera-arriere") return `${mapped.part} ${product}`;
     return `${mapped.part} ${product}`;
   }
-  if (issue) return `${issue} ${product}`;
+  if (issueName) {
+    const partFromIssue = issueName.replace(/\s+(cassé|cassée|fissuré|fissurée|hs|usée|usé|faible|défaillant|qui tient plus)$/i, "").trim();
+    if (partFromIssue) return `${partFromIssue} ${product}`;
+  }
   return product ? `Pièce ${product}` : "Pièce détachée";
 }
 
@@ -471,6 +478,44 @@ export function getSeoProductName(item) {
   return item.brand === "Apple" ? item.name : `${item.brand} ${item.name}`;
 }
 
+/** Phrase d'intention SEO pour le titre — varie selon verdict et type de panne */
+function getSeoIntentPhrase(issue, item, verdict) {
+  const v = verdict?.v;
+  const age = new Date().getFullYear() - (item?.year ?? new Date().getFullYear());
+  const appareilAncien = age >= 5;
+  const issueName = (issue?.name || "").toLowerCase();
+  const isBatterie = issueName.includes("batterie") || issueName.includes("batterie usée") || issueName.includes("batterie faible");
+  const isEcran = issueName.includes("écran") || issueName.includes("écran cassé");
+  if (v === "remplacer" && (isBatterie || appareilAncien)) return "réparer ou passer à plus récent ?";
+  if (v === "remplacer" && isEcran) return "réparer ou remplacer ?";
+  if (v === "remplacer") return "réparer ou remplacer ?";
+  return "réparer ou racheter ?";
+}
+
+/** Phrase question above-the-fold pour page produit + problème */
+export function getSeoQuestionPhrase(issue, item, verdict) {
+  if (!issue || !item) return null;
+  const shortName = getSeoProductName(item);
+  const intent = getSeoIntentPhrase(issue, item, verdict).replace(/\s*\?$/, "");
+  return `Faut-il ${intent} un ${shortName} avec ${issue.name.toLowerCase()} ?`;
+}
+
+/** Metadata SEO complètes pour page produit + problème (title, description uniques) */
+export function buildSeoIssueMetadata(item, issue) {
+  if (!item || !issue) return null;
+  const shortName = getSeoProductName(item);
+  const verdict = getVerdict([issue], item);
+  const repair = getRepairEstimate([issue], item);
+  const intent = getSeoIntentPhrase(issue, item, verdict);
+  const siteName = "Compare.";
+  const title = `${shortName} ${issue.name.toLowerCase()} : ${intent} | ${siteName}`;
+  const reconPrice = issue.reconPrice ?? Math.round(item.priceNew * (OCC_CATS.includes(item.category) ? .55 : .62));
+  const sl = OCC_CATS.includes(item.category) ? "occasion" : "reconditionné";
+  const repairRange = repair.median > 0 ? `Réparation estimée : ${repair.min}-${repair.max} €. ` : "";
+  const description = `${repairRange}Prix neuf ~${item.priceNew} €, ${sl} ~${reconPrice} €. Verdict : ${verdict.label}. Notre analyse et les alternatives pour ${shortName} (${item.productType}, ${item.year}).`;
+  return { title, description, verdict, intent };
+}
+
 export function buildSeo(page, data) {
   const siteName = "Compare.";
   if (page === "home") return { title: `Réparer ou racheter ? Comparez en 30 secondes | ${siteName}`, description: "Comparez réparation, achat reconditionné et neuf pour faire le meilleur choix. Estimations de coût, verdict et alternatives.", canonicalPath: "/", breadcrumb: [{ label: "Accueil", path: "/" }] };
@@ -491,8 +536,11 @@ export function buildSeo(page, data) {
     const item = data.item;
     const shortName = getSeoProductName(item);
     const path = data.issue ? R.pathProductIssue(item, data.issue) : pathCompare(item);
-    const issuePart = data.issue ? ` ${data.issue.name}` : "";
-    return { title: `Réparer ${shortName}${issuePart} ou racheter ? | ${siteName}`, description: `Coût de réparation, occasion et neuf pour ${shortName} (${item.productType}, ${item.year}). Notre recommandation et les alternatives.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: CATS.find(c => c.id === item.category)?.name || item.category, path: pathCategory(item.category) }, { label: shortName, path }] };
+    if (page === "issue" && data.issue) {
+      const meta = buildSeoIssueMetadata(item, data.issue);
+      if (meta) return { title: meta.title, description: meta.description, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: CATS.find(c => c.id === item.category)?.name || item.category, path: pathCategory(item.category) }, { label: shortName, path }] };
+    }
+    return { title: `Réparer ${shortName} ou racheter ? | ${siteName}`, description: `Coût de réparation, occasion et neuf pour ${shortName} (${item.productType}, ${item.year}). Notre recommandation et les alternatives.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: CATS.find(c => c.id === item.category)?.name || item.category, path: pathCategory(item.category) }, { label: shortName, path }] };
   }
   if (page === "aff" && data?.item) {
     const item = data.item;
