@@ -70,6 +70,21 @@ export async function getProductBySlug(slug) {
 }
 
 /**
+ * Récupère le prix neuf minimum pour un produit (offres condition=new actives).
+ * Source de vérité : Supabase.
+ * @returns {{ minPrice: number|null, hasOffer: boolean }}
+ */
+export async function getMinPriceNeuf(productSlug) {
+  const { data } = await getOffersForNeuf(productSlug);
+  const offers = data ?? [];
+  const active = offers.filter((o) => o.active !== false);
+  const withPrice = active.filter((o) => o.price_amount != null && Number(o.price_amount) > 0);
+  if (withPrice.length === 0) return { minPrice: null, hasOffer: false };
+  const min = Math.min(...withPrice.map((o) => Number(o.price_amount)));
+  return { minPrice: Math.round(min), hasOffer: true };
+}
+
+/**
  * Récupère les offres "neuf" pour un produit (page Acheter neuf).
  * Essaie d'abord via jointure products.slug, sinon via product_id.
  * Colonnes attendues : merchant, price_amount, price_currency, url, image_url

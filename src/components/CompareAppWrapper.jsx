@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { ProductImageProvider } from "../lib/product-image-context";
 import { ImageLightboxProvider } from "../lib/image-lightbox-context";
+import { MinPriceNeufProvider } from "../lib/min-price-neuf-context";
 
 const CompareApp = dynamic(() => import("./CompareApp"), {
   ssr: true,
@@ -16,9 +17,11 @@ const CompareApp = dynamic(() => import("./CompareApp"), {
 export default function CompareAppWrapper() {
   return (
     <ProductImageProvider>
-      <ImageLightboxProvider>
-        <CompareApp />
-      </ImageLightboxProvider>
+      <MinPriceNeufProvider>
+        <ImageLightboxProvider>
+          <CompareApp />
+        </ImageLightboxProvider>
+      </MinPriceNeufProvider>
     </ProductImageProvider>
   );
 }

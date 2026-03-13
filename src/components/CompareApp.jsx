@@ -24,6 +24,14 @@ import { getOffersForNeuf, getOffersForOcc, getOffersForParts } from "../lib/sup
 import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
 import { useImageLightbox } from "../lib/image-lightbox-context";
+import { useMinPriceNeuf } from "../lib/min-price-neuf-context";
+
+// ─── Prix neuf unifié (min des offres Supabase) ───
+function ProductPriceNeuf({ item, fallback = "—" }) {
+  const { displayText, loading } = useMinPriceNeuf(item);
+  if (!item) return <>{fallback}</>;
+  return <>{loading ? (item.priceNew != null ? `~${Math.round(item.priceNew)} €` : fallback) : displayText}</>;
+}
 
 // ─── LOGO ───
 function Logo({ s = 32, priority = false }) {
@@ -477,7 +485,7 @@ function Hero({ onSearch, onNav, popularSearches = POPULAR_SEARCHES }) {
           {sug.map(item => <li key={item.id}><button type="button" onMouseDown={() => { setQ(""); setNoMatchMsg(false); onSearch(item.id); }} className="link-hover" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #f0f0f0", transition: "background .2s", width: "100%", textAlign: "left", background: "none", borderLeft: "none", borderRight: "none", borderTop: "none", font: "inherit" }}
             onMouseEnter={e => e.currentTarget.style.background = "#F8FAF9"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
             <ProductImg brand={item.brand} item={item} size={44} />
-            <div style={{ textAlign: "left" }}><div style={{ fontWeight: 600, fontSize: 13, color: "#111" }}>{item.brand} {item.name}</div><div style={{ fontSize: 11, color: "#6B7280" }}>{item.productType} · {item.priceNew} €</div></div>
+            <div style={{ textAlign: "left" }}><div style={{ fontWeight: 600, fontSize: 13, color: "#111" }}>{item.brand} {item.name}</div><div style={{ fontSize: 11, color: "#6B7280" }}>{item.productType} · <ProductPriceNeuf item={item} /></div></div>
           </button></li>)}
         </ul>}
       </div>
@@ -577,6 +585,8 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
     });
   }, [activeIssues, partsPriceByIssue]);
   const refItem = sampleItem || items[0] || { id: 0, category: catId, productType, priceNew: avgPrice || 250, year: new Date().getFullYear() - 3, brand: "Référence", name: "Moyenne" };
+  const { priceForCalc: minNeufRef, hasOffer: hasNeufRefOffer, displayText: neufRefDisplayText } = useMinPriceNeuf(sampleItem || items[0]);
+  const neufRefPrice = minNeufRef ?? refItem?.priceNew ?? avgPrice;
   const repairEst = refItem && enrichedActiveIssues.length ? getRepairEstimate(enrichedActiveIssues, refItem) : null;
   const tMin = repairEst?.min ?? enrichedActiveIssues.reduce((s, i) => s + (i.repairMin || 0), 0);
   const tMax = repairEst?.max ?? enrichedActiveIssues.reduce((s, i) => s + (i.repairMax || 0), 0);
@@ -596,10 +606,10 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
   const remplacerBase = spec?.remplacer || `Remplacer si la réparation dépasse 40 % du prix neuf, si l'appareil a plus de 10 ans, ou si les pièces sont introuvables.`;
   const panneNames = activeIssues.map(i => i.name).join(", ");
   const reparerPersonalized = activeIssues.length
-    ? `${reparerBase} Pour la panne « ${panneNames} », le coût estimé est de ${tPart}–${tMax} € (pièces seules à pro, soit ${Math.round((tPart + tMax) / 2 / (refItem?.priceNew || avgPrice || 1) * 100)} % du neuf). Un appareil récent (< 5 ans) avec cette panne mérite souvent la réparation.`
+    ? `${reparerBase} Pour la panne « ${panneNames} », le coût estimé est de ${tPart}–${tMax} € (pièces seules à pro, soit ${Math.round((tPart + tMax) / 2 / (neufRefPrice || 1) * 100)} % du neuf). Un appareil récent (< 5 ans) avec cette panne mérite souvent la réparation.`
     : `${reparerBase} Prenez en compte l'âge de l'appareil, la garantie restante et la disponibilité des pièces.`;
   const remplacerPersonalized = activeIssues.length
-    ? `${remplacerBase} Pour « ${panneNames} », si le coût dépasse ${Math.round((refItem?.priceNew || avgPrice) * .4)} € ou si l'appareil a plus de 10 ans, le remplacement est souvent plus logique.`
+    ? `${remplacerBase} Pour « ${panneNames} », si le coût dépasse ${Math.round((neufRefPrice || avgPrice) * .4)} € ou si l'appareil a plus de 10 ans, le remplacement est souvent plus logique.`
     : `${remplacerBase} Tenez compte de l'âge : au-delà de 10–12 ans, le remplacement est souvent plus logique.`;
 
   return (
@@ -690,14 +700,14 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
           </summary>
           <div style={{ padding: "0 20px 20px" }}>
           {(() => {
-            const neuf = refItem?.priceNew || avgPrice;
+            const neuf = neufRefPrice || avgPrice;
             const econRep = activeIssues.length ? neuf - tMax : null;
             const econRecon = neuf - recon;
             const econRepLabel = econRep !== null ? (econRep > 0 ? `Économisez jusqu'à ${Math.round(econRep)} €` : econRep < 0 ? `Surcoût ${Math.round(Math.abs(econRep))} €` : "—") : "—";
             const econReconLabel = econRecon > 0 ? `Économisez ${Math.round(econRecon)} €` : "—";
             const diffLabel = activeIssues.length ? (activeIssues.some(i => i.diff === "difficile") ? "●●● Difficile" : activeIssues.some(i => i.diff === "moyen") ? "●● Moyen" : "● Facile") : "—";
             const priceRep = activeIssues.length ? `${Math.round(tPart)}–${Math.round(tMax)} €` : "Variable";
-            const priceNeuf = neuf ? `${Math.round(neuf)} €` : "Variable";
+            const priceNeuf = neuf ? (hasNeufRefOffer ? neufRefDisplayText : `${Math.round(neuf)} €`) : "Variable";
             const bestChoiceBanner = v?.v === "reparer" && econRep > 0
               ? { label: "Réparer", econ: `Économisez jusqu'à ${Math.round(econRep)} €`, color: GREEN }
               : v?.v === "remplacer" && econRecon > 0
@@ -705,7 +715,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
               : null;
             if (isMobile) {
               return <>
-                {neuf && <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 12 }}>Référence : {neuf} € neuf</div>}
+                {neuf && <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 12 }}>Référence : {hasNeufRefOffer ? neufRefDisplayText : `${Math.round(neuf)} €`} neuf</div>}
                 {bestChoiceBanner && (
                   <div style={{ background: bestChoiceBanner.color + "12", border: `1px solid ${bestChoiceBanner.color}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
@@ -764,7 +774,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
               { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
             ];
             return <>
-              {neuf && <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Référence : {neuf} € neuf</div>}
+              {neuf && <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Référence : {hasNeufRefOffer ? neufRefDisplayText : `${Math.round(neuf)} €`} neuf</div>}
               {bestChoiceBanner && (
                 <div style={{ background: bestChoiceBanner.color + "12", border: `1px solid ${bestChoiceBanner.color}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
@@ -811,7 +821,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
             {[
               { key: "reparer", color: GREEN, label: "Réparer", price: activeIssues.length ? `${Math.round(tPart)}–${Math.round(tMax)} €` : "Variable", sub: "pièces + tutoriels", icon: "tool", top: v?.v === "reparer", action: () => onNav("repair", { catId, productType }) },
               { key: "occ", color: AMBER, label: sl, price: `~${recon} €`, sub: "garanti 12–24 mois", icon: "recycle", top: v?.v === "remplacer", action: () => onNav("models-list", { catId, productType, affType: "occ" }) },
-              { key: "neuf", color: "#DC2626", label: "Neuf", price: avgPrice ? `~${avgPrice} €` : "Variable", sub: "Amazon, Leroy Merlin, Darty…", icon: "cart", top: v?.v === "remplacer", action: () => onNav("models-list", { catId, productType, affType: "neuf" }) },
+              { key: "neuf", color: "#DC2626", label: "Neuf", price: neufRefPrice ? (hasNeufRefOffer ? `À partir de ${minNeufRef} €` : `~${Math.round(neufRefPrice)} €`) : "Variable", sub: "Amazon, Leroy Merlin, Darty…", icon: "cart", top: v?.v === "remplacer", action: () => onNav("models-list", { catId, productType, affType: "neuf" }) },
             ].map(o => (
               <div key={o.key} onClick={o.action} className="card-hover" style={{
                 background: "#fff", border: o.top ? `2px solid ${o.color}` : "1px solid #E5E3DE",
@@ -1028,7 +1038,7 @@ function ModelsListPage({ catId, productType, affType, onNav }) {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "1px solid #F3F4F6" }}>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: modeColor }}>{isNeuf ? `${item.priceNew} €` : `~${Math.round(item.priceNew * .55)} €`}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: modeColor }}>{isNeuf ? <ProductPriceNeuf item={item} /> : `~${Math.round(item.priceNew * .55)} €`}</div>
                   <div style={{ fontSize: 11, color: "#9CA3AF" }}>{isNeuf ? "neuf" : sl.toLowerCase()}</div>
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 600, color: ACCENT }}>Voir les offres →</span>
@@ -1391,7 +1401,7 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 12, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.brand} {item.name}</div>
                   <div style={{ fontSize: 11, color: "#6B7280" }}>{item.productType} · {item.year}</div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{item.priceNew} € neuf · {iss[0].name} : {iss[0].repairMin}–{iss[0].repairMax} €</div>
+                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}><ProductPriceNeuf item={item} /> neuf · {iss[0].name} : {iss[0].repairMin}–{iss[0].repairMax} €</div>
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, paddingTop: 8, borderTop: "1px solid #F3F4F6" }}>
@@ -1419,7 +1429,6 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const [showWriteReview, setShowWriteReview] = useState(false);
   const [reviewText, setReviewText] = useState("");
   const [reviews, setReviews] = useState([]);
-  const [minNeufPrice, setMinNeufPrice] = useState(null);
   const [minOccPrice, setMinOccPrice] = useState(null);
   const [partsOffers, setPartsOffers] = useState(null);
   const [deviceUsé, setDeviceUsé] = useState(null);
@@ -1434,19 +1443,17 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   }, [itemId, initialIssueId]);
   useEffect(() => { setDeviceUsé(null); setIsBricoleur(null); }, [itemId]);
 
-  // Charger les prix des offres affiliées (neuf + occasion + pièces) pour affichage et calculs
+  // Prix neuf unifié (hook) + chargement occasion + pièces
+  const { priceForCalc: minNeufPrice, hasOffer: hasNeufOffer, displayText: neufDisplayText } = useMinPriceNeuf(item);
   useEffect(() => {
     if (!item) return;
     let cancelled = false;
     Promise.all([
-      getOffersForNeuf(getProductSlug(item)),
       getOffersForOcc(getProductSlug(item)),
       getOffersForParts(getProductSlug(item)),
-    ]).then(([neufRes, occRes, partsRes]) => {
+    ]).then(([occRes, partsRes]) => {
       if (cancelled) return;
-      const neufMin = neufRes.data?.[0]?.price_amount != null ? Math.round(Number(neufRes.data[0].price_amount)) : null;
       const occMin = occRes.data?.[0]?.price_amount != null ? Math.round(Number(occRes.data[0].price_amount)) : null;
-      setMinNeufPrice(neufMin);
       setMinOccPrice(occMin);
       setPartsOffers(partsRes.data ?? []);
     });
@@ -1491,7 +1498,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const tPart = enrichedActiveIssues.reduce((s, i) => s + i.partPrice, 0);
   const reconFallback = activeIssues[0]?.reconPrice || Math.round(item.priceNew * .6);
   const recon = Math.round(minOccPrice != null ? minOccPrice : reconFallback);
-  const neufDisplay = Math.round(minNeufPrice != null ? minNeufPrice : item.priceNew);
+  const neufDisplay = minNeufPrice != null ? minNeufPrice : Math.round(item.priceNew);
   const v = enrichedActiveIssues.length ? getVerdict(enrichedActiveIssues, item, { deviceUsé: deviceUsé === true, isBricoleur: isBricoleur === true, priceNeufOverride: minNeufPrice ?? undefined, priceOccOverride: minOccPrice ?? undefined }) : null;
   const timeInfo = getCumulTimeInfo(activeIssues);
   const alts = item ? getAlternatives(item) : null;
@@ -1518,7 +1525,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           <ProductImg brand={item.brand} item={item} size={72} />
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: 0 }}>{item.brand} {item.name}</h1>
-            <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>{item.productType} · {item.year} · {neufDisplay} € neuf</p>
+            <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>{item.productType} · {item.year} · {neufDisplayText} neuf</p>
           </div>
         </div>
         <div style={{ background: "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)", borderRadius: 12, padding: "14px 18px", border: "1px solid #E2E8F0", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
@@ -1634,7 +1641,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               {[
                 { top: repairTop, color: GREEN, label: "Réparer", price: `${Math.round(tPart)}–${Math.round(tMax)} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
                 { top: v.v === "remplacer" && TECH_CATS.includes(item.category), color: AMBER, label: sl, price: minOccPrice != null ? `${recon} €` : `~${recon} €`, sub: TECH_CATS.includes(item.category) ? "Très en vogue (tech)" : "garanti 12 mois", btn: `Voir ${sl.toLowerCase()} →`, aff: "occ" },
-                { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: `${neufDisplay} €`, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer neuf →", aff: "neuf" },
+                { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: neufDisplayText, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer neuf →", aff: "neuf" },
               ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: enrichedActiveIssues, affType: o.aff, alts })} className="card-hover" style={{
                 background: "#fff", border: o.top ? `2px solid ${o.color}` : "1px solid #E5E3DE",
                 borderRadius: 12, padding: 14, cursor: "pointer", textAlign: "center",
@@ -1743,7 +1750,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               : null;
             if (isMobile) {
               return <>
-                <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 12 }}>Référence : {neuf} € neuf</div>
+                <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 12 }}>Référence : {neufDisplayText} neuf</div>
                 {bestChoiceBanner && (
                   <div style={{ background: bestChoiceBanner.color + "12", border: `1px solid ${bestChoiceBanner.color}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
@@ -1785,14 +1792,14 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                       <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Neuf</span>
                       <span style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>référence</span>
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{neuf} €</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{neufDisplayText}</div>
                     <div style={{ fontSize: 12, color: "#9CA3AF" }}>Prix de base</div>
                   </div>
                 </div>
               </>;
             }
             const tableRows = [
-              { l: "Prix", r: `${Math.round(tPart)}–${Math.round(tMax)} €`, o: minOccPrice != null ? `${recon} €` : `~${recon} €`, n: `${Math.round(neuf)} €`, bold: true },
+              { l: "Prix", r: `${Math.round(tPart)}–${Math.round(tMax)} €`, o: minOccPrice != null ? `${recon} €` : `~${recon} €`, n: hasNeufOffer ? neufDisplayText : `${Math.round(neuf)} €`, bold: true },
               { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
               { l: "Pièce seule", r: `${Math.round(tPart)} €`, o: "—", n: "—" },
               { l: "Temps (réparation autonome)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis", o: "—", n: "—" },
@@ -1800,7 +1807,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
             ];
             return <>
-              <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Référence : {neuf} € neuf</div>
+              <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Référence : {neufDisplayText} neuf</div>
               {bestChoiceBanner && (
                 <div style={{ background: bestChoiceBanner.color + "12", border: `1px solid ${bestChoiceBanner.color}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 14, color: bestChoiceBanner.color }}>✓</span>
@@ -1858,7 +1865,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, color: AMBER, fontWeight: 600 }}>{minOccPrice != null ? "" : "~"}{recon} € {sl.toLowerCase()}</div>
-              <div style={{ fontSize: 11, color: "#9CA3AF" }}>{neufDisplay} € neuf</div>
+              <div style={{ fontSize: 11, color: "#9CA3AF" }}>{neufDisplayText} neuf</div>
             </div>
           </div>
 
@@ -1881,7 +1888,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: AMBER }}>~{n.reconPrice} € recon.</div>
-                <div style={{ fontSize: 11, color: "#9CA3AF" }}>{n.neufPrice} € neuf</div>
+                <div style={{ fontSize: 11, color: "#9CA3AF" }}><ProductPriceNeuf item={n.item} /> neuf</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                   <button type="button" onClick={e => { e.stopPropagation(); onNav("aff", { item: n.item, issues: altIssues, affType: "neuf", alts: altAlts }); }} style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Prix neuf</button>
                   <button type="button" onClick={e => { e.stopPropagation(); onNav("aff", { item: n.item, issues: altIssues, affType: "occ", alts: altAlts }); }} style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: AMBER, color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Reconditionné</button>
@@ -1908,7 +1915,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: AMBER }}>~{e.reconPrice} € {shLabel(e.item.category).toLowerCase()}</div>
-                <div style={{ fontSize: 11, color: "#9CA3AF" }}>{e.neufPrice} € neuf</div>
+                <div style={{ fontSize: 11, color: "#9CA3AF" }}><ProductPriceNeuf item={e.item} /> neuf</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                   <button type="button" onClick={ev => { ev.stopPropagation(); onNav("aff", { item: e.item, issues: altIssues, affType: "neuf", alts: altAlts }); }} style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Prix neuf</button>
                   <button type="button" onClick={ev => { ev.stopPropagation(); onNav("aff", { item: e.item, issues: altIssues, affType: "occ", alts: altAlts }); }} style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: AMBER, color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: F }}>{sl}</button>
@@ -2047,7 +2054,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                 <ProductImg brand={rel.brand} item={rel} size={48} />
                 <div style={{ fontWeight: 600, fontSize: 11, color: "#111", marginTop: 4 }}>{rel.brand}</div>
                 <div style={{ fontSize: 10, color: "#6B7280" }}>{rel.name}</div>
-                <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>{rel.priceNew} €</div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}><ProductPriceNeuf item={rel} /></div>
               </Card>)}
           </div>
         </div>
@@ -2065,7 +2072,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                 {[
                   { top: repairTop, color: GREEN, label: "Réparer", price: `${Math.round(tPart)}–${Math.round(tMax)} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
                   { top: v.v === "remplacer" && TECH_CATS.includes(item.category), color: AMBER, label: sl, price: `~${recon} €`, sub: TECH_CATS.includes(item.category) ? "Très en vogue (tech)" : "garanti 12 mois", btn: `Voir ${sl.toLowerCase()} →`, aff: "occ" },
-                  { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: `${neufDisplay} €`, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer prix neuf →", aff: "neuf" },
+                  { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: neufDisplayText, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer prix neuf →", aff: "neuf" },
                 ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: enrichedActiveIssues, affType: o.aff, alts })} className="card-hover" style={{
                   background: "#fff", border: o.top ? `2px solid ${o.color}` : "1px solid #E5E3DE",
                   borderRadius: 12, padding: 14, cursor: "pointer", position: "relative",
@@ -2144,7 +2151,8 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   const repairTotalMin = Math.round(issues?.reduce((s, i) => s + i.repairMin, 0) ?? 0);
   const repairTotalMax = Math.round(issues?.reduce((s, i) => s + i.repairMax, 0) ?? 0);
   const repairAvg = Math.round((repairTotalMin + repairTotalMax) / 2);
-  const base = affType === "neuf" ? item.priceNew : affType === "occ" ? (issues?.[0]?.reconPrice || Math.round(item.priceNew * .6)) : (repairAvg || 30);
+  const { priceForCalc: minNeufPriceAff } = useMinPriceNeuf(item);
+  const base = affType === "neuf" ? (minNeufPriceAff ?? item.priceNew) : affType === "occ" ? (issues?.[0]?.reconPrice || Math.round(item.priceNew * .6)) : (repairAvg || 30);
   const off = [0, -.04, .03, -.06, .05];
   // Tri du moins cher au plus cher (lisibilité)
   const retsWithPrice = rets.map((r, idx) => ({ r, price: Math.round(base * (1 + (off[idx] ?? 0))), idx }));
@@ -2170,7 +2178,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   const buildAltList = () => {
     if (isPcs) return [];
     const list = [];
-    const refPrice = isNeuf ? item.priceNew : Math.round(item.priceNew * reconMult);
+    const refPrice = isNeuf ? (minNeufPriceAff ?? item.priceNew) : Math.round(item.priceNew * reconMult);
     const pickTag = ({ kind, priceDiff, yearGain, sameBrand }) => {
       if (kind === "newer") return "Version plus récente";
       if (kind === "equiv") {
@@ -2251,7 +2259,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   const bestAlt = altList[0];
   const otherAlts = altList.slice(1).sort((a, b) => a.price - b.price); // du moins cher au plus cher
   const showAlts = !isPcs && altList.length > 0;
-  const myPrice = isNeuf ? item.priceNew : Math.round(item.priceNew * reconMult);
+  const myPrice = isNeuf ? (minNeufPriceAff ?? item.priceNew) : Math.round(item.priceNew * reconMult);
   const modeColor = isNeuf ? "#DC2626" : AMBER;
   const modeLabel = isNeuf ? "neuf" : sl.toLowerCase();
 
