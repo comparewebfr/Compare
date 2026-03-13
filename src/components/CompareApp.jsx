@@ -12,6 +12,15 @@ function useIsMobile() {
   }, []);
   return isMobile;
 }
+
+function useDebouncedValue(value, delay) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { PRODUCT_IMAGES } from "../data/product-images";
@@ -1433,6 +1442,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const [partsOffers, setPartsOffers] = useState(null);
   const [deviceUsé, setDeviceUsé] = useState(null);
   const [isBricoleur, setIsBricoleur] = useState(null);
+  const deviceUséStable = useDebouncedValue(deviceUsé, 380);
+  const isBricoleurStable = useDebouncedValue(isBricoleur, 380);
   const cat = item ? CATS.find(c => c.id === item.category) : null;
   const sl = item ? shLabel(item.category) : "Reconditionné";
 
@@ -1499,7 +1510,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const reconFallback = activeIssues[0]?.reconPrice || Math.round(item.priceNew * .6);
   const recon = Math.round(minOccPrice != null ? minOccPrice : reconFallback);
   const neufDisplay = minNeufPrice != null ? minNeufPrice : Math.round(item.priceNew);
-  const v = enrichedActiveIssues.length ? getVerdict(enrichedActiveIssues, item, { deviceUsé: deviceUsé === true, isBricoleur: isBricoleur === true, priceNeufOverride: minNeufPrice ?? undefined, priceOccOverride: minOccPrice ?? undefined }) : null;
+  const v = enrichedActiveIssues.length ? getVerdict(enrichedActiveIssues, item, { deviceUsé: deviceUséStable === true, isBricoleur: isBricoleurStable === true, priceNeufOverride: minNeufPrice ?? undefined, priceOccOverride: minOccPrice ?? undefined }) : null;
   const timeInfo = getCumulTimeInfo(activeIssues);
   const alts = item ? getAlternatives(item) : null;
   const bestNewer = alts?.newer?.[0] || null;
