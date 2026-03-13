@@ -1664,6 +1664,35 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           )}
         </div>
 
+        {/* Résumé réparation — bloc clair : problème, difficulté, durée, coûts */}
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E5E3DE", padding: "18px 20px", marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 12 }}>Récapitulatif réparation</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>Problème</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{activeIssues.map(i => i.name).join(", ") || "—"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>Difficulté</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : activeIssues.some(i => i.diff === "moyen") ? AMBER : GREEN }}>
+                {activeIssues.some(i => i.diff === "difficile") ? "Difficile" : activeIssues.some(i => i.diff === "moyen") ? "Moyen" : "Facile"}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>Durée</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>Pièces seules (DIY)</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>dès {Math.round(tPart)} €</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>Réparateur pro</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#6366F1" }}>dès {Math.round(tMin)} €</div>
+            </div>
+          </div>
+        </div>
+
         {/* 3 options — mobile only (sidebar visible sur desktop) */}
         <div className="show-mobile" style={{ flexDirection: "column", gap: 8, marginBottom: 16 }}>
           {(() => {
@@ -2018,28 +2047,33 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             const timeLabel = formatSingleTime(iss.time);
             const impossibleSeul = iss.time === "pro";
             const tutoSteps = getTutorialSteps(item.productType);
-            return <div key={iss.id} style={{ padding: "14px 0", borderBottom: "1px solid #F3F4F6" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-                <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{iss.name}</span>
-                <span style={{ display: "inline-flex", gap: 3, alignItems: "center", padding: "4px 10px", borderRadius: 8, background: diffColor + "18", color: diffColor, fontWeight: 700 }}>
-                  {[1,2,3].map(s => <span key={s} style={{ width: 10, height: 10, borderRadius: 2, background: s <= diffStars ? diffColor : "#E5E7EB", display: "inline-block" }} />)}
-                  <span style={{ fontSize: 12, marginLeft: 4 }}>{diffLabel}</span>
-                  {impossibleSeul && (
-                    <span style={{ marginLeft: 8, display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 6, background: "#DC262618", color: "#DC2626", fontWeight: 700, fontSize: 11 }}>
-                      <Icon name="warn" s={12} color="#DC2626" /> Impossible seul — pro requis
-                    </span>
-                  )}
+            return <div key={iss.id} style={{ padding: "18px 0", borderBottom: "1px solid #F3F4F6" }}>
+              {/* En-tête : problème + badges (difficulté, durée, coûts) */}
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: "#111", margin: "0 0 12px" }}>{iss.name}</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: diffColor + "14", color: diffColor, fontWeight: 700, fontSize: 12 }}>
+                  {[1,2,3].map(s => <span key={s} style={{ width: 8, height: 8, borderRadius: 2, background: s <= diffStars ? diffColor : "#E5E7EB", display: "inline-block" }} />)}
+                  {diffLabel}
                 </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "#F3F4F6", color: "#374151", fontWeight: 600, fontSize: 12 }}>
+                  <Icon name="clock" s={14} color="#6B7280" /> {timeLabel}
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: GREEN + "14", color: GREEN, fontWeight: 700, fontSize: 12 }}>
+                  <Icon name="tool" s={14} color={GREEN} /> DIY : dès {iss.partPrice} €
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "#6366F114", color: "#6366F1", fontWeight: 700, fontSize: 12 }}>
+                  <Icon name="pin" s={14} color="#6366F1" /> Pro : {iss.repairMin}–{iss.repairMax} €
+                </span>
+                {impossibleSeul && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, background: "#DC262614", color: "#DC2626", fontWeight: 700, fontSize: 11 }}>
+                    <Icon name="warn" s={12} color="#DC2626" /> Pro requis
+                  </span>
+                )}
               </div>
-              {/* Étapes principales — tutoriel personnalisé par type de produit */}
+              {/* Étapes principales */}
               <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 14, marginBottom: 12, borderLeft: `4px solid ${GREEN}` }}>
                 <p style={{ fontSize: 13, color: "#374151", margin: "0 0 8px", fontWeight: 700 }}>Étapes principales :</p>
                 <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#374151", lineHeight: 1.7 }}>{tutoSteps.map((s, si) => <li key={si}>{s}</li>)}</ol>
-              </div>
-              <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6B7280", marginBottom: 10, flexWrap: "wrap" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color={GREEN} /> Réparer soi-même : <strong>dès {iss.partPrice} €</strong> (pièces)</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="pin" s={14} color="#6366F1" /> Réparateur pro : <strong>{iss.repairMin}–{iss.repairMax} €</strong> (pièce + main d&apos;œuvre)</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="clock" s={14} color="#9CA3AF" /> Durée : <strong>{timeLabel}</strong></span>
               </div>
               <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.65, marginBottom: 10 }}>
                 {impossibleSeul
@@ -2052,11 +2086,11 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                 }
               </p>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(iss.ytQuery)}`} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 8, background: "#FF0000", color: "#fff", fontSize: 12, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <Icon name="play" s={14} color="#fff" /> Tutoriel YouTube
+                <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(iss.ytQuery)}`} target="_blank" rel="noopener noreferrer" style={{ padding: "10px 16px", borderRadius: 8, background: "#FF0000", color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <Icon name="play" s={14} color="#fff" /> Tutoriel vidéo
                 </a>
-                <button onClick={() => onNav("aff", { item, issues: [iss], affType: "pcs", alts })} style={{ padding: "8px 14px", borderRadius: 8, background: ACCENT, color: "#fff", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer", fontFamily: F, display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <Icon name="cart" s={14} color="#fff" /> Acheter la pièce
+                <button onClick={() => onNav("aff", { item, issues: [iss], affType: "pcs", alts })} style={{ padding: "10px 16px", borderRadius: 8, background: GREEN, color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", fontFamily: F, display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <Icon name="cart" s={14} color="#fff" /> Acheter les pièces{iss.partPrice != null ? ` (${iss.partPrice} €)` : ""}
                 </button>
               </div>
               <div style={{ marginTop: 8, fontSize: 11, color: "#9CA3AF", lineHeight: 1.4 }}>
@@ -2347,10 +2381,14 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111", margin: "0 0 4px" }}>{titles[affType]} — {item.brand} {item.name}</h1>
               <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 8 }}>
-                {isPcs ? `Coût total estimé (pièces + main d'œuvre pro) : ${Math.round(repairTotalMin)}–${Math.round(repairTotalMax)} €` : issues?.map(i => i.name).join(", ")}
+                {isPcs ? (
+                  <>Panne : <strong style={{ color: "#111" }}>{issues?.map(i => i.name).join(", ")}</strong> — Pièces seules dès {Math.round(issues?.reduce((s, i) => s + (i.partPrice || 0), 0) || 0)} € · Réparateur pro dès {Math.round(repairTotalMin)} €</>
+                ) : issues?.map(i => i.name).join(", ")}
               </p>
               <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, maxWidth: 560 }}>
-                Le {item.brand} {item.name} est un {item.productType.toLowerCase()} de {item.year}. Comparez les offres des prestataires ci-dessous.
+                {isPcs
+                  ? `Comparez les offres de pièces détachées ci-dessous. Deux options : acheter les pièces et réparer vous-même (tutoriel vidéo), ou confier à un réparateur professionnel.`
+                  : `Le ${item.brand} ${item.name} est un ${item.productType.toLowerCase()} de ${item.year}. Comparez les offres des prestataires ci-dessous.`}
               </p>
             </div>
             {!isPcs && <div style={{ padding: "4px 10px", borderRadius: 4, background: modeColor + "12", color: modeColor, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
@@ -2425,15 +2463,49 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
         </details>
       )}
 
+      {/* Bloc récapitulatif réparation (AffPage pièces) — avant les offres */}
+      {isPcs && issues?.length > 0 && (() => {
+        const timeInfo = getCumulTimeInfo(issues);
+        const partTotal = Math.round(issues.reduce((s, i) => s + (i.partPrice || 0), 0) || 0);
+        const diffLabel = issues.some(i => i.diff === "difficile") ? "Difficile" : issues.some(i => i.diff === "moyen") ? "Moyen" : "Facile";
+        const diffColor = diffLabel === "Difficile" ? "#DC2626" : diffLabel === "Moyen" ? AMBER : GREEN;
+        return (
+          <div style={{ background: "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)", borderRadius: 14, border: "1px solid #E5E3DE", padding: "18px 20px", marginBottom: 20, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16, alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>Problème</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{issues.map(i => i.name).join(", ")}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>Difficulté</div>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, background: diffColor + "18", color: diffColor, fontWeight: 700, fontSize: 13 }}>
+                <Icon name="tool" s={14} color={diffColor} /> {diffLabel}
+              </span>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>Durée</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{timeInfo.diyLabel}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>Pièces seules (DIY)</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>dès {partTotal} €</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>Réparateur pro</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#111" }}>{repairTotalMin}–{repairTotalMax} €</div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 2. Prix — comparer les offres prestataires */}
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
           <Icon name={isPcs ? "tool" : isNeuf ? "cart" : "recycle"} s={18} color={ACCENT} />
-          {isPcs ? "Comparer les offres pièces & réparation" : isNeuf ? "Comparer les prix neuf" : `Comparer les offres ${sl.toLowerCase()}`}
+          {isPcs ? "Offres de pièces détachées" : isNeuf ? "Comparer les prix neuf" : `Comparer les offres ${sl.toLowerCase()}`}
         </h2>
         <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 14 }}>
           {isPcs
-            ? `Deux options : réparation autonome (acheter la pièce et faire soi-même) ou confier à un réparateur professionnel. Comparez les offres pièces ci-dessous, ou trouvez un réparateur près de chez vous.`
+            ? `Achetez les pièces ci-dessous pour réparer vous-même (tutoriel vidéo disponible), ou confiez à un réparateur professionnel.`
             : isNeuf
             ? `Les meilleures offres pour acheter ${item.brand} ${item.name} neuf. Livraison rapide, garantie fabricant.`
             : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
@@ -2535,7 +2607,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               const imgUrl = (offer?.image_url?.trim() || productImgUrl) || null;
               const matchedIssue = offer && issues?.length ? issues.find((i) => slugify(i.name) === (offer.issue_type ?? "").toLowerCase().replace(/_/g, "-")) : null;
               const offerLabel = offer ? buildPartsOfferLabel(offer, item, matchedIssue?.name) : `${issues?.[0]?.name || "Pièce"} ${item?.brand} ${item?.name}`.trim();
-              const subLabel = `Sur ${r.n}`;
+              const subLabel = `Pièces détachées sur ${r.n}`;
               return (
                 <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={{
                   background: "#fff",
@@ -2570,7 +2642,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                       <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{priceStr}</div>
                     </div>
                   </div>
-                  <div className="retailer-cta" style={{ padding: "12px 18px", borderRadius: 10, background: r.c || "#111", color: "#fff", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform .2s", flexShrink: 0 }}>Voir l&apos;offre →</div>
+                  <div className="retailer-cta" style={{ padding: "12px 18px", borderRadius: 10, background: r.c || "#111", color: "#fff", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform .2s", flexShrink: 0 }}>Acheter les pièces →</div>
                 </a>
               );
             });
