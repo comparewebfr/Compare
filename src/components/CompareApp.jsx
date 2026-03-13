@@ -615,7 +615,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
   const remplacerBase = spec?.remplacer || `Remplacer si la réparation dépasse 40 % du prix neuf, si l'appareil a plus de 10 ans, ou si les pièces sont introuvables.`;
   const panneNames = activeIssues.map(i => i.name).join(", ");
   const reparerPersonalized = activeIssues.length
-    ? `${reparerBase} Pour la panne « ${panneNames} », le coût estimé est de ${tPart}–${tMax} € (pièces seules à pro, soit ${Math.round((tPart + tMax) / 2 / (neufRefPrice || 1) * 100)} % du neuf). Un appareil récent (< 5 ans) avec cette panne mérite souvent la réparation.`
+    ? `${reparerBase} Pour la panne « ${panneNames} » : réparer soi-même dès ${Math.round(tPart)} € (pièces), ou chez un pro dès ${Math.round(tMin)} € (pièce + main d'œuvre). Un appareil récent (< 5 ans) mérite souvent la réparation.`
     : `${reparerBase} Prenez en compte l'âge de l'appareil, la garantie restante et la disponibilité des pièces.`;
   const remplacerPersonalized = activeIssues.length
     ? `${remplacerBase} Pour « ${panneNames} », si le coût dépasse ${Math.round((neufRefPrice || avgPrice) * .4)} € ou si l'appareil a plus de 10 ans, le remplacement est souvent plus logique.`
@@ -738,19 +738,27 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
                   </div>
                 )}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {/* Réparer soi-même — pièces seules */}
                   <div style={{ background: v?.v === "reparer" ? GREEN + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v?.v === "reparer" ? `2px solid ${GREEN}` : "1px solid #E2E8F0" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <span style={{ width: 32, height: 32, borderRadius: 8, background: GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="tool" s={16} color={GREEN} /></span>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Réparer</span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Réparer soi-même</span>
                       {v?.v === "reparer" && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: GREEN, color: "#fff" }}>Recommandé</span>}
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{priceRep}</div>
-                    <div style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{econRepLabel}</div>
-                    {activeIssues.length > 0 && <>
-                      <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {Math.round(tPart)} €</div>
-                      <div style={{ fontSize: 11, color: "#6B7280" }}>Temps (réparation autonome) : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
-                    </>}
-                    <div style={{ fontSize: 11, color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : "#6B7280" }}>Difficulté : {diffLabel}</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 2 }}>{activeIssues.length ? `dès ${Math.round(tPart)} €` : "Variable"}</div>
+                    <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 4 }}>Pièces seules · tutoriel vidéo</div>
+                    {activeIssues.length > 0 && <div style={{ fontSize: 11, color: GREEN, fontWeight: 600 }}>{econRepLabel}</div>}
+                    {activeIssues.length > 0 && <div style={{ fontSize: 11, color: "#6B7280", marginTop: 4 }}>Temps : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>}
+                  </div>
+                  {/* Réparateur professionnel — pièce + main d'œuvre */}
+                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: 14, border: "1px solid #E2E8F0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ width: 32, height: 32, borderRadius: 8, background: "#6366F112", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="pin" s={16} color="#6366F1" /></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Réparateur pro</span>
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 2 }}>{activeIssues.length ? `dès ${Math.round(tMin)} €` : "Variable"}</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>Pièce + main d&apos;œuvre · devis recommandé</div>
+                    {activeIssues.length > 0 && tMin !== tMax && <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>Fourchette : {Math.round(tMin)}–{Math.round(tMax)} €</div>}
                   </div>
                   <div style={{ background: v?.v === "remplacer" ? AMBER + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v?.v === "remplacer" ? `2px solid ${AMBER}` : "1px solid #E2E8F0" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -775,12 +783,10 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
               </>;
             }
             const tableRows = [
-              { l: "Prix", r: priceRep, o: `~${recon} €`, n: priceNeuf, bold: true },
-              { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
-              { l: "Pièce seule", r: activeIssues.length ? `${Math.round(tPart)} €` : "—", o: "—", n: "—" },
-              { l: "Temps (réparation autonome)", r: activeIssues.length ? (timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis") : "—", o: "—", n: "—" },
-              { l: "Difficulté", r: diffLabel, o: "—", n: "—", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
-              { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
+              { l: "Prix", diy: activeIssues.length ? `dès ${Math.round(tPart)} €` : "—", pro: activeIssues.length ? `dès ${Math.round(tMin)} €` : "—", o: `~${recon} €`, n: priceNeuf, bold: true },
+              { l: "Détail", diy: activeIssues.length ? "Pièces seules · tutoriel" : "—", pro: activeIssues.length ? (tMin !== tMax ? `Pièce + main d'œuvre (${Math.round(tMin)}–${Math.round(tMax)} €)` : "Pièce + main d'œuvre") : "—", o: `${sl.toLowerCase()} garanti`, n: "Référence" },
+              { l: "Économie vs neuf", diy: econRepLabel, pro: "—", o: econReconLabel, n: "—", hDiy: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
+              { l: "Temps / Difficulté", diy: activeIssues.length ? (timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis") : "—", pro: "—", o: "—", n: "—", hDiy: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
             ];
             return <>
               {neuf && <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Référence : {hasNeufRefOffer ? neufRefDisplayText : `${Math.round(neuf)} €`} neuf</div>}
@@ -799,18 +805,20 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
               <div className="table-compare-scroll" style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead><tr style={{ background: W }}>
-                    <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#9CA3AF", fontSize: 11, width: "28%" }}></th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: GREEN, fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color={GREEN} /> Réparer</span></th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: AMBER, fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="recycle" s={14} color={AMBER} /> {sl}</span></th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#DC2626", fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="cart" s={14} color="#DC2626" /> Neuf</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#9CA3AF", fontSize: 11, width: "22%" }}></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: GREEN, fontSize: 11 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color={GREEN} /> Soi-même</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#6366F1", fontSize: 11 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="pin" s={14} color="#6366F1" /> Pro</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: AMBER, fontSize: 11 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="recycle" s={14} color={AMBER} /> {sl}</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#DC2626", fontSize: 11 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="cart" s={14} color="#DC2626" /> Neuf</span></th>
                   </tr></thead>
                   <tbody>
                     {tableRows.map((row, i) => (
                       <tr key={i} style={{ borderBottom: "1px solid #F3F4F6" }}>
                         <td style={{ padding: "9px 14px", fontWeight: 600, color: "#374151", fontSize: 12 }}>{row.l}</td>
-                        <td style={{ padding: "9px 14px", textAlign: "center", color: row.hR || "#6B7280", fontWeight: row.bold || row.hR ? 700 : 400, background: v?.v === "reparer" ? GREEN + "06" : "transparent" }}>{row.r}</td>
+                        <td style={{ padding: "9px 14px", textAlign: "center", color: row.hDiy || "#6B7280", fontWeight: row.bold || row.hDiy ? 700 : 400, background: v?.v === "reparer" ? GREEN + "06" : "transparent" }}>{row.diy}</td>
+                        <td style={{ padding: "9px 14px", textAlign: "center", color: "#6B7280", fontWeight: row.bold ? 700 : 400, background: v?.v === "reparer" ? "#6366F106" : "transparent" }}>{row.pro}</td>
                         <td style={{ padding: "9px 14px", textAlign: "center", color: row.hO || "#6B7280", fontWeight: row.bold || row.hO ? 700 : 400, background: v?.v === "remplacer" ? AMBER + "06" : "transparent" }}>{row.o}</td>
-                        <td style={{ padding: "9px 14px", textAlign: "center", color: row.hN || "#6B7280", fontWeight: row.bold || row.hN ? 700 : 400, background: v?.v === "remplacer" ? "#DC262606" : "transparent" }}>{row.n}</td>
+                        <td style={{ padding: "9px 14px", textAlign: "center", color: row.hN || "#6B7280", fontWeight: row.bold || row.hN ? 700 : 400 }}>{row.n}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -828,7 +836,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="grid-3">
             {[
-              { key: "reparer", color: GREEN, label: "Réparer", price: activeIssues.length ? `${Math.round(tPart)}–${Math.round(tMax)} €` : "Variable", sub: "pièces + tutoriels", icon: "tool", top: v?.v === "reparer", action: () => onNav("repair", { catId, productType }) },
+              { key: "reparer", color: GREEN, label: "Réparer", splitPrice: true, priceDiy: Math.round(tPart), pricePro: Math.round(tMin), sub: "Pièces seules ou réparateur", icon: "tool", top: v?.v === "reparer", action: () => onNav("repair", { catId, productType }) },
               { key: "occ", color: AMBER, label: sl, price: `~${recon} €`, sub: "garanti 12–24 mois", icon: "recycle", top: v?.v === "remplacer", action: () => onNav("models-list", { catId, productType, affType: "occ" }) },
               { key: "neuf", color: "#DC2626", label: "Neuf", price: neufRefPrice ? (hasNeufRefOffer ? `À partir de ${minNeufRef} €` : `~${Math.round(neufRefPrice)} €`) : "Variable", sub: "Amazon, Leroy Merlin, Darty…", icon: "cart", top: v?.v === "remplacer", action: () => onNav("models-list", { catId, productType, affType: "neuf" }) },
             ].map(o => (
@@ -840,7 +848,20 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
                 {o.top && <div style={{ fontSize: 8, fontWeight: 700, color: o.color, marginBottom: 4 }}>RECOMMANDÉ</div>}
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: o.color + "18", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}><Icon name={o.icon} s={22} color={o.color} /></div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{o.label}</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: o.color }}>{o.price}</div>
+                {o.splitPrice ? (
+                  <div style={{ marginTop: 8, marginBottom: 6, display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "#F8FAFC", borderRadius: 8, fontSize: 11 }}>
+                      <span style={{ color: "#6B7280", fontWeight: 600 }}>Soi-même</span>
+                      <span style={{ fontWeight: 800, color: o.color }}>dès {o.priceDiy} €</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "#F8FAFC", borderRadius: 8, fontSize: 11 }}>
+                      <span style={{ color: "#6B7280", fontWeight: 600 }}>Pro</span>
+                      <span style={{ fontWeight: 800, color: "#6366F1" }}>dès {o.pricePro} €</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 18, fontWeight: 800, color: o.color }}>{o.price}</div>
+                )}
                 <div style={{ fontSize: 11, color: "#9CA3AF" }}>{o.sub}</div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: o.color, marginTop: 8 }}>Voir →</div>
               </div>
@@ -1647,12 +1668,11 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
         <div className="show-mobile" style={{ flexDirection: "column", gap: 8, marginBottom: 16 }}>
           {(() => {
             const repairFeas = v.repairFeasibility || "facile";
-            const repairSub = repairFeas === "peu_realiste" ? "Réparateur pro" : repairFeas === "technique" ? (v.repairMode === "autonome" ? "Réparation autonome ou pro" : "Réparateur pro") : "pièces + main d'œuvre";
-            const repairBtn = repairFeas === "peu_realiste" ? "Options pro →" : repairFeas === "technique" ? (v.repairMode === "autonome" ? "Réparer (autonome ou pro) →" : "Réparer chez un pro →") : "Réparer →";
             const repairTop = v.v === "reparer";
+            const repairBtnShort = repairFeas === "peu_realiste" ? "Options pro →" : repairFeas === "technique" && v.repairMode !== "autonome" ? "Réparateur pro →" : "Voir les options →";
             return <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
               {[
-                { top: repairTop, color: GREEN, label: "Réparer", price: `${Math.round(tPart)}–${Math.round(tMax)} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
+                { top: repairTop, color: GREEN, label: "Réparer", splitPrice: true, priceDiy: Math.round(tPart), pricePro: Math.round(tMin), sub: "Pièces seules ou réparateur", btn: repairBtnShort, aff: "pcs" },
                 { top: v.v === "remplacer" && TECH_CATS.includes(item.category), color: AMBER, label: sl, price: minOccPrice != null ? `${recon} €` : `~${recon} €`, sub: TECH_CATS.includes(item.category) ? "Très en vogue (tech)" : "garanti 12 mois", btn: `Voir ${sl.toLowerCase()} →`, aff: "occ" },
                 { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: neufDisplayText, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer neuf →", aff: "neuf" },
               ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: enrichedActiveIssues, affType: o.aff, alts })} className="card-hover" style={{
@@ -1662,7 +1682,20 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               }}>
                 {o.top && <div style={{ fontSize: 8, fontWeight: 700, color: o.color, marginBottom: 4 }}>RECOMMANDÉ</div>}
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#111" }}>{o.label}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: o.color }}>{o.price}</div>
+                {o.splitPrice ? (
+                  <div style={{ marginTop: 6, marginBottom: 4 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "6px 10px", background: "#F8FAFC", borderRadius: 8, marginBottom: 4, fontSize: 11 }}>
+                      <span style={{ color: "#6B7280", fontWeight: 600 }}>Soi-même</span>
+                      <span style={{ fontWeight: 800, color: o.color }}>dès {o.priceDiy} €</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "6px 10px", background: "#F8FAFC", borderRadius: 8, fontSize: 11 }}>
+                      <span style={{ color: "#6B7280", fontWeight: 600 }}>Pro</span>
+                      <span style={{ fontWeight: 800, color: "#6366F1" }}>dès {o.pricePro} €</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 16, fontWeight: 800, color: o.color }}>{o.price}</div>
+                )}
                 <div style={{ fontSize: 10, color: "#9CA3AF" }}>{o.sub}</div>
                 <button style={{ width: "100%", padding: 6, borderRadius: 6, border: "none", background: o.top ? o.color : "#F3F4F6", color: o.top ? "#fff" : "#374151", fontWeight: 700, fontSize: 10, cursor: "pointer", fontFamily: F, marginTop: 6 }}>{o.btn}</button>
               </div>)}
@@ -1780,14 +1813,22 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                   <div style={{ background: v.v === "reparer" ? GREEN + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v.v === "reparer" ? `2px solid ${GREEN}` : "1px solid #E2E8F0" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <span style={{ width: 32, height: 32, borderRadius: 8, background: GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="tool" s={16} color={GREEN} /></span>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Réparer</span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Réparer soi-même</span>
                       {v.v === "reparer" && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: GREEN, color: "#fff" }}>Recommandé</span>}
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{Math.round(tPart)}–{Math.round(tMax)} €</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 2 }}>dès {Math.round(tPart)} €</div>
+                    <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 4 }}>Pièces seules · tutoriel vidéo</div>
                     <div style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{econRepLabel}</div>
-                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Pièce seule : {Math.round(tPart)} €</div>
-                    <div style={{ fontSize: 11, color: "#6B7280" }}>Temps (réparation autonome) : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
-                    <div style={{ fontSize: 11, color: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : "#6B7280" }}>Difficulté : {diffLabel}</div>
+                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 4 }}>Temps : {timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis"}</div>
+                  </div>
+                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: 14, border: "1px solid #E2E8F0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ width: 32, height: 32, borderRadius: 8, background: "#6366F112", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="pin" s={16} color="#6366F1" /></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Réparateur pro</span>
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 2 }}>dès {Math.round(tMin)} €</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>Pièce + main d&apos;œuvre · devis recommandé</div>
+                    {tMin !== tMax && <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>Fourchette : {Math.round(tMin)}–{Math.round(tMax)} €</div>}
                   </div>
                   <div style={{ background: v.v === "remplacer" ? AMBER + "08" : "#F8FAFC", borderRadius: 12, padding: 14, border: v.v === "remplacer" ? `2px solid ${AMBER}` : "1px solid #E2E8F0" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -1812,12 +1853,10 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               </>;
             }
             const tableRows = [
-              { l: "Prix", r: `${Math.round(tPart)}–${Math.round(tMax)} €`, o: minOccPrice != null ? `${recon} €` : `~${recon} €`, n: hasNeufOffer ? neufDisplayText : `${Math.round(neuf)} €`, bold: true },
-              { l: "Économie vs neuf", r: econRepLabel, o: econReconLabel, n: "Référence", hR: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
-              { l: "Pièce seule", r: `${Math.round(tPart)} €`, o: "—", n: "—" },
-              { l: "Temps (réparation autonome)", r: timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis", o: "—", n: "—" },
-              { l: "Difficulté", r: diffLabel, o: "—", n: "—", hR: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
-              { l: "Garantie", r: "Variable", o: "12–24 mois", n: "24 mois" },
+              { l: "Prix", diy: `dès ${Math.round(tPart)} €`, pro: `dès ${Math.round(tMin)} €`, o: minOccPrice != null ? `${recon} €` : `~${recon} €`, n: hasNeufOffer ? neufDisplayText : `${Math.round(neuf)} €`, bold: true },
+              { l: "Détail", diy: "Pièces seules · tutoriel", pro: tMin !== tMax ? `Pièce + main d'œuvre (${Math.round(tMin)}–${Math.round(tMax)} €)` : "Pièce + main d'œuvre", o: `${sl.toLowerCase()} garanti`, n: "Référence" },
+              { l: "Économie vs neuf", diy: econRepLabel, pro: "—", o: econReconLabel, n: "—", hDiy: econRep > 0 ? GREEN : null, hO: econRecon > 0 ? AMBER : null },
+              { l: "Temps / Difficulté", diy: timeInfo.diyFeasible ? timeInfo.diyLabel : "Pro requis", pro: "—", o: "—", n: "—", hDiy: activeIssues.some(i => i.diff === "difficile") ? "#DC2626" : null },
             ];
             return <>
               <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Référence : {neufDisplayText} neuf</div>
@@ -1836,17 +1875,19 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
               <div className="table-compare-scroll" style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead><tr style={{ background: W }}>
-                    <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#9CA3AF", fontSize: 11, width: "28%" }}></th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: GREEN, fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color={GREEN} /> Réparer</span></th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: AMBER, fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="recycle" s={14} color={AMBER} /> {sl}</span></th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#DC2626", fontSize: 12 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="cart" s={14} color="#DC2626" /> Neuf</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#9CA3AF", fontSize: 11, width: "22%" }}></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: GREEN, fontSize: 11 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color={GREEN} /> Soi-même</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#6366F1", fontSize: 11 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="pin" s={14} color="#6366F1" /> Pro</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: AMBER, fontSize: 11 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="recycle" s={14} color={AMBER} /> {sl}</span></th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#DC2626", fontSize: 11 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="cart" s={14} color="#DC2626" /> Neuf</span></th>
                   </tr></thead>
                   <tbody>
                     {tableRows.map((row, i) => <tr key={i} style={{ borderBottom: "1px solid #F3F4F6" }}>
                       <td style={{ padding: "9px 14px", fontWeight: 600, color: "#374151", fontSize: 12 }}>{row.l}</td>
-                      <td style={{ padding: "9px 14px", textAlign: "center", color: row.hR || "#6B7280", fontWeight: row.bold || row.hR ? 700 : 400, background: v.v === "reparer" ? GREEN + "06" : "transparent" }}>{row.r}</td>
+                      <td style={{ padding: "9px 14px", textAlign: "center", color: row.hDiy || "#6B7280", fontWeight: row.bold || row.hDiy ? 700 : 400, background: v.v === "reparer" ? GREEN + "06" : "transparent" }}>{row.diy}</td>
+                      <td style={{ padding: "9px 14px", textAlign: "center", color: "#6B7280", fontWeight: row.bold ? 700 : 400, background: v.v === "reparer" ? "#6366F106" : "transparent" }}>{row.pro}</td>
                       <td style={{ padding: "9px 14px", textAlign: "center", color: row.hO || "#6B7280", fontWeight: row.bold || row.hO ? 700 : 400, background: v.v === "remplacer" ? AMBER + "06" : "transparent" }}>{row.o}</td>
-                      <td style={{ padding: "9px 14px", textAlign: "center", color: row.hN || "#6B7280", fontWeight: row.bold || row.hN ? 700 : 400, background: v.v === "remplacer" ? "#DC262606" : "transparent" }}>{row.n}</td>
+                      <td style={{ padding: "9px 14px", textAlign: "center", color: row.hN || "#6B7280", fontWeight: row.bold || row.hN ? 700 : 400 }}>{row.n}</td>
                     </tr>)}
                   </tbody>
                 </table>
@@ -1996,8 +2037,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                 <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#374151", lineHeight: 1.7 }}>{tutoSteps.map((s, si) => <li key={si}>{s}</li>)}</ol>
               </div>
               <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6B7280", marginBottom: 10, flexWrap: "wrap" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="money" s={14} color="#9CA3AF" /> <strong>{iss.repairMin}–{iss.repairMax} €</strong> tout compris</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color="#9CA3AF" /> Pièce : <strong>{iss.partPrice} €</strong></span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="tool" s={14} color={GREEN} /> Réparer soi-même : <strong>dès {iss.partPrice} €</strong> (pièces)</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="pin" s={14} color="#6366F1" /> Réparateur pro : <strong>{iss.repairMin}–{iss.repairMax} €</strong> (pièce + main d&apos;œuvre)</span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="clock" s={14} color="#9CA3AF" /> Durée : <strong>{timeLabel}</strong></span>
               </div>
               <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.65, marginBottom: 10 }}>
@@ -2077,13 +2118,12 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
         <div style={{ position: "sticky", top: 24, display: "flex", flexDirection: "column", gap: 12 }} className="hide-mobile">
           {(() => {
             const repairFeas = v.repairFeasibility || "facile";
-            const repairSub = repairFeas === "peu_realiste" ? "Réparateur pro" : repairFeas === "technique" ? (v.repairMode === "autonome" ? "Réparation autonome ou pro" : "Réparateur pro") : "pièces + main d'œuvre";
-            const repairBtn = repairFeas === "peu_realiste" ? "Options pro →" : repairFeas === "technique" ? (v.repairMode === "autonome" ? "Réparer (autonome ou pro) →" : "Réparer chez un pro →") : "Options réparation →";
             const repairTop = v.v === "reparer";
+            const repairBtnShort = repairFeas === "peu_realiste" ? "Options pro →" : repairFeas === "technique" && v.repairMode !== "autonome" ? "Réparateur pro →" : "Voir les options →";
             return <>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
-                  { top: repairTop, color: GREEN, label: "Réparer", price: `${Math.round(tPart)}–${Math.round(tMax)} €`, sub: repairSub, btn: repairBtn, aff: "pcs" },
+                  { top: repairTop, color: GREEN, label: "Réparer", splitPrice: true, priceDiy: Math.round(tPart), pricePro: Math.round(tMin), sub: "Pièces seules ou réparateur", btn: repairBtnShort, aff: "pcs" },
                   { top: v.v === "remplacer" && TECH_CATS.includes(item.category), color: AMBER, label: sl, price: `~${recon} €`, sub: TECH_CATS.includes(item.category) ? "Très en vogue (tech)" : "garanti 12 mois", btn: `Voir ${sl.toLowerCase()} →`, aff: "occ" },
                   { top: v.v === "remplacer" && !TECH_CATS.includes(item.category), color: "#DC2626", label: "Neuf", price: neufDisplayText, sub: !TECH_CATS.includes(item.category) ? "Référence (électroménager)" : "meilleur prix", btn: "Comparer prix neuf →", aff: "neuf" },
                 ].map((o, idx) => <div key={idx} onClick={() => onNav("aff", { item, issues: enrichedActiveIssues, affType: o.aff, alts })} className="card-hover" style={{
@@ -2094,7 +2134,20 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                   {o.top && <div style={{ position: "absolute", top: -6, left: "50%", transform: "translateX(-50%)", background: o.color, color: "#fff", fontSize: 8, fontWeight: 700, padding: "2px 8px", borderRadius: 4 }}>RECOMMANDÉ</div>}
                   <div style={{ textAlign: "center" }}>
                     <h3 style={{ fontSize: 13, fontWeight: 700, color: "#111", margin: "2px 0 0" }}>{o.label}</h3>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: o.color }}>{o.price}</div>
+                    {o.splitPrice ? (
+                      <div style={{ marginTop: 8, marginBottom: 4, display: "flex", flexDirection: "column", gap: 4 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "#F8FAFC", borderRadius: 8, fontSize: 11 }}>
+                          <span style={{ color: "#6B7280", fontWeight: 600 }}>Soi-même</span>
+                          <span style={{ fontWeight: 800, color: o.color }}>dès {o.priceDiy} €</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "#F8FAFC", borderRadius: 8, fontSize: 11 }}>
+                          <span style={{ color: "#6B7280", fontWeight: 600 }}>Pro</span>
+                          <span style={{ fontWeight: 800, color: "#6366F1" }}>dès {o.pricePro} €</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 18, fontWeight: 800, color: o.color }}>{o.price}</div>
+                    )}
                     <div style={{ fontSize: 10, color: "#9CA3AF" }}>{o.sub}</div>
                   </div>
                   <button style={{ width: "100%", padding: 8, borderRadius: 6, border: "none", background: o.top ? o.color : "#F3F4F6", color: o.top ? "#fff" : "#374151", fontWeight: 700, fontSize: 11, cursor: "pointer", fontFamily: F, marginTop: 8 }}>{o.btn}</button>
