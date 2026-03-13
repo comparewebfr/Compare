@@ -666,6 +666,20 @@ for (const [catId, types] of Object.entries(RAW)) {
 
 export const OCC_CATS = ["electromenager", "plomberie", "chauffage", "jardin"];
 
+/** Questions FAQ pour JSON-LD et page FAQ */
+export const FAQ_QUESTIONS = [
+  { q: "Comment fonctionne Compare. ?", a: "Tapez le nom de votre appareil (iPhone 15, lave-linge Bosch, PS5…), choisissez la panne, et Compare. affiche côte à côte : coût de réparation estimé, prix reconditionné et prix neuf. Un verdict vous indique l'option la plus logique. Le tout en une trentaine de secondes." },
+  { q: "Les prix affichés sont-ils fiables ?", a: "Ce sont des fourchettes basées sur les tarifs moyens en France (pièces + main d'œuvre). Ils varient selon le réparateur, la région et la disponibilité des pièces. À utiliser comme ordre de grandeur — un devis reste la référence pour trancher." },
+  { q: "C'est quoi le bonus QualiRépar ?", a: "Une aide de l'État (15 à 60 €) déduite automatiquement chez un réparateur labellisé QualiRépar. Pas de dossier à remplir : vous allez chez le pro, la réduction est appliquée sur la facture. Éligible : smartphones, électroménager, ordinateurs, TV, consoles, etc." },
+  { q: "Compare. est-il gratuit ?", a: "Oui, 100 % gratuit. Nous sommes rémunérés par des commissions d'affiliation lorsque vous achetez via nos liens — sans surcoût pour vous." },
+  { q: "Puis-je cumuler plusieurs pannes ?", a: "Oui. Sur chaque page produit, cliquez sur « Plusieurs problèmes ? » pour sélectionner plusieurs pannes et voir le coût total. Pratique quand votre appareil cumule écran cassé + batterie usée, par exemple." },
+  { q: "Comment sont calculées les estimations de réparation ?", a: "Nous nous appuyons sur les tarifs moyens des pièces détachées et de la main d'œuvre en France, les tutoriels vidéo et les retours de réparateurs. Les fourchettes donnent un ordre de grandeur réaliste — un devis reste la référence." },
+  { q: "Puis-je suggérer un produit à ajouter ?", a: "Oui. Utilisez la page Contact pour nous envoyer votre suggestion. Nous intégrons les appareils les plus demandés." },
+  { q: "Les liens d'achat sont-ils sécurisés ?", a: "Oui. Nous redirigeons vers des marchands reconnus (Amazon, Back Market, Fnac, Darty, etc.). Vous achetez directement chez eux — nous ne stockons aucune donnée de paiement." },
+  { q: "Compare. affiche-t-il les vrais prix en temps réel ?", a: "Les prix neuf et reconditionné sont indicatifs (basés sur les tarifs habituels). Pour les prix exacts, cliquez sur les liens pour voir les offres actuelles sur chaque site partenaire." },
+  { q: "Comment proposer un produit manquant ?", a: "Rendez-vous sur la page Contact. Nous examinons chaque suggestion et ajoutons les appareils les plus demandés." },
+];
+
 export const SIDEBAR_GROUPS = [
   { label: "Technologies", ids: ["smartphones", "tablettes", "ordinateurs", "tv", "consoles", "audio", "photo", "montres", "velo"] },
   { label: "Maison", ids: ["electromenager", "plomberie", "chauffage", "jardin"] },

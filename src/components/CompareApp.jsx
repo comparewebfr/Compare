@@ -27,8 +27,8 @@ import { PRODUCT_IMAGES } from "../data/product-images";
 import { PRODUCT_TYPE_IMAGES } from "../data/product-type-images";
 import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
-import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL, BRAND_LOGOS } from "../lib/data";
-import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery, getSmartReplacementRecommendation, getSeoProductName, getSeoQuestionPhrase } from "../lib/helpers";
+import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL, BRAND_LOGOS, FAQ_QUESTIONS } from "../lib/data";
+import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery, getSmartReplacementRecommendation, getSeoProductName, getSeoQuestionPhrase } from "../lib/helpers";
 import { getOffersForNeuf, getOffersForOcc, getOffersForParts } from "../lib/supabase-queries";
 import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
@@ -2919,31 +2919,6 @@ export default function App() {
   }
 
 
-  useEffect(() => {
-    let data = null;
-    if (page.type === "cat" || page.type === "cat-type" || page.type === "cat-brand") {
-      data = { cat: page.catId };
-      if (page.type === "cat-type" && page.productType) data.productType = page.productType;
-    } else if (page.type === "compare" || page.type === "issue") {
-      data = { item: page.item, issue: page.issue };
-    } else if (page.type === "aff") {
-      data = { item: page.item, affType: page.affType };
-    }
-    const seo = buildSeo(page.type, data);
-    document.title = seo.title;
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", seo.description);
-    const base = (typeof window !== "undefined" && window.location.origin) || "https://compare-fr.com";
-    const canonicalHref = `${base}${seo.canonicalPath}`;
-    let linkCanonical = document.querySelector('link[rel="canonical"]');
-    if (!linkCanonical) {
-      linkCanonical = document.createElement("link");
-      linkCanonical.rel = "canonical";
-      document.head.appendChild(linkCanonical);
-    }
-    linkCanonical.href = canonicalHref;
-  }, [page.type, page.itemId, page.catId, page.productType, page.item, page.issue, page.affType]);
-
   // Redirection produits maison vers pages type (compare/issue uniquement — pas aff : l'utilisateur doit voir les prestataires Occasion/Neuf/Pièces)
   useEffect(() => {
     if (!router || !page.item) return;
@@ -3073,17 +3048,7 @@ export default function App() {
       {/* FAQ + Qui sommes-nous — bloc unifié */}
       <section style={{ padding: "40px 20px 48px", maxWidth: 860, margin: "0 auto", background: "linear-gradient(180deg, #fff 0%, #FAFAF8 100%)", borderRadius: "20px 20px 0 0", marginTop: -8 }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111", textAlign: "center", marginBottom: 20 }}>Questions fréquentes</h2>
-        {[
-          { q: "Comment fonctionne Compare. ?", a: "Tapez le nom de votre appareil, choisissez la panne, et Compare. affiche côte à côte : coût de réparation, prix reconditionné et prix neuf. Un verdict vous indique l’option la plus logique. Le tout en une trentaine de secondes." },
-          { q: "Les prix affichés sont-ils fiables ?", a: "Ce sont des fourchettes basées sur les tarifs moyens en France (pièces + main d’œuvre). Ils varient selon le réparateur et la région. À utiliser comme ordre de grandeur — un devis reste la référence." },
-          { q: "C'est quoi le bonus QualiRépar ?", a: "Une aide de l’État (15 à 60 €) déduite automatiquement chez un réparateur labellisé QualiRépar. Pas de dossier : la réduction est appliquée sur la facture." },
-          { q: "Compare. est-il gratuit ?", a: "Oui, 100 % gratuit. Nous sommes rémunérés par des commissions d’affiliation lorsque vous achetez via nos liens — sans surcoût pour vous." },
-          { q: "Puis-je cumuler plusieurs pannes ?", a: "Oui. Sur chaque page produit, cliquez sur « Plusieurs problèmes ? » pour voir le coût total de toutes vos réparations." },
-          { q: "Comment sont calculées les estimations de réparation ?", a: "Nous nous appuyons sur les tarifs moyens des pièces et de la main d’œuvre en France, les tutoriels vidéo et les retours de réparateurs. Les fourchettes donnent un ordre de grandeur réaliste." },
-          { q: "Puis-je suggérer un produit à ajouter ?", a: "Oui. Utilisez la page Contact pour nous envoyer votre suggestion. Nous intégrons les appareils les plus demandés." },
-          { q: "Les liens d'achat sont-ils sécurisés ?", a: "Oui. Nous redirigeons vers des marchands reconnus (Amazon, Back Market, Fnac, etc.). Vous achetez directement chez eux — nous ne stockons aucune donnée de paiement." },
-          { q: "Compare. compare-t-il les vrais prix en temps réel ?", a: "Les prix neuf et reconditionné sont indicatifs. Pour les prix exacts, cliquez sur les liens pour voir les offres actuelles sur chaque site partenaire." },
-        ].map((f, i) => <details key={i} style={{ background: "#fff", borderRadius: 10, marginBottom: 6, border: "1px solid #E8E6E2", transition: "all .2s ease" }}>
+        {FAQ_QUESTIONS.map((f, i) => <details key={i} style={{ background: "#fff", borderRadius: 10, marginBottom: 6, border: "1px solid #E8E6E2", transition: "all .2s ease" }}>
           <summary style={{ padding: "14px 18px", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "#111" }}>{f.q}</summary>
           <p style={{ padding: "0 18px 14px", fontSize: 13, color: "#6B7280", lineHeight: 1.7 }}>{f.a}</p>
         </details>)}

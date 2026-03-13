@@ -1,17 +1,24 @@
 import { Suspense } from "react";
 import CompareApp from "../../../../components/CompareAppWrapper";
-import { findProductBySlug, getSeoProductName } from "../../../../lib/helpers";
+import { ITEMS } from "../../../../lib/data";
+import { findProductBySlug } from "../../../../lib/helpers";
+import { getProductSlug } from "../../../../lib/routes";
 
 export async function generateMetadata({ params }) {
-  const { productSlug } = await (params ?? Promise.resolve({}));
+  const { productSlug } = await params;
   const item = findProductBySlug(productSlug);
-  const siteName = "Compare.";
-  if (!item) return { title: siteName };
-  const shortName = getSeoProductName(item);
+  if (!item) return { title: "Produit introuvable | Compare." };
+  const name = `${item.brand} ${item.name}`;
   return {
-    title: `Pièces — ${shortName} | ${siteName}`,
-    description: `Prix et offres pièces pour ${shortName}. Comparateur d'offres.`,
+    title: `Pièces détachées — ${name} | Compare.`,
+    description: `Prix et offres pièces détachées pour ${name}. Comparateur d'offres.`,
+    alternates: { canonical: `https://compare-fr.com/produits/${productSlug}` },
   };
+}
+
+export async function generateStaticParams() {
+  return ITEMS.filter(i => !["electromenager", "plomberie", "chauffage", "jardin"].includes(i.category))
+    .map(item => ({ productSlug: getProductSlug(item) }));
 }
 
 export default function Page() {

@@ -23,7 +23,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr">
       <head>
-        <link rel="canonical" href="https://compare-fr.com/" />
         <link rel="preload" as="image" href="/banner-hero.jpg" fetchPriority="high" />
         <link rel="preconnect" href="https://images.unsplash.com" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
