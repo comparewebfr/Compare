@@ -28,7 +28,7 @@ import { PRODUCT_TYPE_IMAGES } from "../data/product-type-images";
 import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
-import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
+import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery, getSmartReplacementRecommendation } from "../lib/helpers";
 import { getOffersForNeuf, getOffersForOcc, getOffersForParts } from "../lib/supabase-queries";
 import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
@@ -1537,6 +1537,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
   const timeInfo = getCumulTimeInfo(activeIssues);
   const alts = item ? getAlternatives(item) : null;
   const bestNewer = alts?.newer?.[0] || null;
+  const smartReplacement = v?.v === "remplacer" ? getSmartReplacementRecommendation(item, { priceNeufOverride: minNeufPrice ?? undefined, priceOccOverride: minOccPrice ?? undefined }) : null;
 
   const toggleMulti = (id) => setSelMulti(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
 
@@ -1623,8 +1624,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
         {/* Layout 2 colonnes : contenu principal | sidebar sticky (3 options + infos clés) */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 24, alignItems: "start" }} className="grid-2">
           <div style={{ minWidth: 0 }}>
-        {/* VERDICT — très mis en valeur, c'est la réponse ! */}
-        <div style={{ background: `linear-gradient(135deg, #fff 0%, ${v.color}08 100%)`, border: `3px solid ${v.color}`, borderRadius: 16, padding: "24px 24px", marginBottom: 20, boxShadow: `0 8px 32px ${v.color}25`, position: "relative", overflow: "hidden" }}>
+        {/* VERDICT — priorité n°1, c'est la réponse ! */}
+        <div style={{ background: `linear-gradient(135deg, #fff 0%, ${v.color}08 100%)`, border: `3px solid ${v.color}`, borderRadius: 16, padding: "24px 24px", marginBottom: 24, boxShadow: `0 8px 32px ${v.color}25`, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: 0, right: 0, width: 120, height: 120, background: v.color + "12", borderRadius: "0 0 0 100%", opacity: .6 }} />
           <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 12, position: "relative" }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: v.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1664,9 +1665,20 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           )}
         </div>
 
-        {/* Résumé réparation — bloc clair : problème, difficulté, durée, coûts */}
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E5E3DE", padding: "18px 20px", marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 12 }}>Récapitulatif réparation</div>
+        {/* Indication discrète : modèle plus récent conseillé (si remplacement) */}
+        {smartReplacement && (
+          <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 20, lineHeight: 1.5 }}>
+            {smartReplacement.preferredOption === "newer" ? (
+              <>Modèle plus récent conseillé : <button type="button" onClick={() => onNav("aff", { item: smartReplacement.newerModel.item, issues: getIssues(smartReplacement.newerModel.item), affType: "occ", alts: getAlternatives(smartReplacement.newerModel.item) })} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: F, textDecoration: "underline" }}>{smartReplacement.newerModel.item.brand} {smartReplacement.newerModel.item.name}</button> — {smartReplacement.reason}</>
+            ) : (
+              <>Envisagez aussi le <button type="button" onClick={() => onNav("aff", { item: smartReplacement.newerModel.item, issues: getIssues(smartReplacement.newerModel.item), affType: "occ", alts: getAlternatives(smartReplacement.newerModel.item) })} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 600, color: GREEN, cursor: "pointer", fontFamily: F, textDecoration: "underline" }}>{smartReplacement.newerModel.item.brand} {smartReplacement.newerModel.item.name}</button> (modèle plus récent).</>
+            )}
+          </p>
+        )}
+
+        {/* Résumé réparation — compact, l'essentiel en un coup d'œil */}
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E5E3DE", padding: "16px 20px", marginBottom: 24, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>En bref</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
             <div>
               <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>Problème</div>
@@ -1732,9 +1744,12 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           })()}
         </div>
 
-        {/* Réparer / Remplacer / réparation autonome — détaillé, personnalisé par produit (maison + tech) */}
-        <details style={{ marginBottom: 16, background: "#FAFBFC", borderRadius: 10, border: "1px solid #E8E6E1", overflow: "hidden" }}>
-          <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#374151", listStyle: "none" }}>Quand réparer, remplacer ou faire soi-même ?</summary>
+        {/* En savoir plus — sections repliables pour ne pas surcharger */}
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: ".05em", marginTop: 32, marginBottom: 12 }}>En savoir plus</div>
+
+        {/* Réparer / Remplacer / réparation autonome — repliable */}
+        <details style={{ marginBottom: 12, background: "#FAFBFC", borderRadius: 10, border: "1px solid #E8E6E1", overflow: "hidden" }}>
+          <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#6B7280", listStyle: "none" }}>Quand réparer, remplacer ou faire soi-même ?</summary>
           <div style={{ padding: "0 16px 16px" }}>
             {(() => {
               const hasSpec = (OCC_CATS.includes(item.category) || TECH_CATS.includes(item.category)) && WHEN_REPAIR_SPEC[item.productType];
@@ -1781,8 +1796,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           </div>
         </details>
 
-        {/* REPAIRER FINDER (Google Maps) — toujours visible */}
-        <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", padding: "18px 20px", marginBottom: 18, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+        {/* REPAIRER FINDER (Google Maps) */}
+        <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #E0DDD5", padding: "16px 18px", marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700, color: "#111" }}>
               <Icon name="pin" s={16} color={ACCENT} /> Trouver un réparateur près de chez moi
@@ -1805,10 +1820,10 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           </div>
         </div>
 
-        {/* Tableau comparatif — simplifié, mobile-first */}
-        <details open style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", overflow: "hidden", marginBottom: 20 }}>
-          <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 700, fontSize: 15, color: "#111", display: "flex", alignItems: "center", gap: 8, listStyle: "none" }}>
-            <Icon name="chart" s={16} color={ACCENT} /> Comparer les 3 options
+        {/* Tableau comparatif — replié par défaut pour ne pas surcharger */}
+        <details style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", overflow: "hidden", marginBottom: 24 }}>
+          <summary style={{ padding: "14px 18px", cursor: "pointer", fontWeight: 700, fontSize: 14, color: "#374151", display: "flex", alignItems: "center", gap: 8, listStyle: "none" }}>
+            <Icon name="chart" s={16} color={ACCENT} /> Comparer réparer, pro, reconditionné et neuf
           </summary>
           <div style={{ padding: "0 16px 16px" }}>
           {(() => {
@@ -1927,8 +1942,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
         </details>
 
         {/* Smart alternatives section — repliable */}
-        {alts && (alts.newer.length > 0 || alts.equiv.length > 0) && <details style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", marginBottom: 20, overflow: "hidden" }}>
-          <summary style={{ padding: "14px 18px", cursor: "pointer", fontWeight: 700, fontSize: 15, color: "#111", listStyle: "none", display: "flex", alignItems: "center", gap: 8 }}>
+        {alts && (alts.newer.length > 0 || alts.equiv.length > 0) && <details style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", marginBottom: 16, overflow: "hidden" }}>
+          <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#6B7280", listStyle: "none", display: "flex", alignItems: "center", gap: 8 }}>
             <Icon name="swap" s={16} color={ACCENT} />
             {alts.type === "tech" ? "Alternatives plus récentes" : "Produits équivalents"}
           </summary>
@@ -2019,9 +2034,9 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
           </div>
         </details>}
 
-        {/* REPAIR DETAIL section — repliable, inspiré maison : étapes personnalisées, difficulté mise en avant */}
-        <details style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", marginBottom: 18, overflow: "hidden" }}>
-          <summary style={{ padding: "14px 18px", cursor: "pointer", fontWeight: 700, fontSize: 14, color: "#111", listStyle: "none", display: "flex", alignItems: "center", gap: 8 }}>
+        {/* REPAIR DETAIL section — repliable */}
+        <details style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", marginBottom: 20, overflow: "hidden" }}>
+          <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#6B7280", listStyle: "none", display: "flex", alignItems: "center", gap: 8 }}>
             <Icon name="tool" s={16} color={ACCENT} /> Détail de la réparation — {item.brand} {item.name}
           </summary>
           <div style={{ padding: "0 18px 18px" }}>
@@ -2356,12 +2371,11 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   };
 
   const altList = buildAltList();
-  const bestAlt = altList[0];
-  const otherAlts = altList.slice(1).sort((a, b) => a.price - b.price); // du moins cher au plus cher
   const showAlts = !isPcs && altList.length > 0;
   const myPrice = isNeuf ? (minNeufPriceAff ?? item.priceNew) : Math.round(item.priceNew * reconMult);
   const modeColor = isNeuf ? "#DC2626" : AMBER;
   const modeLabel = isNeuf ? "neuf" : sl.toLowerCase();
+  const smartReplacementAff = (isOcc || isNeuf) ? getSmartReplacementRecommendation(item, { priceNeufOverride: minNeufPriceAff ?? undefined }) : null;
 
   return <div className="page-enter" style={{ fontFamily: F }}>
     <div style={{ padding: "12px 20px", maxWidth: 860, margin: "0 auto", fontSize: 12, color: "#9CA3AF", display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
@@ -2400,6 +2414,24 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
           </div>
         </div>
       </div>
+
+      {/* Modèle plus récent recommandé — sur pages neuf/reconditionné (vert = opportunité) */}
+      {smartReplacementAff && (
+        <div
+          onClick={() => onNav("aff", { item: smartReplacementAff.newerModel.item, issues: getIssues(smartReplacementAff.newerModel.item), affType, alts: getAlternatives(smartReplacementAff.newerModel.item) })}
+          className="card-hover"
+          style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", marginBottom: 20, background: GREEN + "12", border: "2px solid " + GREEN + "50", borderRadius: 12, cursor: "pointer", boxShadow: "0 2px 12px " + GREEN + "15" }}
+        >
+          <Icon name="swap" s={22} color={GREEN} style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#111" }}>
+              Modèle plus récent recommandé : {smartReplacementAff.newerModel.item.brand} {smartReplacementAff.newerModel.item.name}
+            </div>
+            <div style={{ fontSize: 12, color: "#374151", marginTop: 4, fontWeight: 500 }}>{smartReplacementAff.newerModel.reason} · ~{smartReplacementAff.newerModel.reconPrice} € {sl.toLowerCase()}</div>
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 800, color: GREEN }}>Voir les offres →</span>
+        </div>
+      )}
 
       {/* 1. Détail réparation — EN PREMIER (sans prestataires) : étapes, puis prix */}
       {isPcs && issues?.length > 0 && (
@@ -2738,39 +2770,9 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
           {isTech ? "Comparer les modèles" : "Modèles équivalents"} — {modeLabel}
         </div>
 
-        {/* BEST ALTERNATIVE — clic = page achat même mode, secondaire = comparatif */}
-        {bestAlt && <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginTop: 10, marginBottom: 6 }}>Alternative recommandée</div>}
-        {bestAlt && (() => {
-          const altIssues = getIssues(bestAlt.item);
-          const altAlts = getAlternatives(bestAlt.item);
-          return <div onClick={() => onNav("aff", { item: bestAlt.item, issues: altIssues, affType, alts: altAlts })} className="card-hover alt-card-mobile" style={{
-            background: isTech && bestAlt.type === "newer"
-              ? `linear-gradient(90deg, ${GREEN}10, ${GREEN}05, #fff)`
-              : GREEN + "06",
-            border: `1.5px solid ${GREEN}40`, borderRadius: 12, padding: "12px 14px",
-            marginBottom: 6, display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
-          }}>
-            <ProductImg brand={bestAlt.item.brand} item={bestAlt.item} size={48} />
-            <div className="alt-main" style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{bestAlt.item.brand} {bestAlt.item.name}</span>
-                {bestAlt.badge && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 5px", borderRadius: 3, background: GREEN, color: "#fff" }}>{bestAlt.badge}</span>}
-                {bestAlt.priceDiff !== 0 && bestAlt.priceDiff < 0 && <span style={{ fontSize: 11, fontWeight: 600, color: GREEN }}>{bestAlt.priceDiff} €</span>}
-              </div>
-              <div style={{ fontSize: 10, color: "#6B7280", marginTop: 1 }}>{bestAlt.item.productType} · {bestAlt.item.year}</div>
-              <div style={{ fontSize: 11, color: GREEN, fontWeight: 500, marginTop: 2 }}>{bestAlt.displayReason}</div>
-            </div>
-            <div style={{ textAlign: "right", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-              <div className="alt-price" style={{ fontSize: 17, fontWeight: 800, color: modeColor }}>{bestAlt.price} €</div>
-              <button type="button" onClick={e => { e.stopPropagation(); onNav("compare", bestAlt.item.id); }} className="hide-mobile" style={{ background: "none", border: "none", padding: 0, fontSize: 10, color: "#9CA3AF", cursor: "pointer", fontFamily: F, textDecoration: "underline" }}>Comparatif</button>
-            </div>
-            <Chev />
-          </div>;
-        })()}
-
-        {/* OTHER ALTERNATIVES — clic = page achat même mode */}
-        {otherAlts.length > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginTop: 10, marginBottom: 6 }}>Autres options</div>}
-        {otherAlts.map(alt => {
+        {/* Alternatives — une seule section "Autres options" */}
+        {altList.length > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginTop: 10, marginBottom: 6 }}>Autres options</div>}
+        {altList.map(alt => {
           const altIssues = getIssues(alt.item);
           const altAlts = getAlternatives(alt.item);
           return <div key={alt.item.id} onClick={() => onNav("aff", { item: alt.item, issues: altIssues, affType, alts: altAlts })} className="card-hover alt-card-mobile" style={{
@@ -2787,7 +2789,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               <div style={{ fontSize: 10, color: "#6B7280", marginTop: 1 }}>{alt.displayReason}</div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div className="alt-price" style={{ fontSize: 15, fontWeight: 700, color: modeColor }}>{alt.price} €</div>
+              <div className="alt-price" style={{ fontSize: 15, fontWeight: 700, color: "#111" }}>{alt.price} €</div>
             </div>
             <Chev />
           </div>;

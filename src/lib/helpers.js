@@ -135,6 +135,110 @@ export function getRepairEstimate(issues, item) {
   return { min, max, median, confidence, explanation, partTotal };
 }
 
+/** Catégories/types éligibles au remplacement intelligent (modèle plus récent recommandé) */
+const SMART_REPLACEMENT_PRODUCT_TYPES = ["Smartphone", "Tablette", "PC Portable", "Console portable"];
+
+/**
+ * Trouve un successeur logique (modèle plus récent, même famille) pour un produit tech.
+ * Utilisé quand la recommandation est "remplacer" — évite de pousser bêtement le même modèle.
+ * @param {object} item - Produit actuel
+ * @returns {{ item: object, reason: string, priceDelta: number, yearDelta: number } | null}
+ */
+export function findSuccessorProduct(item) {
+  if (!item || !SMART_REPLACEMENT_PRODUCT_TYPES.includes(item.productType)) return null;
+  const sameType = ITEMS.filter(i => i.category === item.category && i.productType === item.productType && i.id !== item.id);
+  const newerCandidates = sameType.filter(i => i.year > item.year);
+  if (!newerCandidates.length) return null;
+
+  const brand = item.brand?.toLowerCase() || "";
+  const name = item.name || "";
+  const priceRef = item.priceNew || 500;
+
+  // Filtrer par famille produit (même marque + gamme cohérente)
+  const inSameFamily = (c) => {
+    if (c.brand?.toLowerCase() !== brand) return false;
+    const cName = (c.name || "").toLowerCase();
+    // iPhone → iPhone (tous)
+    if (brand === "apple" && name.toLowerCase().includes("iphone")) return cName.includes("iphone");
+    // Galaxy S → Galaxy S (S22, S23, S24, pas A/Z)
+    if (brand === "samsung" && /galaxy s\d+/i.test(name)) return /galaxy s\d+/i.test(cName) && !/galaxy [az]/i.test(cName);
+    // Galaxy A → Galaxy A
+    if (brand === "samsung" && /galaxy a\d+/i.test(name)) return /galaxy a\d+/i.test(cName);
+    // iPad → iPad (Pro, Air, Mini, base)
+    if (brand === "apple" && name.toLowerCase().includes("ipad")) return cName.includes("ipad");
+    // MacBook Air → MacBook Air
+    if (brand === "apple" && name.toLowerCase().includes("macbook air")) return cName.includes("macbook air");
+    // MacBook Pro → MacBook Pro
+    if (brand === "apple" && name.toLowerCase().includes("macbook pro")) return cName.includes("macbook pro");
+    // Switch → Switch (OLED, Lite, 2)
+    if (brand === "nintendo" && name.toLowerCase().includes("switch")) return cName.includes("switch");
+    // Steam Deck → Steam Deck
+    if (brand === "valve" && name.toLowerCase().includes("steam deck")) return cName.includes("steam deck");
+    // Autres: même marque + type
+    return true;
+  };
+
+  const familyNewer = newerCandidates.filter(inSameFamily);
+  if (!familyNewer.length) return null;
+
+  // Prioriser le modèle le PLUS RÉCENT (iPhone 13 → 15/16, pas 14) tant que l'écart de prix reste raisonnable
+  const yearGap = (c) => c.year - item.year;
+  const priceGap = (c) => (c.priceNew - priceRef) / priceRef;
+  const candidates = familyNewer
+    .map(c => ({ item: c, yearDelta: yearGap(c), priceDelta: priceGap(c) }))
+    .filter(x => x.yearDelta >= 1 && x.yearDelta <= 5 && x.priceDelta <= 0.5); // 1 à 5 ans plus récent, écart < 50 %
+
+  if (!candidates.length) return null;
+
+  // Trier par année décroissante (le plus récent en premier), puis prendre le premier valide
+  const best = [...candidates].sort((a, b) => b.item.year - a.item.year)[0];
+  const reason = best.yearDelta >= 2
+    ? "Modèle plus récent, meilleur rapport qualité-prix"
+    : "Pour un écart de prix limité, le modèle plus récent est plus pertinent";
+  return { item: best.item, reason, priceDelta: best.priceDelta, yearDelta: best.yearDelta };
+}
+
+/**
+ * Recommandation de remplacement intelligent : même modèle vs modèle plus récent.
+ * Utilisé quand v.v === "remplacer" pour les produits tech.
+ * @param {object} item - Produit actuel
+ * @param {object} opts - { priceNeufOverride, priceOccOverride }
+ * @returns {{ sameModel: object, newerModel: object|null, preferredOption: 'same'|'newer', reason: string } | null}
+ */
+export function getSmartReplacementRecommendation(item, opts = {}) {
+  if (!item || !SMART_REPLACEMENT_PRODUCT_TYPES.includes(item.productType)) return null;
+  const successor = findSuccessorProduct(item);
+  if (!successor) return null;
+
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - item.year;
+  const priceNeuf = opts.priceNeufOverride ?? item.priceNew;
+  const reconMult = OCC_CATS.includes(item.category) ? .55 : .62;
+
+  const sameModel = {
+    item,
+    reconPrice: Math.round(priceNeuf * reconMult),
+    neufPrice: priceNeuf,
+  };
+  const newerModel = {
+    item: successor.item,
+    reconPrice: Math.round(successor.item.priceNew * reconMult),
+    neufPrice: successor.item.priceNew,
+    reason: successor.reason,
+    priceDelta: successor.priceDelta,
+    yearDelta: successor.yearDelta,
+  };
+
+  // Favoriser le plus récent si : modèle ancien (>= 3 ans) OU écart de prix très raisonnable (< 25 %)
+  const favorNewer = age >= 3 || (successor.priceDelta < 0.25 && age >= 2);
+  const preferredOption = favorNewer ? "newer" : "same";
+  const reason = favorNewer
+    ? (age >= 4 ? "Le neuf de ce modèle est peu intéressant — le modèle plus récent offre un meilleur rapport qualité-prix." : "Pour un écart de prix limité, le modèle plus récent est plus pertinent.")
+    : "Le neuf de ce modèle reste disponible et peut convenir si vous souhaitez rester sur le même appareil.";
+
+  return { sameModel, newerModel, preferredOption, reason };
+}
+
 export function getAlternatives(item) {
   const isTech = TECH_CATS.includes(item.category);
   const reconMult = OCC_CATS.includes(item.category) ? .55 : .62;
