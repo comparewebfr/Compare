@@ -208,66 +208,6 @@ export async function getProductPrimaryImageBySlug(productSlug) {
 }
 
 /**
- * Récupère toutes les images produits avec infos produit (jointure).
- * Permet un matching robuste par slug, product_slug ou brand+name.
- * Retourne un Map: slugNormalized -> image_url (image principale par produit).
- */
-const _productImageMapCache = { data: null, ts: 0 };
-const CACHE_TTL_MS = 60_000;
-
-function slugify(s) {
-  if (!s || typeof s !== "string") return "";
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-export async function getProductImageMap() {
-  if (_productImageMapCache.data && Date.now() - _productImageMapCache.ts < CACHE_TTL_MS) {
-    return _productImageMapCache.data;
-  }
-  const supabase = getSupabase();
-  if (!supabase) return new Map();
-  const map = new Map();
-  let assets = [];
-  const { data: joined } = await supabase
-    .from("product_assets")
-    .select("image_url, is_primary, product_id, products(slug, product_slug, brand, name)")
-    .not("image_url", "is", null);
-  if (joined?.length) {
-    assets = joined;
-  } else {
-    const { data: pa } = await supabase.from("product_assets").select("image_url, is_primary, product_id").not("image_url", "is", null);
-    const { data: prods } = await supabase.from("products").select("id, slug, product_slug, brand, name");
-    const prodMap = new Map((prods ?? []).map((p) => [p.id, p]));
-    assets = (pa ?? []).map((a) => ({ ...a, products: prodMap.get(a.product_id) }));
-  }
-  if (!assets?.length) return map;
-  const byProductId = {};
-  for (const row of assets) {
-    const pid = row.product_id;
-    if (!pid || !row.image_url?.trim()) continue;
-    if (!byProductId[pid]) byProductId[pid] = [];
-    byProductId[pid].push(row);
-  }
-  for (const pid of Object.keys(byProductId)) {
-    const rows = byProductId[pid];
-    const primary = rows.find((r) => r.is_primary) ?? rows[0];
-    const url = primary.image_url.trim();
-    const product = primary.products;
-    if (!product) continue;
-    const slugs = [product.slug, product.product_slug].filter(Boolean);
-    if (product.brand && product.name) slugs.push(`${slugify(product.brand)}-${slugify(product.name)}`);
-    const slugNorm = (s) => (s || "").toLowerCase().replace(/[-_\s]/g, "");
-    for (const s of slugs) {
-      if (s) map.set(s.toLowerCase(), url);
-      if (s) map.set(slugNorm(s), url);
-    }
-  }
-  _productImageMapCache.data = map;
-  _productImageMapCache.ts = Date.now();
-  return map;
-}
-
-/**
  * Récupère un produit avec son offre et son image (pour test)
  * Retourne { product, offer, asset } ou null en cas d'erreur
  */

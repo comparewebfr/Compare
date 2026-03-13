@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getProducts, getOffers, getProductBySlug, getOffersForNeuf, getProductPrimaryImageBySlug, getProductImageMap } from "../../lib/supabase-queries";
+import { getProducts, getOffers, getProductBySlug, getOffersForNeuf } from "../../lib/supabase-queries";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { getProductSlug } from "../../lib/routes";
 import { ITEMS } from "../../lib/data";
@@ -12,8 +12,6 @@ export default function SupabaseDebugPage() {
   const [offers, setOffers] = useState([]);
   const [testSlug, setTestSlug] = useState("");
   const [testResult, setTestResult] = useState(null);
-  const [imageResults, setImageResults] = useState([]);
-  const [imageMap, setImageMap] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,19 +20,10 @@ export default function SupabaseDebugPage() {
         setLoading(false);
         return;
       }
-      const [pRes, oRes, map] = await Promise.all([getProducts(), getOffers(), getProductImageMap()]);
+      const [pRes, oRes] = await Promise.all([getProducts(), getOffers()]);
       setProducts(pRes.data ?? []);
       setOffers(oRes.data ?? []);
-      setImageMap(map);
       if (ITEMS[0]) setTestSlug(getProductSlug(ITEMS[0]));
-      const imgChecks = await Promise.all(
-        ITEMS.slice(0, 12).map(async (item) => {
-          const slug = getProductSlug(item);
-          const url = await getProductPrimaryImageBySlug(slug);
-          return { slug, name: `${item.brand} ${item.name}`, url };
-        })
-      );
-      setImageResults(imgChecks);
       setLoading(false);
     }
     load();
@@ -81,46 +70,11 @@ export default function SupabaseDebugPage() {
           </section>
 
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 12 }}>Map images produits ({imageMap?.size ?? 0} slugs)</h2>
-            <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 8 }}>Matching slug → image_url (ex. apple-iphone-13)</p>
-            {imageMap && imageMap.size > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-                {Array.from(imageMap.entries()).slice(0, 12).map(([slug, url]) => (
-                  <div key={slug} style={{ background: "#F3F4F6", padding: 8, borderRadius: 6, fontSize: 11, maxWidth: 200 }}>
-                    <strong>{slug}</strong>
-                    <br />
-                    <span style={{ color: "#6B7280", wordBreak: "break-all" }}>{url?.slice(0, 50)}…</span>
-                    {url && <img src={url} alt="" style={{ width: 48, height: 48, objectFit: "contain", marginTop: 4, display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />}
-                  </div>
-                ))}
-              </div>
-            )}
-            {imageMap && imageMap.size === 0 && <p style={{ color: "#DC2626" }}>Aucune image trouvée. Vérifie product_assets et la jointure products.</p>}
-          </section>
-
-          <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: 18, marginBottom: 12 }}>Table offers ({offers.length} lignes)</h2>
             <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 8 }}>Colonnes : {offers[0] ? Object.keys(offers[0]).join(", ") : "—"}</p>
             <pre style={{ background: "#F3F4F6", padding: 12, borderRadius: 8, fontSize: 11, overflow: "auto", maxHeight: 200 }}>
               {JSON.stringify(offers.slice(0, 3), null, 2)}
             </pre>
-          </section>
-
-          <section style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 12 }}>Images produits (product_assets)</h2>
-            <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 12 }}>Slug app = slug dans products Supabase. Si « Aucune » → produit absent ou slug différent.</p>
-            <div style={{ display: "grid", gap: 8 }}>
-              {imageResults.map((r) => (
-                <div key={r.slug} style={{ display: "flex", alignItems: "center", gap: 12, padding: 8, background: r.url ? "#ECFDF5" : "#FEF2F2", borderRadius: 8, border: "1px solid #E5E7EB" }}>
-                  {r.url ? <img src={r.url} alt="" style={{ width: 48, height: 48, objectFit: "contain", borderRadius: 6, background: "#fff" }} onError={(e) => { e.target.style.display = "none"; }} /> : <span style={{ width: 48, height: 48, background: "#E5E7EB", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#6B7280" }}>—</span>}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{r.name}</div>
-                    <div style={{ fontSize: 11, color: "#6B7280" }}>slug: {r.slug}</div>
-                    <div style={{ fontSize: 10, color: r.url ? "#059669" : "#DC2626", wordBreak: "break-all" }}>{r.url || "Aucune image"}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </section>
 
           <section style={{ marginBottom: 32 }}>
