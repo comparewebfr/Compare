@@ -200,6 +200,46 @@ export function buildRetailerUrl(r, item, affType) {
   return `https://www.google.com/search?q=${q}+${r.n}`;
 }
 
+/** Libellé explicite pour une offre pièce/réparation — ex: "Kit réparation batterie iPhone 13", "Écran iPhone 13 compatible" */
+export function buildPartsOfferLabel(offer, item, issueName) {
+  const product = item ? `${item.brand} ${item.name}`.trim() : "";
+  const slug = (offer?.issue_type ?? "").toLowerCase().replace(/_/g, "-");
+  const issue = (issueName ?? "").trim();
+
+  const partLabels = {
+    "ecran-casse": { type: "ecran", part: "Écran" },
+    "ecran-fissure": { type: "ecran", part: "Écran" },
+    "batterie-usee": { type: "kit", part: "batterie" },
+    "batterie-faible": { type: "kit", part: "batterie" },
+    "batterie-ecouteur-usee": { type: "kit", part: "batterie" },
+    "batterie-boitier-usee": { type: "kit", part: "batterie" },
+    "camera-avant-face-id": { type: "camera-avant", part: "Caméra avant Face ID" },
+    "camera-avant": { type: "camera-avant", part: "Caméra avant" },
+    "camera-arriere-hs": { type: "camera-arriere", part: "Caméra arrière" },
+    "camera-arriere": { type: "camera-arriere", part: "Caméra arrière" },
+    "connecteur-de-charge": { type: "piece", part: "Connecteur de charge" },
+    "connecteur-charge": { type: "piece", part: "Connecteur de charge" },
+    "haut-parleur": { type: "piece", part: "Haut-parleur" },
+    "bouton-power-volume": { type: "piece", part: "Boutons volume/power" },
+    "vitre-arriere-cassee": { type: "piece", part: "Vitre arrière" },
+    "wifi-bluetooth-hs": { type: "piece", part: "Module WiFi/Bluetooth" },
+    "vibreur-hs": { type: "piece", part: "Moteur vibreur" },
+    "kit-outils": { type: "kit-outils", part: "outils" },
+    "outils": { type: "kit-outils", part: "outils" },
+  };
+
+  const mapped = partLabels[slug];
+  if (mapped) {
+    if (mapped.type === "ecran") return `Écran ${product} compatible`;
+    if (mapped.type === "kit") return `Kit réparation ${mapped.part} ${product}`;
+    if (mapped.type === "kit-outils") return `Kit outils réparation ${product}`;
+    if (mapped.type === "camera-avant" || mapped.type === "camera-arriere") return `${mapped.part} ${product}`;
+    return `${mapped.part} ${product}`;
+  }
+  if (issue) return `${issue} ${product}`;
+  return product ? `Pièce ${product}` : "Pièce détachée";
+}
+
 /** URL de recherche pièces détachées (par type de produit + panne) — pour pages générales sans item précis */
 export function buildRetailerUrlForParts(r, productType, panneName) {
   const raw = `pièce ${panneName} ${productType}`.trim();

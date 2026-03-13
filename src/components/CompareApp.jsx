@@ -28,7 +28,7 @@ import { PRODUCT_TYPE_IMAGES } from "../data/product-type-images";
 import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
-import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
+import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery } from "../lib/helpers";
 import { getOffersForNeuf, getOffersForOcc, getOffersForParts } from "../lib/supabase-queries";
 import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
@@ -1172,6 +1172,8 @@ function RepairPage({ catId, productType, onNav }) {
                   {sortedRets.map(({ r, offer, price, url }, rank) => {
                     const isBest = rank === 0;
                     const priceStr = price > 0 ? `${Math.round(price)} €` : `~${partBase} €`;
+                    const offerLabel = offer && sampleItem ? buildPartsOfferLabel(offer, sampleItem, iss.name) : `${iss.name} ${sampleItem ? `${sampleItem.brand} ${sampleItem.name}` : productType}`.trim();
+                    const subLabel = `Sur ${r.n}`;
                     return (
                       <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover" style={{
                         background: "#fff", border: isBest ? "2px solid #111" : "1px solid #E5E3DE", borderRadius: 12, padding: "16px 18px",
@@ -1181,10 +1183,10 @@ function RepairPage({ catId, productType, onNav }) {
                         <RetailerLogo r={r} size={48} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                            <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
+                            <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{offerLabel}</span>
                             {isBest && price > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
                           </div>
-                          <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{r.t}</div>
+                          <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{subLabel}</div>
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
                           <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{priceStr}</div>
@@ -2478,6 +2480,9 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               const isBestPrice = rank === 0;
               const priceStr = price > 0 ? `${price} €` : "—";
               const imgUrl = (offer?.image_url?.trim() || productImgUrl) || null;
+              const matchedIssue = offer && issues?.length ? issues.find((i) => slugify(i.name) === (offer.issue_type ?? "").toLowerCase().replace(/_/g, "-")) : null;
+              const offerLabel = offer ? buildPartsOfferLabel(offer, item, matchedIssue?.name) : `${issues?.[0]?.name || "Pièce"} ${item?.brand} ${item?.name}`.trim();
+              const subLabel = `Sur ${r.n}`;
               return (
                 <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={{
                   background: "#fff",
@@ -2503,10 +2508,10 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                     <RetailerLogo r={r} size={56} className="retailer-logo" />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{offerLabel}</span>
                         {isBestPrice && price > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
                       </div>
-                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
+                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subLabel}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{priceStr}</div>
