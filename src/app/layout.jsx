@@ -12,7 +12,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata = {
-  title: "Compare. — Réparer, occasion ou neuf ?",
+  title: "Réparer ou racheter ? Comparez en 30 secondes | Compare.",
   description: "Comparez réparation, achat reconditionné et neuf pour faire le meilleur choix. Estimations de coût, verdict et alternatives.",
   icons: {
     icon: "/icon.png",

@@ -361,9 +361,15 @@ export function findProductTypeBySlug(catId, slug) {
   return R.findProductTypeBySlug(catId, slug);
 }
 
+/** Nom court produit pour SEO (ex: "iPhone 13" au lieu de "Apple iPhone 13") */
+export function getSeoProductName(item) {
+  if (!item) return "";
+  return item.brand === "Apple" ? item.name : `${item.brand} ${item.name}`;
+}
+
 export function buildSeo(page, data) {
   const siteName = "Compare.";
-  if (page === "home") return { title: `${siteName} — Réparer, occasion ou neuf ?`, description: "Comparez réparation, achat reconditionné et neuf pour faire le meilleur choix. Estimations de coût, verdict et alternatives.", canonicalPath: "/", breadcrumb: [{ label: "Accueil", path: "/" }] };
+  if (page === "home") return { title: `Réparer ou racheter ? Comparez en 30 secondes | ${siteName}`, description: "Comparez réparation, achat reconditionné et neuf pour faire le meilleur choix. Estimations de coût, verdict et alternatives.", canonicalPath: "/", breadcrumb: [{ label: "Accueil", path: "/" }] };
   if ((page === "cat" || page === "cat-type" || page === "cat-brand") && data?.cat) {
     const cat = typeof data.cat === "string" ? CATS.find(c => c.id === data.cat) : data.cat;
     const catId = cat?.id || data.cat;
@@ -372,26 +378,27 @@ export function buildSeo(page, data) {
     if (page === "cat-type" && data.productType && PAGES_GENERALES.includes(catId)) {
       const typeLower = data.productType.toLowerCase();
       const typePath = R.pathProductType(catId, data.productType);
-      return { title: `Réparer un ${typeLower} ou le remplacer ? | ${siteName}`, description: `Guide : quand réparer ou remplacer un ${typeLower} ? Coûts indicatifs, pannes typiques et références pour comparer.`, canonicalPath: typePath, breadcrumb: [{ label: "Accueil", path: "/" }, { label: name, path }, { label: data.productType, path: typePath }] };
+      const issuePart = data.issueName ? ` ${data.issueName}` : "";
+      return { title: `Réparer ou racheter ${typeLower}${issuePart} ? | ${siteName}`, description: `Guide : quand réparer ou racheter un ${typeLower} ? Coûts indicatifs, pannes typiques et références pour comparer.`, canonicalPath: typePath, breadcrumb: [{ label: "Accueil", path: "/" }, { label: name, path }, { label: data.productType, path: typePath }] };
     }
-    return { title: `${name} — Réparer ou remplacer ? | ${siteName}`, description: `Comparez réparation, occasion et neuf pour les ${name}. Trouvez le meilleur choix pour votre appareil.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: name, path }] };
+    return { title: `Réparer ou racheter ${name} ? | ${siteName}`, description: `Comparez réparation, occasion et neuf pour les ${name}. Trouvez le meilleur choix pour votre appareil.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: name, path }] };
   }
   if ((page === "compare" || page === "issue") && data?.item) {
     const item = data.item;
-    const name = `${item.brand} ${item.name}`;
+    const shortName = getSeoProductName(item);
     const path = data.issue ? R.pathProductIssue(item, data.issue) : pathCompare(item);
-    const issueLabel = data.issue ? ` — ${data.issue.name}` : "";
-    return { title: `Réparer ou remplacer ${name}${issueLabel} ? | ${siteName}`, description: `Coût de réparation, occasion et neuf pour ${name} (${item.productType}, ${item.year}). Notre recommandation et les alternatives.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: CATS.find(c => c.id === item.category)?.name || item.category, path: pathCategory(item.category) }, { label: name, path }] };
+    const issuePart = data.issue ? ` ${data.issue.name}` : "";
+    return { title: `Réparer ${shortName}${issuePart} ou racheter ? | ${siteName}`, description: `Coût de réparation, occasion et neuf pour ${shortName} (${item.productType}, ${item.year}). Notre recommandation et les alternatives.`, canonicalPath: path, breadcrumb: [{ label: "Accueil", path: "/" }, { label: CATS.find(c => c.id === item.category)?.name || item.category, path: pathCategory(item.category) }, { label: shortName, path }] };
   }
   if (page === "aff" && data?.item) {
     const item = data.item;
-    const name = `${item.brand} ${item.name}`;
+    const shortName = getSeoProductName(item);
     const typeLabel = data.affType === "neuf" ? "Acheter neuf" : data.affType === "occ" ? (OCC_CATS.includes(item.category) ? "Occasion" : "Reconditionné") : "Pièces";
-    return { title: `${typeLabel} — ${name} | ${siteName}`, description: `Prix et offres pour ${name} (${typeLabel}). Comparateur d'offres.`, canonicalPath: pathCompare(item), breadcrumb: [{ label: "Accueil", path: "/" }, { label: name, path: pathCompare(item) }, { label: typeLabel, path: "" }] };
+    return { title: `${typeLabel} — ${shortName} | ${siteName}`, description: `Prix et offres pour ${shortName} (${typeLabel}). Comparateur d'offres.`, canonicalPath: pathCompare(item), breadcrumb: [{ label: "Accueil", path: "/" }, { label: shortName, path: pathCompare(item) }, { label: typeLabel, path: "" }] };
   }
   const staticPages = { guide: "/comment-ca-marche", "repair-guide": "/guide/reparer-ou-racheter", avantages: "/avantages", faq: "/faq", legal: "/mentions-legales", about: "/a-propos", contact: "/contact" };
   if (staticPages[page]) return { title: siteName, description: "Comparez réparation, achat reconditionné et neuf.", canonicalPath: staticPages[page], breadcrumb: [] };
-  return { title: siteName, description: "Réparer, occasion ou neuf ? Comparez en un clic.", canonicalPath: "/", breadcrumb: [] };
+  return { title: `Réparer ou racheter ? | ${siteName}`, description: "Réparer, occasion ou neuf ? Comparez en un clic.", canonicalPath: "/", breadcrumb: [] };
 }
 
 export function findProductByChip(label) {
