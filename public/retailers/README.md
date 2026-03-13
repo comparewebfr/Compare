@@ -7,7 +7,6 @@ Logos officiels des partenaires affiliés (PNG).
 - fnac.png
 - darty.png
 - castorama.png
-- manomano.png
 - backmarket.png
 - spareka.png
 - rakuten.png

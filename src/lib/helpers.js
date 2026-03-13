@@ -279,13 +279,13 @@ export function getAlternatives(item) {
 
 export function getRet(cat, type) {
   const m = OCC_CATS.includes(cat);
-  if (type === "neuf") return RET.neuf.filter(r => m ? ["Amazon", "Castorama", "ManoMano", "Cdiscount", "Darty", "Rue du Commerce"].includes(r.n) : ["Amazon", "Fnac", "Darty", "Cdiscount", "Rue du Commerce"].includes(r.n));
+  if (type === "neuf") return RET.neuf.filter(r => m ? ["Amazon", "Castorama", "Cdiscount", "Darty", "Rue du Commerce"].includes(r.n) : ["Amazon", "Fnac", "Darty", "Cdiscount", "Rue du Commerce"].includes(r.n));
   if (type === "occ") {
     const occRets = RET.occ.filter(r => ["Back Market", "Amazon Renewed", "Rakuten", "Cdiscount"].includes(r.n));
     if (OCC_CATS.includes(cat)) return occRets.filter(r => r.n !== "Back Market");
     return occRets;
   }
-  return RET.pcs.filter(r => m ? ["Amazon", "Spareka", "ManoMano", "Castorama", "Rue du Commerce"].includes(r.n) : ["Amazon", "Spareka", "Rue du Commerce"].includes(r.n));
+  return RET.pcs.filter(r => m ? ["Amazon", "Spareka", "Castorama", "Rue du Commerce"].includes(r.n) : ["Amazon", "Spareka", "Rue du Commerce"].includes(r.n));
 }
 
 export function buildRetailerUrl(r, item, affType) {
@@ -297,7 +297,6 @@ export function buildRetailerUrl(r, item, affType) {
   if (r.n === "Darty") return `https://www.darty.com/nav/recherche?s=${q}`;
   if (r.n === "Cdiscount") return `https://www.cdiscount.com/search/10/${q.replace(/ /g, "+")}.html`;
   if (r.n === "Castorama") return `https://www.castorama.fr/recherche?q=${q}`;
-  if (r.n === "ManoMano") return `https://www.manomano.fr/recherche?q=${q}`;
   if (r.n === "Rakuten") return `https://fr.shopping.rakuten.com/search/${q.replace(/ /g, "+")}`;
   if (r.n === "Rue du Commerce") return `https://www.rueducommerce.fr/recherche/${q.replace(/ /g, "%20")}`;
   if (r.n === "Spareka") return `https://www.spareka.fr/recherche?q=${q}`;
@@ -357,7 +356,6 @@ export function buildRetailerUrlForParts(r, productType, panneName) {
   const q = encodeURIComponent(raw);
   if (r.n === "Amazon") return `https://www.amazon.fr/s?k=${q}`;
   if (r.n === "Rue du Commerce") return `https://www.rueducommerce.fr/recherche/${raw.replace(/ /g, "+")}`;
-  if (r.n === "ManoMano") return `https://www.manomano.fr/recherche?q=${q}`;
   if (r.n === "Castorama") return `https://www.castorama.fr/recherche?q=${q}`;
   if (r.n === "Spareka") return `https://www.spareka.fr/recherche?q=${q}`;
   return `https://www.google.com/search?q=${q}`;

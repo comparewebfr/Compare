@@ -710,7 +710,7 @@ export const POPULAR_SEARCHES_IPHONE = [
 ];
 
 /** Marques affiliées uniquement — ne pas inclure les sites sans programme d'affiliation */
-export const AFFILIATED_RETAILERS = ["Amazon", "Cdiscount", "Rakuten", "Fnac", "Darty", "Castorama", "Back Market", "ManoMano", "Spareka", "Rue du Commerce"];
+export const AFFILIATED_RETAILERS = ["Amazon", "Cdiscount", "Rakuten", "Fnac", "Darty", "Castorama", "Back Market", "Spareka", "Rue du Commerce"];
 
 /** Couleur du fond du logo (prolongement visuel, pas la couleur accent) */
 export const LOGO_BG = {
@@ -719,7 +719,6 @@ export const LOGO_BG = {
   "/retailers/fnac.png": "#E4A100",
   "/retailers/darty.png": "#CE0E2D",
   "/retailers/castorama.png": "#E30613",
-  "/retailers/manomano.png": "#00B2A9",
   "/retailers/backmarket.png": "#1A1A1A",
   "/retailers/rakuten.png": "#B00020",
   "/retailers/spareka.png": "#00B8D9",
@@ -734,7 +733,6 @@ export const RET = {
     { n: "Fnac", t: "Retrait 1h en magasin", c: "#E4A100", logo: "F", logoUrl: "/retailers/fnac.png" },
     { n: "Darty", t: "Garantie 2 ans", c: "#CE0E2D", logo: "D", logoUrl: "/retailers/darty.png" },
     { n: "Castorama", t: "Bricolage & maison", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.png" },
-    { n: "ManoMano", t: "Bricolage", c: "#00B2A9", logo: "M", logoUrl: "/retailers/manomano.png" },
   ],
   occ: [
     { n: "Back Market", t: "N°1 reconditionné garanti", c: "#4DBC80", logo: "B", logoUrl: "/retailers/backmarket.png" },
@@ -746,7 +744,6 @@ export const RET = {
     { n: "Amazon", t: "Pièces détachées", c: "#FF9900", logo: "A", logoUrl: "/retailers/amazon.png" },
     { n: "Spareka", t: "Électroménager", c: "#00B8D9", logo: "S", logoUrl: "/retailers/spareka.png" },
     { n: "Rue du Commerce", t: "Tech & pièces", c: "#E30613", logo: "R", logoUrl: "/retailers/rueducommerce.png" },
-    { n: "ManoMano", t: "Pièces & outillage", c: "#00B2A9", logo: "M", logoUrl: "/retailers/manomano.png" },
     { n: "Castorama", t: "Plomberie & bricolage", c: "#E30613", logo: "C", logoUrl: "/retailers/castorama.png" },
   ],
 }

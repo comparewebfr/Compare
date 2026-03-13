@@ -34,17 +34,14 @@ import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
 import { useImageLightbox } from "../lib/image-lightbox-context";
 import { useMinPriceNeuf } from "../lib/min-price-neuf-context";
+import { Icon, Logo, Chev, Pill, Badge, Card } from "./shared";
+import { FaqPage, LegalPage, AdvantagesPage, GuidePage, RepairGuidePage, AboutPage, ContactPage } from "./pages/StaticPages";
 
 // ─── Prix neuf unifié (min des offres Supabase) ───
 function ProductPriceNeuf({ item, fallback = "—" }) {
   const { displayText, loading } = useMinPriceNeuf(item);
   if (!item) return <>{fallback}</>;
   return <>{loading ? (item.priceNew != null ? `~${Math.round(item.priceNew)} €` : fallback) : displayText}</>;
-}
-
-// ─── LOGO ───
-function Logo({ s = 32, priority = false }) {
-  return <Image src="/logo.png" alt="Compare." width={s} height={s} sizes={`${s}px`} priority={priority} style={{ width: s, height: s, objectFit: "contain", borderRadius: "50%" }} />;
 }
 
 const INFO_LOGO_SIZE = 56;
@@ -94,67 +91,6 @@ function InfoCardBlock({ children }) {
     </div>
   );
 }
-
-// ─── MINIMAL ICONS (decorative, aria-hidden) ───
-function Icon({ name, s = 18, color = "#111", style = {} }) {
-  const common = { width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: "block", ...style }, "aria-hidden": true, focusable: false };
-  switch (name) {
-    case "check": return <svg {...common}><path d="M20 6 9 17l-5-5" /></svg>;
-    case "tool": return <svg {...common}><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2.7-2.7 2-2z" /></svg>;
-    case "recycle": return <svg {...common}><path d="M7 19h10" /><path d="M7 19l-2-3" /><path d="M17 19l2-3" /><path d="M7 19l3-5" /><path d="M17 19l-3-5" /><path d="M9 9l3-5 3 5" /><path d="M12 4v5" /></svg>;
-    case "swap": return <svg {...common}><path d="M7 7h14l-3-3" /><path d="M17 17H3l3 3" /></svg>;
-    case "cart": return <svg {...common}><path d="M6 6h15l-1.5 9h-12z" /><path d="M6 6l-2-2" /><circle cx="9" cy="20" r="1" /><circle cx="18" cy="20" r="1" /></svg>;
-    case "chart": return <svg {...common}><path d="M4 19V5" /><path d="M4 19h16" /><path d="M8 16v-5" /><path d="M12 16V8" /><path d="M16 16v-3" /></svg>;
-    case "money": return <svg {...common}><path d="M3 7h18v10H3z" /><path d="M7 7v10" /><path d="M17 7v10" /><circle cx="12" cy="12" r="2" /></svg>;
-    case "leaf": return <svg {...common}><path d="M21 3c-8 1-14 7-15 15" /><path d="M6 18c6 0 10-4 10-10" /></svg>;
-    case "clock": return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 7v6l4 2" /></svg>;
-    case "warn": return <svg {...common}><path d="M12 3 2 21h20z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>;
-    case "info": return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 10v6" /><path d="M12 7h.01" /></svg>;
-    case "help": return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>;
-    case "shield": return <svg {...common}><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6z" /></svg>;
-    case "search": return <svg {...common}><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></svg>;
-    case "calendar": return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M3 11h18" /></svg>;
-    case "pin": return <svg {...common}><path d="M12 21s6-5 6-10a6 6 0 1 0-12 0c0 5 6 10 6 10z" /><circle cx="12" cy="11" r="2" /></svg>;
-    case "chat": return <svg {...common}><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" /></svg>;
-    case "book": return <svg {...common}><path d="M4 19a2 2 0 0 1 2-2h14" /><path d="M6 3h14v18H6a2 2 0 0 0-2 2V5a2 2 0 0 1 2-2z" /></svg>;
-    case "play": return <svg {...common}><path d="M8 5v14l11-7z" /></svg>;
-    case "x": return <svg {...common}><path d="M18 6 6 18" /><path d="M6 6l12 12" /></svg>;
-    // Category icons
-    case "smartphone": return <svg {...common}><rect x="7" y="3" width="10" height="18" rx="2" /><path d="M11 18h2" /></svg>;
-    case "tablet": return <svg {...common}><rect x="5" y="4" width="14" height="16" rx="2" /><path d="M11 17h2" /></svg>;
-    case "laptop": return <svg {...common}><path d="M4 6h16v10H4z" /><path d="M2 18h20" /></svg>;
-    case "washer": return <svg {...common}><rect x="4" y="3" width="16" height="18" rx="2" /><circle cx="12" cy="13" r="4" /><path d="M8 7h.01" /><path d="M12 7h.01" /></svg>;
-    case "tv": return <svg {...common}><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M8 20h8" /></svg>;
-    case "gamepad": return <svg {...common}><path d="M8 14H6a3 3 0 0 1-3-3 4 4 0 0 1 4-4h10a4 4 0 0 1 4 4 3 3 0 0 1-3 3h-2" /><path d="M7 12h2" /><path d="M8 11v2" /><path d="M16 11h.01" /><path d="M18 13h.01" /></svg>;
-    case "headphones": return <svg {...common}><path d="M4 13a8 8 0 0 1 16 0" /><path d="M4 13v5a2 2 0 0 0 2 2h1v-7H6a2 2 0 0 0-2 2" /><path d="M20 13v5a2 2 0 0 1-2 2h-1v-7h1a2 2 0 0 1 2 2" /></svg>;
-    case "camera": return <svg {...common}><path d="M4 7h4l2-2h4l2 2h4v12H4z" /><circle cx="12" cy="13" r="3" /></svg>;
-    case "shower": return <svg {...common}><path d="M7 7a5 5 0 0 1 10 0" /><path d="M17 7H7" /><path d="M12 7v2" /><path d="M9 12h.01" /><path d="M12 13h.01" /><path d="M15 12h.01" /><path d="M10 16h.01" /><path d="M14 16h.01" /></svg>;
-    case "flame": return <svg {...common}><path d="M12 3s-3 3-3 7a3 3 0 0 0 6 0c0-4-3-7-3-7z" /><path d="M8 14a4 4 0 0 0 8 0" /></svg>;
-    case "kitchen": return <svg {...common}><path d="M6 3v8" /><path d="M10 3v8" /><path d="M6 7h4" /><path d="M14 3v6a3 3 0 0 0 6 0V3" /><path d="M4 21h16" /></svg>;
-    case "home": return <svg {...common}><path d="M3 10.5 12 3l9 7.5" /><path d="M5 10v11h14V10" /></svg>;
-    case "sofa": return <svg {...common}><path d="M5 12V9a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" /><path d="M4 12h16v5H4z" /><path d="M6 17v2" /><path d="M18 17v2" /></svg>;
-    case "bike": return <svg {...common}><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17l4-7h4l4 7" /><path d="M10 10l-2-3h4" /></svg>;
-    case "watch": return <svg {...common}><rect x="7" y="6" width="10" height="12" rx="2" /><path d="M9 6V4h6v2" /><path d="M9 18v2h6v-2" /><path d="M12 10v3l2 1" /></svg>;
-    default: return <svg {...common}><rect x="4" y="4" width="16" height="16" rx="3" /></svg>;
-  }
-}
-
-// ═══════════════ UI COMPONENTS ═══════════════
-
-function Pill({ active, onClick, children }) {
-  return <button type="button" onClick={onClick} className="pill-hover" style={{ padding: "10px 16px", borderRadius: 10, cursor: "pointer", fontFamily: F, fontSize: 13, fontWeight: active ? 700 : 500, background: active ? ACCENT : "#fff", color: active ? "#fff" : "#374151", border: active ? `2px solid ${ACCENT}` : "1.5px solid #E0DDD5", whiteSpace: "nowrap", minHeight: 44 }}>{children}</button>;
-}
-function Badge({ color, children }) {
-  return <span style={{ display: "inline-block", padding: "5px 11px", borderRadius: 100, background: color + "18", color, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", border: `1px solid ${color}30` }}>{children}</span>;
-}
-function Card({ children, onClick, style = {}, as: Tag = "div", ...rest }) {
-  const baseStyle = { background: "#fff", border: "1px solid #E5E3DE", borderRadius: 12, cursor: onClick ? "pointer" : "default", ...style };
-  if (onClick && Tag === "div") {
-    return <button type="button" onClick={onClick} className="card-hover" style={{ ...baseStyle, width: "100%", textAlign: "left", font: "inherit" }} {...rest}>{children}</button>;
-  }
-  return <Tag onClick={onClick} className={onClick ? "card-hover" : ""} style={baseStyle} {...rest}>{children}</Tag>;
-}
-function Chev() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6" /></svg>; }
 
 // ─── Images produits ────────────────────────────────────────────────────────
 // Priorité centralisée : 1) Supabase (product_assets)  2) PRODUCT_IMAGES  3) placeholder (pas de /products/ pour éviter 404)
@@ -1030,7 +966,7 @@ function TypeProductGeneralPage({ catId, productType, onNav }) {
           { q: `Combien coûte la réparation d'un ${typeLower} ?`, a: `Les tarifs varient selon la panne : de ${fallbackIssues.reduce((m,i) => Math.min(m,i.repairMin),999)}€ à ${fallbackIssues.reduce((m,i) => Math.max(m,i.repairMax),0)}€ (pièces + main d’œuvre). La panne « ${fallbackIssues[0]?.name} » revient en général à ${fallbackIssues[0]?.repairMin}–${fallbackIssues[0]?.repairMax}€. Demandez un devis pour confirmer.` },
             { q: `Vaut-il mieux réparer ou remplacer un ${typeLower} ?`, a: `Tout dépend de la panne et de l’âge de l’appareil. Une réparation peu coûteuse (pièce d’usure, panne courante) reste souvent le meilleur choix. Si le devis s’approche du prix d’un neuf ou si l’appareil a plus de 10 ans, le remplacement devient plus logique. Utilisez notre comparateur pour voir les trois options côte à côte.` },
             { q: `Peut-on réparer un ${typeLower} soi-même ?`, a: `Les pannes notées « Facile » sont accessibles avec un tutoriel vidéo. Pour les interventions « Difficile » ou nécessitant un pro, confiez l’appareil à un réparateur agréé — le bonus QualiRépar (15 à 60 €) s’applique automatiquement chez un labellisé.` },
-            { q: `Où trouver les pièces détachées ?`, a: "Spareka, Amazon, ManoMano et Rue du Commerce proposent des pièces pour l’électroménager et la tech. Vérifiez la référence exacte de votre modèle avant d’acheter. Comparez les prix entre enseignes." },
+            { q: `Où trouver les pièces détachées ?`, a: "Spareka, Amazon et Rue du Commerce proposent des pièces pour l’électroménager et la tech. Vérifiez la référence exacte de votre modèle avant d’acheter. Comparez les prix entre enseignes." },
           ].map((f, i) => (
             <details key={i} style={{ background: "#fff", borderRadius: 6, marginBottom: 4, border: "1px solid #E0DDD5" }}>
               <summary style={{ padding: "10px 14px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#111" }}>{f.q}</summary>
@@ -2180,7 +2116,7 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
             { q: `Combien coûte la réparation d'un ${item.brand} ${item.name} ?`, a: `Selon la panne, le coût varie de ${issues.reduce((m,i) => Math.min(m,i.repairMin),999)}€ à ${issues.reduce((m,i) => Math.max(m,i.repairMax),0)}€ (pièces + main d’œuvre). La panne « ${issues[0]?.name} » revient en général à ${issues[0]?.repairMin}–${issues[0]?.repairMax}€. Demandez un devis pour confirmer.` },
             { q: `Vaut-il mieux réparer ou racheter un ${item.brand} ${item.name} ?`, a: `Cela dépend de la panne. Pour les réparations simples (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "batterie, pièces d’usure"}), la réparation est généralement plus rentable. Au-delà de 40 % du prix neuf (${Math.round(item.priceNew*.4)}€), un modèle ${sl.toLowerCase()} peut être plus avantageux.` },
             { q: `Peut-on réparer un ${item.brand} ${item.name} soi-même ?`, a: `Les réparations notées « Facile » (${issues.filter(i=>i.diff==="facile").map(i=>i.name).join(", ") || "certaines pièces"}) sont accessibles aux débutants avec un tutoriel vidéo YouTube. Les réparations « Difficile » nécessitent un professionnel.` },
-            { q: `Où trouver les pièces détachées pour ${item.brand} ${item.name} ?`, a: OCC_CATS.includes(item.category) ? "Les pièces sont disponibles chez Spareka, Castorama, ManoMano et Amazon. Spareka propose aussi des guides de réparation adaptés." : "Les pièces sont disponibles chez Spareka, Amazon et les revendeurs spécialisés. Des tutoriels vidéo YouTube ciblés existent pour de nombreux modèles." },
+            { q: `Où trouver les pièces détachées pour ${item.brand} ${item.name} ?`, a: OCC_CATS.includes(item.category) ? "Les pièces sont disponibles chez Spareka, Castorama et Amazon. Spareka propose aussi des guides de réparation adaptés." : "Les pièces sont disponibles chez Spareka, Amazon et les revendeurs spécialisés. Des tutoriels vidéo YouTube ciblés existent pour de nombreux modèles." },
             { q: `Le bonus QualiRépar s'applique-t-il au ${item.brand} ${item.name} ?`, a: `Oui. Le bonus QualiRépar (${getQualiReparBonus(item.productType) ?? "15 à 60"} €) est applicable sur la réparation des ${item.productType.toLowerCase()}s chez un réparateur agréé. La réduction est automatique, aucune démarche nécessaire.` },
           ].map((f, i) => <details key={i} style={{ background: "#fff", borderRadius: 6, marginBottom: 4, border: "1px solid #E0DDD5" }}>
             <summary style={{ padding: "10px 14px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#111" }}>{f.q}</summary>
@@ -2842,304 +2778,6 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
         {isPcs ? "Prix indicatifs (pièces + main d'œuvre). " : ""}Prix indicatifs {isNeuf ? "neufs" : isOcc ? `en ${sl.toLowerCase()}` : ""}. Compare. reçoit une commission sur les achats via ces liens, sans surcoût pour vous.
       </div>
     </div>
-  </div>;
-}
-
-// ─── FAQ ───
-function FaqPage({ onNav }) {
-  const faqs = [
-    { q: "Comment fonctionne Compare. ?", a: "Tapez le nom de votre appareil (iPhone 15, lave-linge Bosch, PS5…), choisissez la panne, et Compare. affiche côte à côte : coût de réparation estimé, prix reconditionné et prix neuf. Un verdict vous indique l’option la plus logique. Le tout en une trentaine de secondes." },
-    { q: "Les prix affichés sont-ils fiables ?", a: "Ce sont des fourchettes basées sur les tarifs moyens en France (pièces + main d’œuvre). Ils varient selon le réparateur, la région et la disponibilité des pièces. À utiliser comme ordre de grandeur — un devis reste la référence pour trancher." },
-    { q: "C'est quoi le bonus QualiRépar ?", a: "Une aide de l’État (15 à 60 €) déduite automatiquement chez un réparateur labellisé QualiRépar. Pas de dossier à remplir : vous allez chez le pro, la réduction est appliquée sur la facture. Éligible : smartphones, électroménager, ordinateurs, TV, consoles, etc." },
-    { q: "Compare. est-il gratuit ?", a: "Oui, 100 % gratuit. Nous sommes rémunérés par des commissions d’affiliation lorsque vous achetez via nos liens — sans surcoût pour vous." },
-    { q: "Puis-je cumuler plusieurs pannes ?", a: "Oui. Sur chaque page produit, cliquez sur « Plusieurs problèmes ? » pour sélectionner plusieurs pannes et voir le coût total. Pratique quand votre appareil cumule écran cassé + batterie usée, par exemple." },
-    { q: "Comment sont calculées les estimations de réparation ?", a: "Nous nous appuyons sur les tarifs moyens des pièces détachées et de la main d’œuvre en France, les tutoriels vidéo et les retours de réparateurs. Les fourchettes donnent un ordre de grandeur réaliste — un devis reste la référence." },
-    { q: "Puis-je suggérer un produit à ajouter ?", a: "Oui. Utilisez la page Contact pour nous envoyer votre suggestion. Nous intégrons les appareils les plus demandés." },
-    { q: "Les liens d'achat sont-ils sécurisés ?", a: "Oui. Nous redirigeons vers des marchands reconnus (Amazon, Back Market, Fnac, Darty, etc.). Vous achetez directement chez eux — nous ne stockons aucune donnée de paiement." },
-    { q: "Compare. affiche-t-il les vrais prix en temps réel ?", a: "Les prix neuf et reconditionné sont indicatifs (basés sur les tarifs habituels). Pour les prix exacts, cliquez sur les liens pour voir les offres actuelles sur chaque site partenaire." },
-    { q: "Comment proposer un produit manquant ?", a: "Rendez-vous sur la page Contact. Nous examinons chaque suggestion et ajoutons les appareils les plus demandés." },
-  ];
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 660, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>FAQ</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Questions fréquentes</h1></div>
-    {faqs.map((f, i) => <details key={i} style={{ background: "#FAFAFA", borderRadius: 10, marginBottom: 5, border: "1px solid #E5E7EB" }}>
-      <summary style={{ padding: "12px 16px", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "#111" }}>{f.q}</summary>
-      <p style={{ padding: "0 16px 12px", fontSize: 13, color: "#6B7280", lineHeight: 1.6 }}>{f.a}</p>
-    </details>)}
-    <div style={{ marginTop: 28, padding: 18, background: "#EFF6FF", borderRadius: 12, border: "1px solid #BFDBFE" }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1E3A5F", marginBottom: 4 }}>Service client</h3>
-      <p style={{ fontSize: 13, color: "#3B6998" }}>Une question ? <a href="mailto:compare.webfr@gmail.com" style={{ color: "#1E3A5F", fontWeight: 700 }}>compare.webfr@gmail.com</a> — Réponse sous 24h.</p>
-    </div>
-  </div>;
-}
-
-// ─── LEGAL ───
-function LegalPage({ onNav }) {
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Mentions légales</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Mentions légales</h1></div>
-    <p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.7, marginBottom: 28 }}>Conformément aux dispositions des articles 6-III et 19 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique (LCEN), les présentes mentions légales sont portées à la connaissance des utilisateurs du site Compare.</p>
-    {[
-      { t: "Éditeur du site", c: "Le site Compare. est édité par [Raison sociale]. Siège social : [Adresse complète]. SIRET : [numéro]. Directeur de la publication : [nom du responsable]." },
-      { t: "Hébergement", c: "Le site est hébergé par Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis." },
-      { t: "Programmes d'affiliation", c: "Compare. participe à des programmes d'affiliation (Amazon Partenaires, Awin, CJ Affiliate, etc.). Lorsque vous cliquez sur un lien partenaire et effectuez un achat, nous percevons une commission sans surcoût pour vous. Les prix affichés restent ceux pratiqués par les marchands." },
-      { t: "Données personnelles (RGPD)", c: "Conformément au Règlement général sur la protection des données (RGPD), vous disposez d'un droit d'accès, de rectification, de suppression et de portabilité de vos données personnelles. Pour exercer ces droits ou pour toute question : compare.webfr@gmail.com. Nous ne collectons pas de données personnelles identifiables via les fonctionnalités de comparaison." },
-      { t: "Cookies", c: "Le site utilise des cookies techniques nécessaires au fonctionnement et, le cas échéant, des cookies analytiques pour mesurer l'audience. Vous pouvez gérer vos préférences via les paramètres de votre navigateur." },
-      { t: "Propriété intellectuelle", c: "L'ensemble du contenu (textes, visuels, structure) est protégé par le droit d'auteur. Toute reproduction, représentation ou exploitation non autorisée est interdite." },
-      { t: "Limitation de responsabilité", c: "Les informations (prix, estimations de réparation, verdicts) sont fournies à titre indicatif. Compare. ne garantit pas leur exactitude ni leur exhaustivité. Les prix peuvent varier selon les marchands et le moment. Nous déclinons toute responsabilité quant aux achats effectués auprès des partenaires ou à la qualité des réparations réalisées par des tiers." },
-      { t: "Liens hypertextes", c: "Le site peut contenir des liens vers des sites externes. Compare. n'exerce aucun contrôle sur ces sites et décline toute responsabilité quant à leur contenu." },
-    ].map((s, i) => <div key={i} style={{ marginBottom: 20 }}><h3 style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 6 }}>{s.t}</h3><p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.7 }}>{s.c}</p></div>)}
-    <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 24 }}>Dernière mise à jour : février 2025</p>
-  </div>;
-}
-
-// ─── AVANTAGES PAGE ───
-function AdvantagesPage({ onNav }) {
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Avantages</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Les avantages de la réparation</h1></div>
-    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>Réparer plutôt que remplacer, c’est souvent le meilleur choix : économies, durée de vie prolongée, impact écologique. Voici pourquoi.</p>
-
-    {/* Avantages principaux */}
-    <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 14 }}>Pourquoi réparer ?</h2>
-    <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
-      {[
-        { icon: "money", title: "Économies réelles", desc: "Une réparation coûte souvent 50 à 200 € — bien moins qu’un remplacement (400 à 1000 € pour un smartphone ou un lave-linge). Vous gardez un appareil fonctionnel sans vous ruiner." },
-        { icon: "clock", title: "Durée de vie prolongée", desc: "Un appareil bien réparé peut tenir encore plusieurs années. Vous maximisez votre investissement initial au lieu de racheter trop tôt." },
-        { icon: "shield", title: "Bonus QualiRépar", desc: "L’État déduit 15 à 60 € directement chez un réparateur labellisé. Aucune démarche — la réduction s’applique sur la facture." },
-        { icon: "tool", title: "Apprendre en faisant", desc: "Beaucoup de pannes (batterie, joint, filtre) se réparent en réparation autonome avec un tutoriel. Une compétence utile pour la suite." },
-      ].map((a, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
-        <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-          <Icon name={a.icon} s={18} color={ACCENT} />
-        </div>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 6 }}>{a.title}</h3>
-        <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>{a.desc}</p>
-      </div>)}
-    </div>
-
-    {/* Section écologie — mise en avant sans exagérer */}
-    <div style={{ background: GREEN + "10", borderRadius: 10, border: `1px solid ${GREEN}30`, padding: "20px 22px", marginBottom: 28 }}>
-      <h2 style={{ fontSize: 17, fontWeight: 800, color: GREEN, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="leaf" s={20} color={GREEN} /> Bon pour la planète ?
-      </h2>
-      <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.8, marginBottom: 10 }}>
-        Oui. Réparer réduit les déchets et les émissions de CO₂. Chaque appareil réparé, c’est un appareil de moins à produire et à recycler.
-      </p>
-      <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>
-        Exemples : réparer un smartphone évite environ 70 kg de CO₂ ; un lave-linge, ~200 kg. L’impact est concret, sans être miraculeux — c’est une contribution parmi d’autres gestes du quotidien.
-      </p>
-    </div>
-
-    {/* Maillage interne */}
-    <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 16, lineHeight: 1.6 }}>Consultez aussi notre <button type="button" onClick={() => onNav("repair-guide")} style={{ background: "none", border: "none", padding: 0, font: "inherit", color: ACCENT, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>guide réparer ou racheter</button> pour les critères de décision détaillés.</p>
-
-    {/* CTA */}
-    <div style={{ textAlign: "center", padding: "24px 20px", background: `linear-gradient(135deg, ${ACCENT}, ${GREEN})`, borderRadius: 10 }}>
-      <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Comparez pour votre appareil</h3>
-      <p style={{ fontSize: 13, color: "#B7E4C7", marginBottom: 14 }}>Découvrez si la réparation est le meilleur choix pour vous.</p>
-      <button onClick={() => onNav("home")} className="btn-cta" style={{ padding: "12px 28px", borderRadius: 10, border: "2px solid #fff", background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Comparer maintenant →</button>
-    </div>
-  </div>;
-}
-
-// ─── GUIDE PAGE ───
-function GuidePage({ onNav }) {
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Comment ça marche</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Comment ça marche ?</h1></div>
-    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>Compare. vous aide à trancher : réparer, racheter d’occasion ou remplacer par du neuf. En 3 étapes, sans inscription.</p>
-    
-    {/* 3 steps */}
-    <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 32 }}>
-      {[
-        { n: "1", icon: "search", title: "Recherchez votre appareil", desc: `Tapez le nom de votre produit parmi nos ${ITEMS.length} références : iPhone, MacBook, lave-linge Bosch, PS5, chauffe-eau… Si votre modèle n’apparaît pas, suggérez-le via la page Contact.`, color: GREEN },
-        { n: "2", icon: "chart", title: "Comparez les 3 options", desc: "Indiquez votre panne (écran cassé, batterie HS, fuite…). Compare. estime le coût de réparation, le prix reconditionné et le prix neuf. Un verdict vous indique la solution la plus logique.", color: AMBER },
-        { n: "3", icon: "check", title: "Passez à l’action", desc: "Accédez aux tutoriels vidéo, aux pièces détachées ou aux offres des marchands. Vous savez combien vous économisez et quelle option fait sens pour votre situation.", color: ACCENT },
-      ].map((s, i) => <div key={i} style={{ display: "flex", gap: 18, padding: "24px 0", borderBottom: i < 2 ? "1px solid #E0DDD5" : "none", alignItems: "flex-start" }}>
-        <div style={{ width: 56, height: 56, borderRadius: 12, background: s.color + "12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
-          <Icon name={s.icon} s={26} color={s.color} />
-          <div style={{ position: "absolute", top: -6, left: -6, width: 22, height: 22, borderRadius: 22, background: s.color, color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.n}</div>
-        </div>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111", marginBottom: 6 }}>{s.title}</h3>
-          <p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.7 }}>{s.desc}</p>
-        </div>
-      </div>)}
-    </div>
-
-    {/* Features grid */}
-    <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 14 }}>Ce que Compare. vous apporte</h2>
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }} className="grid-2">
-      {[
-        { icon: "money", title: "Économies réelles", desc: "Jusqu'à 80% d'économies vs le prix neuf" },
-        { icon: "clock", title: "Gain de temps", desc: "Décision en 30 secondes, pas des heures de recherche" },
-        { icon: "leaf", title: "Impact écologique", desc: "Chaque réparation = moins de CO₂ et de déchets" },
-        { icon: "tool", title: "Tutoriels intégrés", desc: "Liens YouTube et guides en ligne pour chaque panne" },
-        { icon: "chart", title: "Comparaison transparente", desc: "Prix réparation, occasion et neuf côte à côte" },
-        { icon: "shield", title: "Bonus QualiRépar", desc: "Jusqu'à 45€ d'aide de l'État sur les réparations" },
-      ].map((f, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, padding: 16, border: "1px solid #E0DDD5" }}>
-        <div style={{ width: 34, height: 34, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-          <Icon name={f.icon} s={18} color={ACCENT} />
-        </div>
-        <div style={{ fontWeight: 700, fontSize: 13, color: "#111", marginBottom: 2 }}>{f.title}</div>
-        <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>{f.desc}</div>
-      </div>)}
-    </div>
-
-    {/* CTA */}
-    <div style={{ textAlign: "center", padding: "24px 20px", background: `linear-gradient(135deg, ${ACCENT}, ${GREEN})`, borderRadius: 10 }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><Logo s={40} /></div>
-      <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Prêt à comparer ?</h3>
-      <p style={{ fontSize: 13, color: "#B7E4C7", marginBottom: 14 }}>Trouvez la meilleure option pour votre appareil en quelques secondes.</p>
-      <button onClick={() => onNav("home")} className="btn-cta" style={{ padding: "12px 28px", borderRadius: 10, border: "2px solid #fff", background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Comparer maintenant →</button>
-    </div>
-  </div>;
-}
-
-// ─── REPAIR GUIDE PAGE ───
-function RepairGuidePage({ onNav }) {
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Guide</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Réparer ou racheter : le guide complet</h1></div>
-    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.7 }}>Vous hésitez entre faire réparer votre appareil ou le remplacer ? Ce guide vous aide à prendre la bonne décision selon votre panne, l’âge de l’appareil et le coût.</p>
-
-    {/* Decision criteria */}
-    <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 12 }}>Les critères de décision</h2>
-    <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
-      {[
-        { icon: "money", title: "Le coût de réparation", desc: "Comparez le devis à la valeur d'un appareil neuf ou reconditionné. Une réparation peu coûteuse (pièce d'usure, panne courante) reste presque toujours rentable. Quand le devis s'approche du prix du neuf, le remplacement devient plus logique." },
-        { icon: "calendar", title: "L'âge de l'appareil", desc: "Un appareil récent a encore une longue durée de vie devant lui — la réparation maximise votre investissement. Au-delà de 7 à 10 ans, les pièces se raréfient et les modèles récents offrent souvent plus de performance ou d'économies d'énergie." },
-        { icon: "tool", title: "La difficulté technique", desc: "Batterie, filtre, joint : ces pannes sont souvent réparables en réparation autonome avec un tutoriel. Les interventions plus lourdes (carte électronique, démontage complexe) demandent un professionnel — pensez au bonus QualiRépar." },
-        { icon: "leaf", title: "L'impact écologique", desc: "Chaque appareil réparé, c'est un appareil de moins à produire et à recycler. Réparer un smartphone évite environ 70 kg de CO₂ ; un lave-linge, ~200 kg. L'impact est concret, sans être miraculeux." },
-      ].map((c, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
-        <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-          <Icon name={c.icon} s={18} color={ACCENT} />
-        </div>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 6 }}>{c.title}</h3>
-        <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>{c.desc}</p>
-      </div>)}
-    </div>
-
-    {/* When to repair */}
-    <div style={{ background: GREEN + "10", borderRadius: 8, border: `1px solid ${GREEN}30`, padding: "18px 20px", marginBottom: 16 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: GREEN, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="check" s={16} color={GREEN} /> Quand réparer ?
-      </h2>
-      <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}><strong>Devis raisonnable :</strong> quand la réparation reste bien en dessous du prix d’un neuf ou d’un reconditionné, c’est presque toujours le meilleur choix. Vous gardez un appareil fonctionnel et vous réalisez une vraie économie.</p>
-        <p style={{ marginBottom: 6 }}><strong>Panne simple et courante :</strong> écran cassé, batterie usée, pompe de vidange HS, joint de porte abîmé. Ces pannes sont fréquentes, bien documentées et les pièces circulent.</p>
-        <p style={{ marginBottom: 6 }}><strong>Appareil récent :</strong> un produit de moins de 3 à 5 ans a encore une longue durée de vie devant lui. La réparation maximise votre investissement initial.</p>
-        <p><strong>Pièces disponibles :</strong> si les pièces existent (Spareka, Amazon, ManoMano), la réparation est viable. Compare. vous aide à estimer le coût et à trouver les références.</p>
-      </div>
-    </div>
-
-    {/* When to replace */}
-    <div style={{ background: "#DC262610", borderRadius: 8, border: "1px solid #DC262630", padding: "18px 20px", marginBottom: 16 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: "#DC2626", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="swap" s={16} color="#DC2626" /> Quand remplacer ?
-      </h2>
-      <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}><strong>Devis qui s’approche du neuf :</strong> quand la réparation coûte presque autant qu’un appareil neuf ou reconditionné, le remplacement devient plus logique. Le reconditionné offre souvent un bon compromis (garantie, prix réduit).</p>
-        <p style={{ marginBottom: 6 }}><strong>Pannes multiples :</strong> si votre appareil cumule plusieurs problèmes, le coût total peut vite dépasser le seuil de rentabilité. Un seul devis global vous aidera à trancher.</p>
-        <p style={{ marginBottom: 6 }}><strong>Appareil obsolète :</strong> au-delà de 7 à 10 ans, les pièces se raréfient. Les modèles récents sont souvent plus performants, plus économes ou plus sûrs.</p>
-        <p><strong>Carte mère ou composant critique HS :</strong> ces réparations sont coûteuses et la fiabilité n'est pas toujours garantie. Le remplacement est souvent plus rassurant.</p>
-      </div>
-    </div>
-
-    {/* Occasion option */}
-    <div style={{ background: AMBER + "10", borderRadius: 8, border: `1px solid ${AMBER}30`, padding: "18px 20px", marginBottom: 28 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: AMBER, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="recycle" s={16} color={AMBER} /> L'option reconditionné / occasion
-      </h2>
-      <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}>Quand la réparation coûte trop cher mais que le neuf vous semble excessif, le reconditionné fait souvent sens. Garanti 12 à 24 mois, testé et remis à neuf, il offre un appareil quasi-neuf à prix réduit. Très développé pour la tech (smartphones, consoles, PC), moins pour l'électroménager.</p>
-        <p>Compare. référence Back Market, Amazon Renewed, Rakuten et Cdiscount pour comparer les offres selon votre produit.</p>
-      </div>
-    </div>
-
-    {/* QualiRépar */}
-    <div style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "18px 20px", marginBottom: 28 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: ACCENT, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="shield" s={16} color={ACCENT} /> L'aide de l'État — Bonus QualiRépar
-      </h2>
-      <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}>L'État français propose une aide de <strong>15 à 60 €</strong> sur la réparation d'appareils électriques et électroniques. Le montant varie selon le produit (ex. : smartphone 25 €, lave-linge 50 €, TV 60 €). La réduction est déduite directement sur la facture chez un réparateur labellisé QualiRépar.</p>
-        <p style={{ marginBottom: 6 }}><strong>Conditions :</strong> réparateur labellisé QualiRépar, appareil hors garantie constructeur. Aucune démarche : la réduction s'applique automatiquement à la caisse.</p>
-        <p><strong>Appareils éligibles :</strong> smartphones, tablettes, ordinateurs, TV, consoles, électroménager, aspirateurs, machines à café, vélos électriques, etc.</p>
-      </div>
-    </div>
-
-    {/* Maillage interne — guides par type */}
-    <div style={{ background: "#F8FAFC", borderRadius: 8, border: "1px solid #E5E3DE", padding: "18px 20px", marginBottom: 28 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 10 }}>Guides par type de produit</h3>
-      <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 12, lineHeight: 1.5 }}>Consultez nos recommandations spécifiques : symptômes, pannes courantes et verdict selon le produit.</p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {[
-          { catId: "electromenager", productType: "Lave-linge" },
-          { catId: "electromenager", productType: "Lave-vaisselle" },
-          { catId: "electromenager", productType: "Réfrigérateur" },
-          { catId: "electromenager", productType: "Sèche-linge" },
-          { catId: "electromenager", productType: "Four" },
-          { catId: "electromenager", productType: "Plaque induction" },
-          { catId: "smartphones", productType: "Smartphone" },
-          { catId: "consoles", productType: "Console de salon" },
-          { catId: "plomberie", productType: "Chauffe-eau" },
-          { catId: "ordinateurs", productType: "PC Portable" },
-        ].map(({ catId, productType }) => (
-          <button key={productType} type="button" onClick={() => onNav("cat-type", { catId, productType })} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #E0DDD5", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer", fontFamily: F }} onMouseEnter={e => { e.currentTarget.style.background = ACCENT + "12"; e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = ACCENT; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E0DDD5"; e.currentTarget.style.color = "#374151"; }}>{productType}</button>
-        ))}
-      </div>
-    </div>
-
-    {/* CTA */}
-    <div style={{ textAlign: "center", padding: "24px 20px", background: `linear-gradient(135deg, ${ACCENT}, ${GREEN})`, borderRadius: 10 }}>
-      <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Testez Compare. sur votre appareil</h3>
-      <p style={{ fontSize: 13, color: "#B7E4C7", marginBottom: 14 }}>Recherchez votre produit et découvrez le verdict en quelques secondes.</p>
-      <button onClick={() => onNav("home")} className="btn-cta" style={{ padding: "12px 28px", borderRadius: 10, border: "2px solid #fff", background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Comparer maintenant →</button>
-    </div>
-  </div>;
-}
-
-// ─── ABOUT PAGE ───
-function AboutPage({ onNav }) {
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 660, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>À propos</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>À propos de Compare.</h1></div>
-    <div style={{ fontSize: 14, color: "#374151", lineHeight: 1.8 }}>
-      <p style={{ marginBottom: 12 }}>Basés à Paris, nous avons créé Compare. pour répondre à une question que tout le monde se pose : <strong>réparer, acheter d’occasion ou racheter neuf ?</strong> Pas de réponse toute faite — tout dépend de la panne, de l’âge de l’appareil et du coût.</p>
-      <p style={{ marginBottom: 12 }}>Notre objectif : vous donner les éléments pour trancher en 30 secondes. Coûts indicatifs, verdict clair, liens vers les tutoriels, pièces et marchands. Que vous soyez bricoleur ou que vous préfériez confier à un pro, vous savez où vous en êtes.</p>
-      <p style={{ marginBottom: 12 }}>Un appareil réparé, c’est un appareil de moins à produire et à recycler. Chaque réparation compte — et chaque euro économisé aussi.</p>
-    </div>
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 20 }}>
-      {[{ n: ITEMS.length + "+", l: "Produits référencés" }, { n: CATS.length, l: "Catégories" }, { n: "100%", l: "Gratuit" }].map((s, i) =>
-        <div key={i} style={{ textAlign: "center", padding: 16, background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5" }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: ACCENT }}>{s.n}</div>
-          <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{s.l}</div>
-        </div>
-      )}
-    </div>
-  </div>;
-}
-
-// ─── CONTACT PAGE ───
-function ContactPage({ onNav }) {
-  const [sent, setSent] = useState(false);
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 660, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Contact</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Contact</h1></div>
-    {sent ? <div style={{ textAlign: "center", padding: 40, background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5" }}>
-      <div style={{ width: 54, height: 54, borderRadius: 16, background: GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
-        <Icon name="check" s={28} color={GREEN} />
-      </div>
-      <p style={{ fontSize: 15, fontWeight: 600 }}>Message envoyé !</p>
-      <p style={{ fontSize: 13, color: "#6B7280", marginTop: 4 }}>Nous vous répondons sous 24h.</p>
-    </div> : <div style={{ background: "#fff", borderRadius: 8, padding: 24, border: "1px solid #E0DDD5" }}>
-      <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 14 }}>Une question, une suggestion, un produit à ajouter ? Écrivez-nous.</p>
-      <input placeholder="Votre email" style={{ width: "100%", padding: "11px 14px", borderRadius: 6, border: "1.5px solid #D1D5DB", fontSize: 14, fontFamily: F, marginBottom: 8, outline: "none" }} />
-      <textarea placeholder="Votre message..." style={{ width: "100%", padding: "11px 14px", borderRadius: 6, border: "1.5px solid #D1D5DB", fontSize: 14, fontFamily: F, marginBottom: 12, outline: "none", minHeight: 80, resize: "vertical" }} />
-      <button onClick={() => setSent(true)} style={{ width: "100%", padding: 12, borderRadius: 6, border: "none", background: ACCENT, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: F }}>Envoyer</button>
-      <p style={{ fontSize: 12, color: "#999", marginTop: 8 }}>Ou directement : <a href="mailto:compare.webfr@gmail.com" style={{ color: ACCENT, fontWeight: 600 }}>compare.webfr@gmail.com</a></p>
-    </div>}
   </div>;
 }
 
