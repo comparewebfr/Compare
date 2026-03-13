@@ -15,6 +15,7 @@ const nextConfig = {
       { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
       { protocol: "https", hostname: "picsum.photos", pathname: "/**" },
       { protocol: "https", hostname: "logo.clearbit.com", pathname: "/**" },
+      { protocol: "https", hostname: "www.google.com", pathname: "/s2/favicons" },
       { protocol: "https", hostname: "*.supabase.co", pathname: "/**" },
       { protocol: "https", hostname: "encrypted-tbn1.gstatic.com", pathname: "/**" },
       { protocol: "https", hostname: "store.storeimages.cdn-apple.com", pathname: "/**" },

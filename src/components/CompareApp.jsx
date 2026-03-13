@@ -27,7 +27,7 @@ import { PRODUCT_IMAGES } from "../data/product-images";
 import { PRODUCT_TYPE_IMAGES } from "../data/product-type-images";
 import { ACCENT, GREEN, AMBER, W, F, CSS } from "../lib/constants";
 import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEmail, subscribeToAuth, logout } from "../lib/firebase";
-import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL } from "../lib/data";
+import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL, BRAND_LOGOS } from "../lib/data";
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, buildSeo, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery, getSmartReplacementRecommendation } from "../lib/helpers";
 import { getOffersForNeuf, getOffersForOcc, getOffersForParts } from "../lib/supabase-queries";
 import { getProductSlug } from "../lib/routes";
@@ -178,6 +178,25 @@ function RetailerLogo({ r, size = 44, className }) {
   }
   return (
     <Image src={r.logoUrl} alt={r.n} onError={() => setHasError(true)} width={size} height={size} sizes={`${size}px`} className={className} style={{ width: size, height: size, borderRadius: 10, objectFit: "contain", background: bg, flexShrink: 0 }} />
+  );
+}
+
+/** Logo de marque — Google Favicon (gratuit, fiable) ; fallback initiales si échec */
+function BrandLogo({ brand, size = 48 }) {
+  const [hasError, setHasError] = useState(false);
+  useEffect(() => setHasError(false), [brand]);
+  const domain = BRAND_LOGOS[brand] || (brand ? `${String(brand).toLowerCase().replace(/\s/g, "")}.com` : null);
+  const initials = (brand || "?").slice(0, 2).toUpperCase();
+  const fallback = (
+    <div style={{ width: size, height: size, borderRadius: 10, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #E5E7EB", flexShrink: 0 }}>
+      <span style={{ fontSize: Math.max(10, size * 0.25), fontWeight: 800, color: "#9CA3AF" }}>{initials}</span>
+    </div>
+  );
+  if (!domain || hasError) return fallback;
+  const sz = Math.min(256, Math.max(32, size * 2));
+  const src = `https://www.google.com/s2/favicons?domain=${domain}&sz=${sz}`;
+  return (
+    <Image src={src} alt={brand} onError={() => setHasError(true)} width={size} height={size} sizes={`${size}px`} style={{ width: size, height: size, borderRadius: 10, objectFit: "contain", border: "1px solid #E5E7EB", flexShrink: 0, background: "#fff" }} />
   );
 }
 
@@ -1383,16 +1402,15 @@ function CategoryPage({ catId, onNav, initialProductType, initialBrandSlug }) {
       {isBrandFirst && !selBrand && !selType && brands.length > 3 && <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 10 }}>Choisir une marque</div>
         <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
-          {brands.slice(0, 8).map(b => {
-            const sample = items.filter(i => i.brand === b.name)[0];
-            return <div key={b.name} onClick={() => onNav("cat-brand", { catId, productType: null, brand: b.name })} style={{ background: "#fff", border: "1px solid #E0DDD5", borderRadius: 8, padding: "16px 12px", cursor: "pointer", textAlign: "center", transition: "all .2s" }}
+          {brands.slice(0, 8).map(b => (
+            <div key={b.name} onClick={() => onNav("cat-brand", { catId, productType: null, brand: b.name })} style={{ background: "#fff", border: "1px solid #E0DDD5", borderRadius: 8, padding: "16px 12px", cursor: "pointer", textAlign: "center", transition: "all .2s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0DDD5"; e.currentTarget.style.transform = "none"; }}>
-              <ProductImg brand={b.name} item={sample} size={48} />
+              <BrandLogo brand={b.name} size={48} />
               <div style={{ fontWeight: 700, fontSize: 13, color: "#111", marginTop: 6 }}>{b.name}</div>
               <div style={{ fontSize: 11, color: "#9CA3AF" }}>{b.count} produit{b.count > 1 ? "s" : ""}</div>
-            </div>;
-          })}
+            </div>
+          ))}
         </div>
       </div>}
 
