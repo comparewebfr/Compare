@@ -128,8 +128,12 @@ function ProductImg({ brand, item, size = 48, priorityUrl: priorityUrlProp, expa
   if (!item || step === 3) return fallbackDiv;
   if (step === 0 && !src) return fallbackDiv;
   const objectFit = priorityUrl && step === 0 ? "contain" : "cover";
-  const imgEl = (
-    <Image src={src} alt={`Produit : ${item?.brand || ""} ${item?.name || ""}`.trim()} onError={onError} loading="lazy" width={size} height={size} sizes={`${size}px`} style={{ width: size, height: size, borderRadius: 10, objectFit, border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" }} />
+  const imgStyle = { width: size, height: size, borderRadius: 10, objectFit, border: "1px solid #E5E7EB", flexShrink: 0, background: "#F3F4F6" };
+  const alt = `Produit : ${item?.brand || ""} ${item?.name || ""}`.trim();
+  const imgEl = src.startsWith("http") ? (
+    <img src={src} alt={alt} onError={onError} loading="lazy" width={size} height={size} style={imgStyle} />
+  ) : (
+    <Image src={src} alt={alt} onError={onError} loading="lazy" width={size} height={size} sizes={`${size}px`} style={imgStyle} />
   );
   if (expandable && lightbox && src) {
     return (
