@@ -697,27 +697,27 @@ export const CHIP_TO_PRODUCT = {
 }
 
 export const POPULAR_SEARCHES = [
-  { label: "iPhone 13", intent: "Écran cassé", brand: "Apple", name: "iPhone 13" },
-  { label: "Galaxy S24", intent: "Batterie HS", brand: "Samsung", name: "Galaxy S24" },
-  { label: "PlayStation 5 Slim", intent: "Ne s'allume plus", brand: "Sony", name: "PlayStation 5 Slim" },
+  { label: "iPhone 13", intent: "Batterie usée", brand: "Apple", name: "iPhone 13" },
+  { label: "Galaxy S24", intent: "Écran cassé", brand: "Samsung", name: "Galaxy S24" },
+  { label: "PlayStation 5 Slim", intent: "Ventilateur bruyant", brand: "Sony", name: "PlayStation 5 Slim" },
   { label: "Lave-linge : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Lave-linge" },
   { label: "MacBook Air M3", intent: "Batterie usée", brand: "Apple", name: "MacBook Air M3 13\"" },
   { label: "Lave-vaisselle : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Lave-vaisselle" },
   { label: "Réfrigérateur : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Réfrigérateur" },
   { label: "Plaque induction : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Plaque induction" },
   { label: "OLED C4", intent: "Dalle abîmée", brand: "LG", name: "OLED 55\" C4" },
-  { label: "AirPods Pro", intent: "Son défaillant", brand: "Apple", name: "AirPods Pro 2" },
+  { label: "AirPods Pro", intent: "Grille / mesh sale", brand: "Apple", name: "AirPods Pro 2" },
 ];
 
 /** Recommandations pour utilisateurs sur iPhone/iPad — écosystème Apple en priorité */
 export const POPULAR_SEARCHES_IPHONE = [
-  { label: "iPhone 15", intent: "Écran cassé", brand: "Apple", name: "iPhone 15" },
-  { label: "iPhone 14", intent: "Batterie HS", brand: "Apple", name: "iPhone 14" },
-  { label: "iPhone 13", intent: "Écran cassé", brand: "Apple", name: "iPhone 13" },
+  { label: "iPhone 15", intent: "Batterie usée", brand: "Apple", name: "iPhone 15" },
+  { label: "iPhone 14", intent: "Écran cassé", brand: "Apple", name: "iPhone 14" },
+  { label: "iPhone 13", intent: "Batterie usée", brand: "Apple", name: "iPhone 13" },
   { label: "iPhone 16", intent: "Batterie usée", brand: "Apple", name: "iPhone 16" },
   { label: "MacBook Air M3", intent: "Batterie usée", brand: "Apple", name: "MacBook Air M3 13\"" },
   { label: "iPad Pro", intent: "Écran cassé", brand: "Apple", name: "iPad Pro M4 13\"" },
-  { label: "AirPods Pro", intent: "Son défaillant", brand: "Apple", name: "AirPods Pro 2" },
+  { label: "AirPods Pro", intent: "Grille / mesh sale", brand: "Apple", name: "AirPods Pro 2" },
   { label: "Lave-linge : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Lave-linge" },
   { label: "Apple Watch", intent: "Batterie usée", brand: "Apple", name: "Apple Watch Series 10" },
   { label: "Lave-vaisselle : réparer ou remplacer", type: "general", catId: "electromenager", productType: "Lave-vaisselle" },

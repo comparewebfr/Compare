@@ -2991,12 +2991,13 @@ export default function App() {
               const item = findProductByPopular({ brand: entry.brand, name: entry.name });
               if (!item) return null;
               const iss = getIssues(item);
-              const v = getVerdict([iss[0]], item);
+              const issue = iss.find(i => i.name === entry.intent || (entry.intent && i.name.toLowerCase().includes(entry.intent.toLowerCase().split(/[\s/]+/)[0]))) || iss[0];
+              const v = getVerdict([issue], item);
               return <Card key={item.id} onClick={() => nav("compare", item.id)} className="popular-card-mobile" style={{ padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, minHeight: 56 }}>
                 <ProductImg brand={item.brand} item={item} size={48} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.brand} {item.name}</div>
-                  <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{entry.intent} · {iss[0].repairMin}–{iss[0].repairMax} €</div>
+                  <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{entry.intent} · {issue.repairMin}–{issue.repairMax} €</div>
                 </div>
                 <span style={{ flexShrink: 0 }}><Badge color={v.color}>{v.label}</Badge></span>
               </Card>;
