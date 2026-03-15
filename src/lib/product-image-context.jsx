@@ -18,12 +18,19 @@ export function ProductImageProvider({ children }) {
     if (cache[slug] !== undefined) return cache[slug];
     if (pending[slug]) return pending[slug];
 
-    const promise = getProductPrimaryImageBySlug(slug).then((url) => {
-      cache[slug] = url ?? null;
-      delete pending[slug];
-      setVersion((v) => v + 1);
-      return cache[slug];
-    });
+    const promise = getProductPrimaryImageBySlug(slug)
+      .then((url) => {
+        cache[slug] = url ?? null;
+        delete pending[slug];
+        setVersion((v) => v + 1);
+        return cache[slug];
+      })
+      .catch(() => {
+        cache[slug] = null;
+        delete pending[slug];
+        setVersion((v) => v + 1);
+        return null;
+      });
     pending[slug] = promise;
     return promise;
   }, []);
@@ -58,6 +65,8 @@ export function useProductImage(item) {
     let cancelled = false;
     ctx.getImageUrl(slug).then((u) => {
       if (!cancelled) setUrl(u);
+    }).catch(() => {
+      if (!cancelled) setUrl(null);
     });
     return () => { cancelled = true; };
   }, [ctx, slug]);
