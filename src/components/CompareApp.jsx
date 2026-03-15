@@ -459,10 +459,11 @@ function BannerCarousel({ banners, onNav }) {
 }
 
 // ─── HERO ───
+// Images produit : iPhone 16 Pro, PlayStation 5, lave-linge (Unsplash)
 const HERO_BANNERS = (W, ACCENT, GREEN) => [
-  { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "/banner-hero.jpg", title: "Réparer ou remplacer ? La réponse en 30 secondes", sub: "Comparez réparation, reconditionné et neuf pour smartphones, électroménager, consoles…", catId: "smartphones", icon: "smartphone", dark: false },
-  { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=480&q=70", title: "Console en panne ? Ne la jetez pas tout de suite", sub: "Ventilateur, lecteur disque, alimentation : beaucoup de pannes se réparent. Comparez avant de racheter.", catId: "consoles", icon: "gamepad", dark: true },
-  { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=480&q=70", title: "Lave-linge, four, plaque : réparer ou changer ?", sub: "Fuite, ne chauffe plus, fait du bruit : symptômes, coûts indicatifs et verdict selon votre panne.", catId: "electromenager", icon: "kitchen", dark: false },
+  { bg: `linear-gradient(135deg, ${W} 30%, #E8F5E9)`, image: "https://images.unsplash.com/photo-1727093493864-0bcbd16c7e6d?w=1200&q=75&auto=format&fit=crop&ixlib=rb-4.1.0", title: "Réparer ou remplacer ? La réponse en 30 secondes", sub: "Comparez réparation, reconditionné et neuf pour smartphones, électroménager, consoles…", catId: "smartphones", icon: "smartphone", dark: false },
+  { bg: `linear-gradient(135deg, ${ACCENT} 30%, ${GREEN})`, image: "https://images.unsplash.com/photo-1752262526779-bd65a9b83c25?w=1200&q=75&auto=format&fit=crop&ixlib=rb-4.1.0", title: "Console en panne ? Ne la jetez pas tout de suite", sub: "Ventilateur, lecteur disque, alimentation : beaucoup de pannes se réparent. Comparez avant de racheter.", catId: "consoles", icon: "gamepad", dark: true },
+  { bg: `linear-gradient(135deg, ${W} 30%, #FDE8CD)`, image: "https://images.unsplash.com/photo-1628843226223-989e20810393?w=1200&q=75&auto=format&fit=crop&ixlib=rb-4.1.0", title: "Lave-linge, four, plaque : réparer ou changer ?", sub: "Fuite, ne chauffe plus, fait du bruit : symptômes, coûts indicatifs et verdict selon votre panne.", catId: "electromenager", icon: "kitchen", dark: false },
 ];
 function Hero({ onSearch, onNav, popularSearches = POPULAR_SEARCHES }) {
   const [q, setQ] = useState(""); const [show, setShow] = useState(false); const [noMatchMsg, setNoMatchMsg] = useState(false);
