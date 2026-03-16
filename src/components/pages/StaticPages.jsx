@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Icon, Logo, Chev } from "../shared";
 import { ACCENT, GREEN, AMBER, F } from "../../lib/constants";
 import { ITEMS, CATS, FAQ_QUESTIONS } from "../../lib/data";
+import guideStyles from "./Guide.module.css";
 
 // ─── FAQ ───
 export function FaqPage({ onNav }) {
@@ -44,195 +45,215 @@ export function LegalPage({ onNav }) {
 
 // ─── AVANTAGES PAGE ───
 export function AdvantagesPage({ onNav }) {
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Avantages</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Les avantages de la réparation</h1></div>
-    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>Réparer plutôt que remplacer, c'est souvent le meilleur choix : économies, durée de vie prolongée, impact écologique. Voici pourquoi.</p>
-
-    <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 14 }}>Pourquoi réparer ?</h2>
-    <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
-      {[
-        { icon: "money", title: "Économies réelles", desc: "Une réparation coûte souvent 50 à 200 € — bien moins qu'un remplacement (400 à 1000 € pour un smartphone ou un lave-linge). Vous gardez un appareil fonctionnel sans vous ruiner." },
-        { icon: "clock", title: "Durée de vie prolongée", desc: "Un appareil bien réparé peut tenir encore plusieurs années. Vous maximisez votre investissement initial au lieu de racheter trop tôt." },
-        { icon: "shield", title: "Bonus QualiRépar", desc: "L'État déduit 15 à 60 € directement chez un réparateur labellisé. Aucune démarche — la réduction s'applique sur la facture." },
-        { icon: "tool", title: "Apprendre en faisant", desc: "Beaucoup de pannes (batterie, joint, filtre) se réparent en réparation autonome avec un tutoriel. Une compétence utile pour la suite." },
-      ].map((a, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
-        <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-          <Icon name={a.icon} s={18} color={ACCENT} />
+  const advantages = [
+    { icon: "money", title: "Économies réelles", desc: "Une réparation coûte souvent 50 à 200 € — bien moins qu'un remplacement (400 à 1000 € pour un smartphone ou un lave-linge). Vous gardez un appareil fonctionnel sans vous ruiner.", highlight: "50–200 € vs 400–1000 €" },
+    { icon: "clock", title: "Durée de vie prolongée", desc: "Un appareil bien réparé peut tenir encore plusieurs années. Vous maximisez votre investissement initial au lieu de racheter trop tôt.", highlight: "+ plusieurs années" },
+    { icon: "shield", title: "Bonus QualiRépar", desc: "L'État déduit 15 à 60 € directement chez un réparateur labellisé. Aucune démarche — la réduction s'applique sur la facture.", highlight: "15–60 € déduits" },
+    { icon: "tool", title: "Apprendre en faisant", desc: "Beaucoup de pannes (batterie, joint, filtre) se réparent en réparation autonome avec un tutoriel. Une compétence utile pour la suite.", highlight: "DIY possible" },
+  ];
+  return (
+    <div className={`page-enter ${guideStyles.guide}`}>
+      <header className={guideStyles.hero}>
+        <nav className={guideStyles.breadcrumb} aria-label="Fil d'Ariane">
+          <button type="button" className={guideStyles.breadcrumbBtn} onClick={() => onNav("home")}>Accueil</button>
+          <Chev />
+          <span>Avantages</span>
+        </nav>
+        <div className={guideStyles.heroContent}>
+          <h1 className={guideStyles.heroTitle}>Les avantages de la réparation</h1>
+          <p className={guideStyles.heroSubtitle}>Économies, durée de vie prolongée, impact écologique. Voici pourquoi réparer est souvent le meilleur choix.</p>
         </div>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 6 }}>{a.title}</h3>
-        <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>{a.desc}</p>
-      </div>)}
-    </div>
+      </header>
+      <main className={guideStyles.content}>
+        <div className={guideStyles.contentInner}>
+          <h2 className={guideStyles.sectionTitle}>Pourquoi réparer ?</h2>
+          <div className={guideStyles.advantageGrid}>
+            {advantages.map((a, i) => (
+              <div key={i} className={guideStyles.advantageCard}>
+                <div className={guideStyles.advantageIcon}><Icon name={a.icon} s={24} color={ACCENT} /></div>
+                <span className={guideStyles.advantageHighlight}>{a.highlight}</span>
+                <h3 className={guideStyles.advantageTitle}>{a.title}</h3>
+                <p className={guideStyles.advantageDesc}>{a.desc}</p>
+              </div>
+            ))}
+          </div>
 
-    <div style={{ background: GREEN + "10", borderRadius: 10, border: `1px solid ${GREEN}30`, padding: "20px 22px", marginBottom: 28 }}>
-      <h2 style={{ fontSize: 17, fontWeight: 800, color: GREEN, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="leaf" s={20} color={GREEN} /> Bon pour la planète ?
-      </h2>
-      <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.8, marginBottom: 10 }}>
-        Oui. Réparer réduit les déchets et les émissions de CO₂. Chaque appareil réparé, c'est un appareil de moins à produire et à recycler.
-      </p>
-      <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>
-        Exemples : réparer un smartphone évite environ 70 kg de CO₂ ; un lave-linge, ~200 kg. L'impact est concret, sans être miraculeux — c'est une contribution parmi d'autres gestes du quotidien.
-      </p>
-    </div>
+          <div className={`${guideStyles.tipBlock} ${guideStyles.tipGreen} ${guideStyles.planetBlock}`}>
+            <h3 className={guideStyles.tipTitle}><Icon name="leaf" s={20} color={GREEN} /> Bon pour la planète ?</h3>
+            <p className={guideStyles.planetLead}>Oui. Réparer réduit les déchets et les émissions de CO₂. Chaque appareil réparé, c'est un appareil de moins à produire et à recycler.</p>
+            <div className={guideStyles.planetExamples}>
+              <span>Smartphone : ~70 kg CO₂ évités</span>
+              <span>Lave-linge : ~200 kg CO₂ évités</span>
+            </div>
+            <p className={guideStyles.planetNote}>L'impact est concret — une contribution parmi d'autres gestes du quotidien.</p>
+          </div>
 
-    <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 16, lineHeight: 1.6 }}>Consultez aussi notre <button type="button" onClick={() => onNav("repair-guide")} style={{ background: "none", border: "none", padding: 0, font: "inherit", color: ACCENT, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>guide réparer ou racheter</button> pour les critères de décision détaillés.</p>
+          <p className={guideStyles.advantageLink}>Consultez aussi notre <button type="button" onClick={() => onNav("repair-guide")} className={guideStyles.advantageLinkBtn}>guide réparer ou racheter</button> pour les critères de décision détaillés.</p>
 
-    <div style={{ textAlign: "center", padding: "24px 20px", background: `linear-gradient(135deg, ${ACCENT}, ${GREEN})`, borderRadius: 10 }}>
-      <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Comparez pour votre appareil</h3>
-      <p style={{ fontSize: 13, color: "#B7E4C7", marginBottom: 14 }}>Découvrez si la réparation est le meilleur choix pour vous.</p>
-      <button onClick={() => onNav("home")} className="btn-cta" style={{ padding: "12px 28px", borderRadius: 10, border: "2px solid #fff", background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Comparer maintenant →</button>
+          <div className={guideStyles.ctaBlock}>
+            <h3 className={guideStyles.ctaTitle}>Comparez pour votre appareil</h3>
+            <p className={guideStyles.ctaSub}>Découvrez si la réparation est le meilleur choix pour vous.</p>
+            <button type="button" onClick={() => onNav("home")} className={guideStyles.ctaBtn}>Comparer maintenant →</button>
+          </div>
+        </div>
+      </main>
     </div>
-  </div>;
+  );
 }
 
-// ─── GUIDE PAGE ───
+// ─── GUIDE PAGE (Comment ça marche) ───
 export function GuidePage({ onNav }) {
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Comment ça marche</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Comment ça marche ?</h1></div>
-    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>Compare. vous aide à trancher : réparer, racheter d'occasion ou remplacer par du neuf. En 3 étapes, sans inscription.</p>
-
-    <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 32 }}>
-      {[
-        { n: "1", icon: "search", title: "Recherchez votre appareil", desc: `Tapez le nom de votre produit parmi nos ${ITEMS.length} références : iPhone, MacBook, lave-linge Bosch, PS5, chauffe-eau… Si votre modèle n'apparaît pas, suggérez-le via la page Contact.`, color: GREEN },
-        { n: "2", icon: "chart", title: "Comparez les 3 options", desc: "Indiquez votre panne (écran cassé, batterie HS, fuite…). Compare. estime le coût de réparation, le prix reconditionné et le prix neuf. Un verdict vous indique la solution la plus logique.", color: AMBER },
-        { n: "3", icon: "check", title: "Passez à l'action", desc: "Accédez aux tutoriels vidéo, aux pièces détachées ou aux offres des marchands. Vous savez combien vous économisez et quelle option fait sens pour votre situation.", color: ACCENT },
-      ].map((s, i) => <div key={i} style={{ display: "flex", gap: 18, padding: "24px 0", borderBottom: i < 2 ? "1px solid #E0DDD5" : "none", alignItems: "flex-start" }}>
-        <div style={{ width: 56, height: 56, borderRadius: 12, background: s.color + "12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
-          <Icon name={s.icon} s={26} color={s.color} />
-          <div style={{ position: "absolute", top: -6, left: -6, width: 22, height: 22, borderRadius: 22, background: s.color, color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.n}</div>
+  const steps = [
+    { n: "1", icon: "search", title: "Recherchez", desc: `Tapez le nom de votre appareil (iPhone, MacBook, lave-linge…). ${ITEMS.length}+ références. Modèle absent ? Suggérez-le via Contact.`, color: GREEN },
+    { n: "2", icon: "chart", title: "Comparez", desc: "Indiquez la panne. Compare. affiche réparation, reconditionné et neuf côte à côte, avec un verdict clair.", color: AMBER },
+    { n: "3", icon: "check", title: "Agissez", desc: "Tutoriels vidéo, pièces détachées, offres marchands. Vous savez quoi faire en 30 secondes.", color: ACCENT },
+  ];
+  const benefits = [
+    { icon: "money", title: "Économies", desc: "Jusqu'à 80% vs neuf" },
+    { icon: "clock", title: "Rapidité", desc: "Décision en 30 s" },
+    { icon: "leaf", title: "Écologie", desc: "Moins de CO₂" },
+    { icon: "tool", title: "Tutoriels", desc: "Vidéos par panne" },
+    { icon: "chart", title: "Transparence", desc: "3 options comparées" },
+    { icon: "shield", title: "QualiRépar", desc: "15–60 € d'aide" },
+  ];
+  return (
+    <div className={`page-enter ${guideStyles.guide}`}>
+      <header className={guideStyles.hero}>
+        <nav className={guideStyles.breadcrumb} aria-label="Fil d'Ariane">
+          <button type="button" className={guideStyles.breadcrumbBtn} onClick={() => onNav("home")}>Accueil</button>
+          <Chev />
+          <span>Comment ça marche</span>
+        </nav>
+        <div className={guideStyles.heroContent}>
+          <h1 className={guideStyles.heroTitle}>Comment ça marche ?</h1>
+          <p className={guideStyles.heroSubtitle}>Réparer, occasion ou neuf ? En 3 étapes, sans inscription.</p>
         </div>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111", marginBottom: 6 }}>{s.title}</h3>
-          <p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.7 }}>{s.desc}</p>
+      </header>
+      <main className={guideStyles.content}>
+        <div className={guideStyles.contentInner}>
+          <h2 className={guideStyles.sectionTitle}>3 étapes simples</h2>
+          {steps.map((s, i) => (
+            <div key={i} className={guideStyles.stepCard}>
+              <div className={guideStyles.stepNum} style={{ background: s.color }}>{s.n}</div>
+              <div>
+                <h3 className={guideStyles.stepTitle}>{s.title}</h3>
+                <p className={guideStyles.stepDesc}>{s.desc}</p>
+              </div>
+            </div>
+          ))}
+          <h2 className={guideStyles.sectionTitle}>Ce que vous gagnez</h2>
+          <div className={guideStyles.benefitGrid}>
+            {benefits.map((f, i) => (
+              <div key={i} className={guideStyles.benefitCard}>
+                <div className={guideStyles.benefitIcon}><Icon name={f.icon} s={20} color={ACCENT} /></div>
+                <div className={guideStyles.benefitTitle}>{f.title}</div>
+                <div className={guideStyles.benefitDesc}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+          <div className={guideStyles.ctaBlock}>
+            <h3 className={guideStyles.ctaTitle}>Prêt à comparer ?</h3>
+            <p className={guideStyles.ctaSub}>Trouvez la meilleure option en quelques secondes.</p>
+            <button type="button" onClick={() => onNav("home")} className={guideStyles.ctaBtn}>Comparer maintenant →</button>
+          </div>
         </div>
-      </div>)}
+      </main>
     </div>
-
-    <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 14 }}>Ce que Compare. vous apporte</h2>
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }} className="grid-2">
-      {[
-        { icon: "money", title: "Économies réelles", desc: "Jusqu'à 80% d'économies vs le prix neuf" },
-        { icon: "clock", title: "Gain de temps", desc: "Décision en 30 secondes, pas des heures de recherche" },
-        { icon: "leaf", title: "Impact écologique", desc: "Chaque réparation = moins de CO₂ et de déchets" },
-        { icon: "tool", title: "Tutoriels intégrés", desc: "Liens YouTube et guides en ligne pour chaque panne" },
-        { icon: "chart", title: "Comparaison transparente", desc: "Prix réparation, occasion et neuf côte à côte" },
-        { icon: "shield", title: "Bonus QualiRépar", desc: "Jusqu'à 45€ d'aide de l'État sur les réparations" },
-      ].map((f, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, padding: 16, border: "1px solid #E0DDD5" }}>
-        <div style={{ width: 34, height: 34, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-          <Icon name={f.icon} s={18} color={ACCENT} />
-        </div>
-        <div style={{ fontWeight: 700, fontSize: 13, color: "#111", marginBottom: 2 }}>{f.title}</div>
-        <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>{f.desc}</div>
-      </div>)}
-    </div>
-
-    <div style={{ textAlign: "center", padding: "24px 20px", background: `linear-gradient(135deg, ${ACCENT}, ${GREEN})`, borderRadius: 10 }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><Logo s={40} /></div>
-      <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Prêt à comparer ?</h3>
-      <p style={{ fontSize: 13, color: "#B7E4C7", marginBottom: 14 }}>Trouvez la meilleure option pour votre appareil en quelques secondes.</p>
-      <button onClick={() => onNav("home")} className="btn-cta" style={{ padding: "12px 28px", borderRadius: 10, border: "2px solid #fff", background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Comparer maintenant →</button>
-    </div>
-  </div>;
+  );
 }
 
-// ─── REPAIR GUIDE PAGE ───
+// ─── REPAIR GUIDE PAGE (Réparer ou racheter) ───
 export function RepairGuidePage({ onNav }) {
-  return <div className="page-enter" style={{ fontFamily: F, maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 18, display: "flex", gap: 5, alignItems: "center" }}><span style={{ cursor: "pointer", color: "#111", fontWeight: 500 }} onClick={() => onNav("home")}>Accueil</span><Chev /><span>Guide</span></div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo s={48} /><h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", margin: 0 }}>Réparer ou racheter : le guide complet</h1></div>
-    <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.7 }}>Vous hésitez entre faire réparer votre appareil ou le remplacer ? Ce guide vous aide à prendre la bonne décision selon votre panne, l'âge de l'appareil et le coût.</p>
-
-    <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 12 }}>Les critères de décision</h2>
-    <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
-      {[
-        { icon: "money", title: "Le coût de réparation", desc: "Comparez le devis à la valeur d'un appareil neuf ou reconditionné. Une réparation peu coûteuse (pièce d'usure, panne courante) reste presque toujours rentable. Quand le devis s'approche du prix du neuf, le remplacement devient plus logique." },
-        { icon: "calendar", title: "L'âge de l'appareil", desc: "Un appareil récent a encore une longue durée de vie devant lui — la réparation maximise votre investissement. Au-delà de 7 à 10 ans, les pièces se raréfient et les modèles récents offrent souvent plus de performance ou d'économies d'énergie." },
-        { icon: "tool", title: "La difficulté technique", desc: "Batterie, filtre, joint : ces pannes sont souvent réparables en réparation autonome avec un tutoriel. Les interventions plus lourdes (carte électronique, démontage complexe) demandent un professionnel — pensez au bonus QualiRépar." },
-        { icon: "leaf", title: "L'impact écologique", desc: "Chaque appareil réparé, c'est un appareil de moins à produire et à recycler. Réparer un smartphone évite environ 70 kg de CO₂ ; un lave-linge, ~200 kg. L'impact est concret, sans être miraculeux." },
-      ].map((c, i) => <div key={i} style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "16px 18px" }}>
-        <div style={{ width: 36, height: 36, borderRadius: 12, background: ACCENT + "10", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-          <Icon name={c.icon} s={18} color={ACCENT} />
+  const criteria = [
+    { icon: "money", title: "Le coût", desc: "Réparation peu chère = souvent rentable. Devis proche du neuf = remplacement plus logique." },
+    { icon: "calendar", title: "L'âge", desc: "Appareil récent = réparer. Au-delà de 7–10 ans = pièces rares, modèles récents plus performants." },
+    { icon: "tool", title: "La difficulté", desc: "Batterie, joint, filtre = DIY possible. Carte électronique = pro (pensez QualiRépar)." },
+    { icon: "leaf", title: "L'impact", desc: "Réparer = moins de CO₂. Smartphone ~70 kg, lave-linge ~200 kg évités." },
+  ];
+  const productTypes = [
+    { catId: "electromenager", productType: "Lave-linge" },
+    { catId: "electromenager", productType: "Lave-vaisselle" },
+    { catId: "electromenager", productType: "Réfrigérateur" },
+    { catId: "electromenager", productType: "Four" },
+    { catId: "smartphones", productType: "Smartphone" },
+    { catId: "consoles", productType: "Console de salon" },
+    { catId: "plomberie", productType: "Chauffe-eau" },
+    { catId: "ordinateurs", productType: "PC Portable" },
+  ];
+  return (
+    <div className={`page-enter ${guideStyles.guide}`}>
+      <header className={guideStyles.hero}>
+        <nav className={guideStyles.breadcrumb} aria-label="Fil d'Ariane">
+          <button type="button" className={guideStyles.breadcrumbBtn} onClick={() => onNav("home")}>Accueil</button>
+          <Chev />
+          <span>Guide réparer ou racheter</span>
+        </nav>
+        <div className={guideStyles.heroContent}>
+          <h1 className={guideStyles.heroTitle}>Réparer ou racheter ?</h1>
+          <p className={guideStyles.heroSubtitle}>Les critères pour prendre la bonne décision selon votre panne et votre appareil.</p>
         </div>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 6 }}>{c.title}</h3>
-        <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7 }}>{c.desc}</p>
-      </div>)}
-    </div>
+      </header>
+      <main className={guideStyles.content}>
+        <div className={guideStyles.contentInner}>
+          <div className={guideStyles.criteriaSection}>
+            <h2 className={guideStyles.sectionTitle}>4 critères</h2>
+            <div className={guideStyles.criteriaGrid}>
+            {criteria.map((c, i) => (
+              <div key={i} className={guideStyles.criteriaCard}>
+                <div className={guideStyles.criteriaIcon}><Icon name={c.icon} s={24} color={ACCENT} /></div>
+                <h3 className={guideStyles.criteriaTitle}>{c.title}</h3>
+                <p className={guideStyles.criteriaDesc}>{c.desc}</p>
+              </div>
+            ))}
+            </div>
+          </div>
 
-    <div style={{ background: GREEN + "10", borderRadius: 8, border: `1px solid ${GREEN}30`, padding: "18px 20px", marginBottom: 16 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: GREEN, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="check" s={16} color={GREEN} /> Quand réparer ?
-      </h2>
-      <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}><strong>Devis raisonnable :</strong> quand la réparation reste bien en dessous du prix d'un neuf ou d'un reconditionné, c'est presque toujours le meilleur choix. Vous gardez un appareil fonctionnel et vous réalisez une vraie économie.</p>
-        <p style={{ marginBottom: 6 }}><strong>Panne simple et courante :</strong> écran cassé, batterie usée, pompe de vidange HS, joint de porte abîmé. Ces pannes sont fréquentes, bien documentées et les pièces circulent.</p>
-        <p style={{ marginBottom: 6 }}><strong>Appareil récent :</strong> un produit de moins de 3 à 5 ans a encore une longue durée de vie devant lui. La réparation maximise votre investissement initial.</p>
-        <p><strong>Pièces disponibles :</strong> si les pièces existent (Spareka, Amazon), la réparation est viable. Compare. vous aide à estimer le coût et à trouver les références.</p>
-      </div>
-    </div>
+          <div className={`${guideStyles.tipBlock} ${guideStyles.tipGreen}`}>
+            <h3 className={guideStyles.tipTitle}><Icon name="check" s={18} color={GREEN} /> Quand réparer ?</h3>
+            <ul className={guideStyles.tipList}>
+              <li>Devis raisonnable (bien en dessous du neuf/reconditionné)</li>
+              <li>Panne simple : écran, batterie, joint, pompe de vidange</li>
+              <li>Appareil récent (&lt; 3–5 ans)</li>
+              <li>Pièces disponibles (Spareka, Amazon)</li>
+            </ul>
+          </div>
 
-    <div style={{ background: "#DC262610", borderRadius: 8, border: "1px solid #DC262630", padding: "18px 20px", marginBottom: 16 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: "#DC2626", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="swap" s={16} color="#DC2626" /> Quand remplacer ?
-      </h2>
-      <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}><strong>Devis qui s'approche du neuf :</strong> quand la réparation coûte presque autant qu'un appareil neuf ou reconditionné, le remplacement devient plus logique. Le reconditionné offre souvent un bon compromis (garantie, prix réduit).</p>
-        <p style={{ marginBottom: 6 }}><strong>Pannes multiples :</strong> si votre appareil cumule plusieurs problèmes, le coût total peut vite dépasser le seuil de rentabilité. Un seul devis global vous aidera à trancher.</p>
-        <p style={{ marginBottom: 6 }}><strong>Appareil obsolète :</strong> au-delà de 7 à 10 ans, les pièces se raréfient. Les modèles récents sont souvent plus performants, plus économes ou plus sûrs.</p>
-        <p><strong>Carte mère ou composant critique HS :</strong> ces réparations sont coûteuses et la fiabilité n'est pas toujours garantie. Le remplacement est souvent plus rassurant.</p>
-      </div>
-    </div>
+          <div className={`${guideStyles.tipBlock} ${guideStyles.tipRed}`}>
+            <h3 className={guideStyles.tipTitle}><Icon name="swap" s={18} color="#DC2626" /> Quand remplacer ?</h3>
+            <ul className={guideStyles.tipList}>
+              <li>Devis proche du neuf ou reconditionné</li>
+              <li>Pannes multiples (coût total élevé)</li>
+              <li>Appareil obsolète (7–10 ans+)</li>
+              <li>Carte mère ou composant critique HS</li>
+            </ul>
+          </div>
 
-    <div style={{ background: AMBER + "10", borderRadius: 8, border: `1px solid ${AMBER}30`, padding: "18px 20px", marginBottom: 28 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: AMBER, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="recycle" s={16} color={AMBER} /> L'option reconditionné / occasion
-      </h2>
-      <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}>Quand la réparation coûte trop cher mais que le neuf vous semble excessif, le reconditionné fait souvent sens. Garanti 12 à 24 mois, testé et remis à neuf, il offre un appareil quasi-neuf à prix réduit. Très développé pour la tech (smartphones, consoles, PC), moins pour l'électroménager.</p>
-        <p>Compare. référence Back Market, Amazon Renewed, Rakuten et Cdiscount pour comparer les offres selon votre produit.</p>
-      </div>
-    </div>
+          <div className={`${guideStyles.tipBlock} ${guideStyles.tipAmber}`}>
+            <h3 className={guideStyles.tipTitle}><Icon name="recycle" s={18} color={AMBER} /> Reconditionné</h3>
+            <p className={guideStyles.tipText}>Quand la réparation coûte trop cher mais que le neuf semble excessif : reconditionné garanti 12–24 mois, quasi-neuf à prix réduit. Très développé pour la tech, moins pour l'électroménager. Compare. référence Back Market, Amazon Renewed, Rakuten, Cdiscount.</p>
+          </div>
 
-    <div style={{ background: "#fff", borderRadius: 8, border: "1px solid #E0DDD5", padding: "18px 20px", marginBottom: 28 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: ACCENT, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="shield" s={16} color={ACCENT} /> L'aide de l'État — Bonus QualiRépar
-      </h2>
-      <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 6 }}>L'État français propose une aide de <strong>15 à 60 €</strong> sur la réparation d'appareils électriques et électroniques. Le montant varie selon le produit (ex. : smartphone 25 €, lave-linge 50 €, TV 60 €). La réduction est déduite directement sur la facture chez un réparateur labellisé QualiRépar.</p>
-        <p style={{ marginBottom: 6 }}><strong>Conditions :</strong> réparateur labellisé QualiRépar, appareil hors garantie constructeur. Aucune démarche : la réduction s'applique automatiquement à la caisse.</p>
-        <p><strong>Appareils éligibles :</strong> smartphones, tablettes, ordinateurs, TV, consoles, électroménager, aspirateurs, machines à café, vélos électriques, etc.</p>
-      </div>
-    </div>
+          <div className={guideStyles.qualireparBlock}>
+            <h3 className={guideStyles.qualireparTitle}><Icon name="shield" s={18} color={ACCENT} /> Bonus QualiRépar</h3>
+            <p className={guideStyles.qualireparText}>Aide de l'État : <strong>15 à 60 €</strong> déduits sur la facture chez un réparateur labellisé. Smartphone 25 €, lave-linge 50 €, TV 60 €. Aucune démarche — réduction automatique à la caisse.</p>
+          </div>
 
-    <div style={{ background: "#F8FAFC", borderRadius: 8, border: "1px solid #E5E3DE", padding: "18px 20px", marginBottom: 28 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 10 }}>Guides par type de produit</h3>
-      <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 12, lineHeight: 1.5 }}>Consultez nos recommandations spécifiques : symptômes, pannes courantes et verdict selon le produit.</p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {[
-          { catId: "electromenager", productType: "Lave-linge" },
-          { catId: "electromenager", productType: "Lave-vaisselle" },
-          { catId: "electromenager", productType: "Réfrigérateur" },
-          { catId: "electromenager", productType: "Sèche-linge" },
-          { catId: "electromenager", productType: "Four" },
-          { catId: "electromenager", productType: "Plaque induction" },
-          { catId: "smartphones", productType: "Smartphone" },
-          { catId: "consoles", productType: "Console de salon" },
-          { catId: "plomberie", productType: "Chauffe-eau" },
-          { catId: "ordinateurs", productType: "PC Portable" },
-        ].map(({ catId, productType }) => (
-          <button key={productType} type="button" onClick={() => onNav("cat-type", { catId, productType })} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #E0DDD5", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer", fontFamily: F }} onMouseEnter={e => { e.currentTarget.style.background = ACCENT + "12"; e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = ACCENT; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E0DDD5"; e.currentTarget.style.color = "#374151"; }}>{productType}</button>
-        ))}
-      </div>
-    </div>
+          <h2 className={guideStyles.sectionTitle}>Guides par produit</h2>
+          <div className={guideStyles.pillWrap}>
+            {productTypes.map(({ catId, productType }) => (
+              <button key={productType} type="button" className={guideStyles.pill} onClick={() => onNav("cat-type", { catId, productType })}>{productType}</button>
+            ))}
+          </div>
 
-    <div style={{ textAlign: "center", padding: "24px 20px", background: `linear-gradient(135deg, ${ACCENT}, ${GREEN})`, borderRadius: 10 }}>
-      <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Testez Compare. sur votre appareil</h3>
-      <p style={{ fontSize: 13, color: "#B7E4C7", marginBottom: 14 }}>Recherchez votre produit et découvrez le verdict en quelques secondes.</p>
-      <button onClick={() => onNav("home")} className="btn-cta" style={{ padding: "12px 28px", borderRadius: 10, border: "2px solid #fff", background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: F }}>Comparer maintenant →</button>
+          <div className={guideStyles.ctaBlock}>
+            <h3 className={guideStyles.ctaTitle}>Testez sur votre appareil</h3>
+            <p className={guideStyles.ctaSub}>Recherchez et découvrez le verdict en quelques secondes.</p>
+            <button type="button" onClick={() => onNav("home")} className={guideStyles.ctaBtn}>Comparer maintenant →</button>
+          </div>
+        </div>
+      </main>
     </div>
-  </div>;
+  );
 }
 
 // ─── ABOUT PAGE ───
