@@ -382,7 +382,7 @@ function Navbar({ onNav, onSearch, user, onAuth, onMenu }) {
         {[0,1,2].map(i => <div key={i} style={{ width: 17, height: 2, background: "#fff", borderRadius: 1 }} />)}
       </button>
       <button type="button" onClick={() => onNav("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, font: "inherit" }} aria-label="Compare. - Retour à l'accueil">
-        <Image src="/logo.png" alt="" width={40} height={40} style={{ width: 40, height: 40, objectFit: "contain", borderRadius: "50%" }} />
+        <Image src="/logo.webp" alt="" width={40} height={40} style={{ width: 40, height: 40, objectFit: "contain", borderRadius: "50%" }} />
         <span className="hide-mobile" style={{ fontSize: 20, fontWeight: 800, color: W, letterSpacing: "-.03em" }}>Compare<span style={{ color: "#52B788" }}>.</span></span>
       </button>
     </div>
