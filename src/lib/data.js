@@ -770,7 +770,7 @@ export const BRAND_LOGOS = {
   Samsung: "samsung.com",
   Google: "google.com",
   Microsoft: "microsoft.com",
-  Nintendo: "nintendo.com",
+  Nintendo: "nintendo.co.jp",
   Dell: "dell.com",
   HP: "hp.com",
   Lenovo: "lenovo.com",
