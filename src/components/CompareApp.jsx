@@ -1157,11 +1157,12 @@ function RepairPage({ catId, productType, onNav }) {
           const partOff = [-0.05, 0, 0.08, 0.12];
           const issueSlug = slugify(iss.name);
           const offers = Array.isArray(partsOffers) ? partsOffers : [];
+          const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "");
           const findOfferForParts = (r) => {
             if (!offers.length) return null;
             const m = (o) => (o.merchant ?? o.retailer ?? "").toLowerCase();
             return offers.find(
-              (o) => m(o) && (m(o).includes(r.n.toLowerCase()) || r.n.toLowerCase().includes(m(o))) && ((o.issue_type ?? "").toLowerCase() === issueSlug || (o.issue_type ?? "").toLowerCase().replace(/_/g, "-") === issueSlug)
+              (o) => m(o) && (norm(m(o)).includes(norm(r.n)) || norm(r.n).includes(norm(m(o)))) && ((o.issue_type ?? "").toLowerCase() === issueSlug || (o.issue_type ?? "").toLowerCase().replace(/_/g, "-") === issueSlug)
             );
           };
           const retsWithPrice = retPcs.map((r, idx) => ({ r, price: Math.round(partBase * (1 + (partOff[idx] ?? 0))) }));
@@ -2256,9 +2257,10 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
 /** Associe merchant (Supabase) → retailer RET pour logo/couleur */
 function getRetailerForMerchant(merchant) {
   if (!merchant) return { n: "?", t: "", c: "#111", logoUrl: null };
-  const m = String(merchant).toLowerCase();
+  const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "");
+  const m = norm(String(merchant));
   const all = [...RET.neuf, ...RET.occ];
-  const match = all.find((r) => m.includes(r.n.toLowerCase()) || r.n.toLowerCase().includes(m));
+  const match = all.find((r) => m.includes(norm(r.n)) || norm(r.n).includes(m));
   return match || { n: merchant, t: "", c: "#111", logoUrl: null };
 }
 
@@ -2595,9 +2597,10 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {(isNeuf || isOcc) ? (() => {
             const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
+            const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "");
             const findOffer = (r) => offers.find((o) => {
               const m = (o.merchant ?? o.retailer ?? "").toLowerCase();
-              return m && (m.includes(r.n.toLowerCase()) || r.n.toLowerCase().includes(m));
+              return m && (norm(m).includes(norm(r.n)) || norm(r.n).includes(norm(m)));
             });
             const merged = retsWithPrice.map(({ r, price: fallbackPrice }) => {
               const offer = findOffer(r);
@@ -2661,11 +2664,12 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
           })() : (() => {
             const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
             const issueSlugs = (issues ?? []).map((i) => slugify(i.name));
+            const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "");
             const findOfferForParts = (r) => {
               if (!offers.length || !issueSlugs.length) return null;
               const m = (o) => (o.merchant ?? o.retailer ?? "").toLowerCase();
               return offers.find(
-                (o) => m(o) && (m(o).includes(r.n.toLowerCase()) || r.n.toLowerCase().includes(m(o))) && issueSlugs.some((s) => (o.issue_type ?? "").toLowerCase() === s || (o.issue_type ?? "").toLowerCase().replace(/_/g, "-") === s)
+                (o) => m(o) && (norm(m(o)).includes(norm(r.n)) || norm(r.n).includes(norm(m(o)))) && issueSlugs.some((s) => (o.issue_type ?? "").toLowerCase() === s || (o.issue_type ?? "").toLowerCase().replace(/_/g, "-") === s)
               );
             };
             const merged = sortedRets.map(({ r, price: fallbackPrice }) => {
