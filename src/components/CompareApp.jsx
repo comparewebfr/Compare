@@ -2948,7 +2948,8 @@ export default function App() {
         page.issue = findIssueBySlug(page.item, issueSlug);
         page.issues = page.issue ? [page.issue] : allIssues.slice(0, 1);
       } else if (pageType === "aff") {
-        page.issues = panneIds.length ? allIssues.filter(i => panneIds.includes(i.id)) : allIssues.slice(0, 1);
+        const matched = panneIds.length ? allIssues.filter(i => panneIds.includes(i.id)) : [];
+        page.issues = matched.length > 0 ? matched : allIssues.slice(0, 1);
       } else {
         page.issues = [];
       }
@@ -3037,7 +3038,7 @@ export default function App() {
         initialIssueId={page.issue?.id}
       />
     )}
-    {page.type === "aff" && <AffPage item={page.item} issues={page.issues} affType={page.affType} alts={page.alts} onNav={nav} />}
+    {page.type === "aff" && (page.item ? <AffPage item={page.item} issues={page.issues} affType={page.affType} alts={page.alts} onNav={nav} /> : <div style={{ padding: 80, textAlign: "center", fontFamily: F, color: "#6B7280" }}>Produit non trouvé</div>)}
     {page.type === "faq" && <FaqPage onNav={nav} />}
     {page.type === "legal" && <LegalPage onNav={nav} />}
     {page.type === "avantages" && <AdvantagesPage onNav={nav} />}
