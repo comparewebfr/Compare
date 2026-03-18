@@ -1,8 +1,44 @@
 /**
  * Fonctions de lecture Supabase — products, offers, product_assets
  * À adapter si le schéma de tes tables diffère
+ *
+ * Source des offres : manual (priorité) | awin_feed | import_script
+ * Priorité d'affichage : manuel exact > import exact > fallback > reste
  */
-import { getSupabase } from "./supabase";
+
+/** Offre manuelle (Amazon, etc.) — prioritaire, jamais écrasée par import */
+function isManualOffer(o) {
+  const s = (o.source ?? "").toLowerCase();
+  return !s || s === "manual";
+}
+
+/** Priorité pour tri : 0 = meilleur, 1 = manuel fallback, 2 = import exact, 3 = import fallback */
+function getOfferDisplayPriority(o) {
+  const manual = isManualOffer(o);
+  const exact = o.is_exact_match === true;
+  if (manual && exact) return 0;
+  if (manual) return 1;
+  if (exact) return 2;
+  return 3;
+}
+
+/** Inclut les offres produit principal + alternative (exclut part/accessory) */
+function isMainProductOffer(o) {
+  const kind = (o.offer_kind ?? "").toLowerCase();
+  if (!kind || kind === "main_product" || kind === "alternative_product") return true;
+  return false;
+}
+
+/** Inclut les offres pièces/accessoires dans la zone réparation */
+function isPartsOffer(o) {
+  const kind = (o.offer_kind ?? "").toLowerCase();
+  const c = (o.condition ?? o.product_condition ?? "").toLowerCase();
+  const partsConditions = ["parts", "pièces", "pieces", "reparation", "réparation"];
+  const condMatch = partsConditions.some((term) => c.includes(term));
+  if (kind === "part" || kind === "accessory" || kind === "service") return true;
+  if (condMatch) return true;
+  return false;
+}
 
 /** Récupère tous les produits */
 export async function getProducts() {
@@ -93,21 +129,35 @@ export async function getOffersForNeuf(productSlug) {
   const supabase = getSupabase();
   if (!supabase) return { data: [], error: new Error("Supabase non configuré") };
 
-  // 1. Produit par slug puis offres par product_id
+  // 1. Produit par slug puis offres : product_id exact OU fallback pour cette page
   const { data: product, error: productErr } = await getProductBySlug(productSlug);
   if (productErr || !product) return { data: [], error: productErr };
 
-  const { data: offers, error } = await supabase
+  const { data: directOffers, error: err1 } = await supabase
     .from("offers")
     .select("*")
     .eq("product_id", product.id);
-
+  const { data: fallbackOffers, error: err2 } = await supabase
+    .from("offers")
+    .select("*")
+    .eq("fallback_for_product_id", product.id);
+  const error = err1 || err2;
+  const offers = [...(directOffers ?? []), ...(fallbackOffers ?? [])];
   if (error) return { data: [], error };
 
-  const filtered = (offers ?? []).filter(
-    (o) => !o.condition || o.condition === "new" || o.product_condition === "new" || o.condition === "neuf"
-  );
-  const sorted = [...filtered].sort((a, b) => (Number(a.price_amount) ?? 99999) - (Number(b.price_amount) ?? 99999));
+  const filtered = (offers ?? []).filter((o) => {
+    if (o.is_hidden === true) return false;
+    const condOk = !o.condition || o.condition === "new" || o.product_condition === "new" || o.condition === "neuf";
+    if (!condOk) return false;
+    if (!isMainProductOffer(o)) return false;
+    return true;
+  });
+  const sorted = [...filtered].sort((a, b) => {
+    const pa = getOfferDisplayPriority(a);
+    const pb = getOfferDisplayPriority(b);
+    if (pa !== pb) return pa - pb;
+    return (Number(a.price_amount) ?? 99999) - (Number(b.price_amount) ?? 99999);
+  });
 
   return { data: sorted, error: null };
 }
@@ -133,6 +183,7 @@ export async function getOffersForParts(productSlug) {
 
   const partsConditions = ["parts", "pièces", "pieces", "reparation", "réparation"];
   const filtered = (offers ?? []).filter((o) => {
+    if (o.is_hidden === true) return false;
     const c = (o.condition ?? o.product_condition ?? "").toLowerCase();
     return partsConditions.some((term) => c.includes(term));
   });
@@ -151,21 +202,32 @@ export async function getOffersForOcc(productSlug) {
   const { data: product, error: productErr } = await getProductBySlug(productSlug);
   if (productErr || !product) return { data: [], error: productErr };
 
-  const { data: offers, error } = await supabase
+  const { data: directOffers, error: err1 } = await supabase
     .from("offers")
     .select("*")
     .eq("product_id", product.id);
-
+  const { data: fallbackOffers, error: err2 } = await supabase
+    .from("offers")
+    .select("*")
+    .eq("fallback_for_product_id", product.id);
+  const error = err1 || err2;
+  const offers = [...(directOffers ?? []), ...(fallbackOffers ?? [])];
   if (error) return { data: [], error };
 
   const occConditions = ["refurbished", "occasion", "occ", "reconditionné", "reconditionne"];
-  const filtered = (offers ?? []).filter(
-    (o) => {
-      const c = (o.condition ?? o.product_condition ?? "").toLowerCase();
-      return occConditions.some(term => c.includes(term));
-    }
-  );
-  const sorted = [...filtered].sort((a, b) => (Number(a.price_amount) ?? 99999) - (Number(b.price_amount) ?? 99999));
+  const filtered = (offers ?? []).filter((o) => {
+    if (o.is_hidden === true) return false;
+    const c = (o.condition ?? o.product_condition ?? "").toLowerCase();
+    if (!occConditions.some((term) => c.includes(term))) return false;
+    if (!isMainProductOffer(o)) return false;
+    return true;
+  });
+  const sorted = [...filtered].sort((a, b) => {
+    const pa = getOfferDisplayPriority(a);
+    const pb = getOfferDisplayPriority(b);
+    if (pa !== pb) return pa - pb;
+    return (Number(a.price_amount) ?? 99999) - (Number(b.price_amount) ?? 99999);
+  });
 
   return { data: sorted, error: null };
 }

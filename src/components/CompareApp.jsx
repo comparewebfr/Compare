@@ -1209,6 +1209,9 @@ function RepairPage({ catId, productType, onNav }) {
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                             <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{offerLabel}</span>
                             {isBest && price > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+                            {offer && (offer.is_fallback_model === true || offer.match_status === "fallback") && (
+                              <span style={{ fontSize: 9, fontWeight: 600, padding: "2px 6px", borderRadius: 4, background: "#FEF3C7", color: "#92400E", flexShrink: 0 }}>Alternative plus récente</span>
+                            )}
                           </div>
                           <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{subLabel}</div>
                         </div>
@@ -2645,6 +2648,9 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{r.n}</span>
                         {isBestPrice && price > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+                        {offer && (offer.is_fallback_model === true || offer.match_status === "fallback") && (
+                          <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 4, background: "#FEF3C7", color: "#92400E", flexShrink: 0 }}>Alternative plus récente</span>
+                        )}
                       </div>
                       <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
                     </div>
@@ -2721,6 +2727,9 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{offerLabel}</span>
                         {isBestPrice && price > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff", flexShrink: 0 }}>Meilleur prix</span>}
+                        {offer && (offer.is_fallback_model === true || offer.match_status === "fallback") && (
+                          <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 4, background: "#FEF3C7", color: "#92400E", flexShrink: 0 }}>Alternative plus récente</span>
+                        )}
                       </div>
                       <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subLabel}</div>
                     </div>
