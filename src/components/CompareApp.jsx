@@ -30,6 +30,7 @@ import { auth, signInWithGoogle, signInWithApple, signUpWithEmail, signInWithEma
 import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR_SEARCHES, POPULAR_SEARCHES_IPHONE, RET, LOGO_BG, TECH_CATS, WHEN_REPAIR_SPEC, PAGES_PRECISES, PAGES_GENERALES, ISS_TPL, BRAND_LOGOS, FAQ_QUESTIONS } from "../lib/data";
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery, getSmartReplacementRecommendation, getSeoProductName, getSeoQuestionPhrase } from "../lib/helpers";
 import { getOffersForNeuf, getOffersForOcc, getOffersForParts } from "../lib/supabase-queries";
+import { isSupabaseConfigured } from "../lib/supabase";
 import { getProductSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
 import { useImageLightbox } from "../lib/image-lightbox-context";
@@ -2293,9 +2294,13 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   useEffect(() => {
     if ((affType !== "neuf" && affType !== "occ" && affType !== "pcs") || !item) return;
     let cancelled = false;
+    const slug = getProductSlug(item);
     const fetchOffers = affType === "neuf" ? getOffersForNeuf : affType === "occ" ? getOffersForOcc : getOffersForParts;
-    fetchOffers(getProductSlug(item)).then(({ data, error }) => {
-      if (!cancelled) setSupabaseOffers(error ? [] : data ?? []);
+    console.log("[Compare] Chargement offres Supabase:", { affType, slug, itemId: item?.id });
+    fetchOffers(slug).then(({ data, error }) => {
+      if (cancelled) return;
+      console.log("[Compare] Offres Supabase reçues:", { slug, count: data?.length ?? 0, error: error?.message ?? null, sample: data?.[0] ?? null });
+      setSupabaseOffers(error ? [] : data ?? []);
     });
     return () => { cancelled = true; };
   }, [affType, item?.id]);
@@ -2597,6 +2602,11 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             ? `Les meilleures offres pour acheter ${item.brand} ${item.name} neuf. Livraison rapide, garantie fabricant.`
             : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
         </p>
+        {!isSupabaseConfigured() && (
+          <div style={{ background: "#FEF3C7", border: "1px solid #F59E0B", borderRadius: 8, padding: "10px 14px", marginBottom: 10, fontSize: 12, color: "#92400E" }}>
+            ⚠️ Supabase non configuré — variables NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY manquantes dans Vercel
+          </div>
+        )}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {(isNeuf || isOcc) ? (() => {
             const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
