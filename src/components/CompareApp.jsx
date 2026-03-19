@@ -2601,20 +2601,32 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
           {(isNeuf || isOcc) ? (() => {
             const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
             const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "");
-            const findOffer = (r) => offers.find((o) => {
-              const m = (o.merchant ?? o.retailer ?? "").toLowerCase();
-              return m && (norm(m).includes(norm(r.n)) || norm(r.n).includes(norm(m)));
-            });
-            const merged = retsWithPrice.map(({ r, price: fallbackPrice }) => {
-              const offer = findOffer(r);
-              const price = offer?.price_amount != null ? Math.round(Number(offer.price_amount)) : Math.round(fallbackPrice);
-              const affUrl = offer?.url?.trim() || null;
-              const url = affUrl || buildRetailerUrl(r, item, affType);
-              return { r, offer, price, url };
-            });
-            const sorted = [...merged].sort((a, b) => a.price - b.price);
+            // Ne montrer que les offres réelles Supabase (liens affiliés, prix, images) — pas de fallback fictif
+            const byMerchant = {};
+            for (const o of offers) {
+              const m = norm(String(o.merchant ?? o.retailer ?? ""));
+              if (!m || !o.url?.trim()) continue;
+              const price = Number(o.price_amount) ?? 99999;
+              if (!byMerchant[m] || price < (Number(byMerchant[m].price_amount) ?? 99999)) {
+                byMerchant[m] = o;
+              }
+            }
+            const displayList = Object.values(byMerchant)
+              .map((offer) => {
+                const r = getRetailerForMerchant(offer.merchant ?? offer.retailer);
+                return { r, offer, price: Math.round(Number(offer.price_amount)) || 0, url: offer.url.trim() };
+              })
+              .filter((x) => x.url)
+              .sort((a, b) => a.price - b.price);
             const productImgUrl = productImageUrl?.trim() || null;
-            return sorted.map(({ r, offer, price, url }, rank) => {
+            if (displayList.length === 0) {
+              return (
+                <p style={{ fontSize: 14, color: "#6B7280", padding: "16px 0" }}>
+                  Aucune offre disponible pour le moment. Revenez plus tard ou consultez directement les marchands.
+                </p>
+              );
+            }
+            return displayList.map(({ r, offer, price, url }, rank) => {
               const isBestPrice = rank === 0;
               const priceStr = price > 0 ? `${price} €` : "—";
               const imgUrl = (offer?.image_url?.trim() || productImgUrl) || null;
@@ -2626,7 +2638,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                 textDecoration: "none", color: "inherit", cursor: "pointer",
               };
               return (
-                <a key={r.n} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={cardStyle}>
+                <a key={`${r.n}-${rank}`} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={cardStyle}>
                   {/* Image produit/pièce (offer.image_url ou produit) — cliquable pour agrandir */}
                   <div
                     role="button"

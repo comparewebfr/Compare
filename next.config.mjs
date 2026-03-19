@@ -20,6 +20,7 @@ const nextConfig = {
       { protocol: "https", hostname: "encrypted-tbn1.gstatic.com", pathname: "/**" },
       { protocol: "https", hostname: "store.storeimages.cdn-apple.com", pathname: "/**" },
       { protocol: "https", hostname: "m.media-amazon.com", pathname: "/**" },
+      { protocol: "https", hostname: "media.rueducommerce.fr", pathname: "/**" },
     ],
   },
   compress: true,
