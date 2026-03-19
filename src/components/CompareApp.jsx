@@ -2301,6 +2301,11 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
       if (cancelled) return;
       console.log("[Compare] Offres Supabase reçues:", { slug, count: data?.length ?? 0, error: error?.message ?? null, sample: data?.[0] ?? null });
       setSupabaseOffers(error ? [] : data ?? []);
+    }).catch((err) => {
+      if (!cancelled) {
+        console.error("[Compare] Erreur Supabase (catch):", err?.message ?? err);
+        setSupabaseOffers([]);
+      }
     });
     return () => { cancelled = true; };
   }, [affType, item?.id]);
