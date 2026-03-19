@@ -2601,7 +2601,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
           {(isNeuf || isOcc) ? (() => {
             const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
             const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "");
-            // Ne montrer que les offres réelles Supabase (liens affiliés, prix, images) — pas de fallback fictif
+            // Offres Supabase avec URL valide, meilleur prix par marchand
             const byMerchant = {};
             for (const o of offers) {
               const m = norm(String(o.merchant ?? o.retailer ?? ""));
@@ -2611,21 +2611,18 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                 byMerchant[m] = o;
               }
             }
-            const displayList = Object.values(byMerchant)
+            const supabaseList = Object.values(byMerchant)
               .map((offer) => {
                 const r = getRetailerForMerchant(offer.merchant ?? offer.retailer);
                 return { r, offer, price: Math.round(Number(offer.price_amount)) || 0, url: offer.url.trim() };
               })
               .filter((x) => x.url)
               .sort((a, b) => a.price - b.price);
+            // Fallback : liens génériques sur les marchands par défaut si aucune offre Supabase
+            const displayList = supabaseList.length > 0 ? supabaseList : retsWithPrice.map(({ r, price: fallbackPrice }) => ({
+              r, offer: null, price: Math.round(fallbackPrice), url: buildRetailerUrl(r, item, affType),
+            })).sort((a, b) => a.price - b.price);
             const productImgUrl = productImageUrl?.trim() || null;
-            if (displayList.length === 0) {
-              return (
-                <p style={{ fontSize: 14, color: "#6B7280", padding: "16px 0" }}>
-                  Aucune offre disponible pour le moment. Revenez plus tard ou consultez directement les marchands.
-                </p>
-              );
-            }
             return displayList.map(({ r, offer, price, url }, rank) => {
               const isBestPrice = rank === 0;
               const priceStr = price > 0 ? `${price} €` : "—";
