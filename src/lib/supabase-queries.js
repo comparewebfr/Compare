@@ -5,6 +5,7 @@
  * Source des offres : manual (priorité) | awin_feed | import_script
  * Priorité d'affichage : manuel exact > import exact > fallback > reste
  */
+import { getSupabase } from "./supabase";
 
 /** Offre manuelle (Amazon, etc.) — prioritaire, jamais écrasée par import */
 function isManualOffer(o) {
