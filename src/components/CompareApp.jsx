@@ -2272,6 +2272,7 @@ function getRetailerForMerchant(merchant) {
 function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
   const [place, setPlace] = useState("");
   const [supabaseOffers, setSupabaseOffers] = useState(null);
+  const [supabaseDebug, setSupabaseDebug] = useState(null);
   const productImageUrl = useProductImage(item);
   const lightbox = useImageLightbox();
   const cat = CATS.find(c => c.id === item.category);
@@ -2300,10 +2301,12 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
     fetchOffers(slug).then(({ data, error }) => {
       if (cancelled) return;
       console.log("[Compare] Offres Supabase reçues:", { slug, count: data?.length ?? 0, error: error?.message ?? null, sample: data?.[0] ?? null });
+      setSupabaseDebug({ ok: !error, count: data?.length ?? 0, error: error?.message ?? null });
       setSupabaseOffers(error ? [] : data ?? []);
     }).catch((err) => {
       if (!cancelled) {
         console.error("[Compare] Erreur Supabase (catch):", err?.message ?? err);
+        setSupabaseDebug({ ok: false, count: 0, error: err?.message ?? String(err) });
         setSupabaseOffers([]);
       }
     });
@@ -2608,7 +2611,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
         </p>
         <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 8, padding: "8px 14px", marginBottom: 10, fontSize: 11, color: "#166534", fontFamily: "monospace" }}>
-          [DEBUG] Supabase configuré: {isSupabaseConfigured() ? "OUI" : "NON"} | supabaseOffers: {supabaseOffers === null ? "null (chargement...)" : `Array(${supabaseOffers.length})`} | slug: {getProductSlug(item)}
+          [DEBUG] configuré:{isSupabaseConfigured()?"OUI":"NON"} | offers:{supabaseOffers===null?"null(chargement)":supabaseOffers.length} | slug:{getProductSlug(item)} | {supabaseDebug===null?"en attente":supabaseDebug.ok?`OK(${supabaseDebug.count})`:`ERREUR:${supabaseDebug.error}`}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {(isNeuf || isOcc) ? (() => {
