@@ -137,13 +137,14 @@ export async function getOffersForNeuf(productSlug) {
     .from("offers")
     .select("*")
     .eq("product_id", product.id);
-  const { data: fallbackOffers, error: err2 } = await supabase
+  if (err1) return { data: [], error: err1 };
+
+  // fallback_for_product_id est optionnel — on ignore l'erreur si la colonne n'existe pas
+  const { data: fallbackOffers } = await supabase
     .from("offers")
     .select("*")
     .eq("fallback_for_product_id", product.id);
-  const error = err1 || err2;
   const offers = [...(directOffers ?? []), ...(fallbackOffers ?? [])];
-  if (error) return { data: [], error };
 
   const filtered = (offers ?? []).filter((o) => {
     if (o.is_hidden === true) return false;
@@ -206,13 +207,14 @@ export async function getOffersForOcc(productSlug) {
     .from("offers")
     .select("*")
     .eq("product_id", product.id);
-  const { data: fallbackOffers, error: err2 } = await supabase
+  if (err1) return { data: [], error: err1 };
+
+  // fallback_for_product_id est optionnel — on ignore l'erreur si la colonne n'existe pas
+  const { data: fallbackOffers } = await supabase
     .from("offers")
     .select("*")
     .eq("fallback_for_product_id", product.id);
-  const error = err1 || err2;
   const offers = [...(directOffers ?? []), ...(fallbackOffers ?? [])];
-  if (error) return { data: [], error };
 
   const occConditions = ["refurbished", "occasion", "occ", "reconditionné", "reconditionne"];
   const filtered = (offers ?? []).filter((o) => {
