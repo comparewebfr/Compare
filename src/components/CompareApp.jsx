@@ -2610,9 +2610,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             ? `Les meilleures offres pour acheter ${item.brand} ${item.name} neuf. Livraison rapide, garantie fabricant.`
             : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
         </p>
-        <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 8, padding: "8px 14px", marginBottom: 10, fontSize: 11, color: "#166534", fontFamily: "monospace" }}>
-          [DEBUG] configuré:{isSupabaseConfigured()?"OUI":"NON"} | offers:{supabaseOffers===null?"null(chargement)":supabaseOffers.length} | slug:{getProductSlug(item)} | {supabaseDebug===null?"en attente":supabaseDebug.ok?`OK(${supabaseDebug.count})`:`ERREUR:${supabaseDebug.error}`}
-        </div>
+
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {(isNeuf || isOcc) ? (() => {
             const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
@@ -2638,11 +2636,9 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             const displayList = supabaseList.length > 0 ? supabaseList : retsWithPrice.map(({ r, price: fallbackPrice }) => ({
               r, offer: null, price: Math.round(fallbackPrice), url: buildRetailerUrl(r, item, affType),
             })).sort((a, b) => a.price - b.price);
-            const productImgUrl = productImageUrl?.trim() || null;
             return displayList.map(({ r, offer, price, url }, rank) => {
               const isBestPrice = rank === 0;
               const priceStr = price > 0 ? `${price} €` : "—";
-              const imgUrl = (offer?.image_url?.trim() || productImgUrl) || null;
               const cardStyle = {
                 background: "#fff",
                 border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
@@ -2652,21 +2648,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               };
               return (
                 <a key={`${r.n}-${rank}`} href={url} target="_blank" rel="noopener noreferrer sponsored" className="card-hover retailer-card-mobile" style={cardStyle}>
-                  {/* Image produit/pièce (offer.image_url ou produit) — cliquable pour agrandir */}
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className="offer-product-img"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (imgUrl && lightbox) lightbox.openLightbox(imgUrl); }}
-                    onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && imgUrl && lightbox) { e.preventDefault(); lightbox.openLightbox(imgUrl); } }}
-                    style={{ width: 96, height: 96, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", cursor: imgUrl ? "zoom-in" : "default" }}
-                  >
-                    {imgUrl ? (
-                      <img src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} loading="lazy" />
-                    ) : (
-                      <Icon name="cart" s={28} color="#9CA3AF" style={{ opacity: 0.6 }} />
-                    )}
-                  </div>
+                  <ProductImg item={item} size={96} priorityUrl={offer?.image_url?.trim() || undefined} />
                   <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 0 }}>
                     <RetailerLogo r={r} size={56} className="retailer-logo" />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -2717,11 +2699,9 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
               return { r, offer, price, url };
             });
             const sorted = [...merged].sort((a, b) => a.price - b.price);
-            const productImgUrl = productImageUrl?.trim() || null;
             return sorted.map(({ r, offer, price, url }, rank) => {
               const isBestPrice = rank === 0;
               const priceStr = price > 0 ? `${price} €` : "—";
-              const imgUrl = (offer?.image_url?.trim() || productImgUrl) || null;
               const matchedIssue = offer && issues?.length ? issues.find((i) => slugify(i.name) === (offer.issue_type ?? "").toLowerCase().replace(/_/g, "-")) : null;
               const offerLabel = buildPartsOfferLabel(offer, item, matchedIssue?.name ?? issues?.[0]?.name);
               const subLabel = `Pièces détachées sur ${r.n}`;
@@ -2731,21 +2711,7 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                   border: isBestPrice ? "2px solid #111" : "1px solid #E5E3DE",
                   borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 18, cursor: "pointer", boxShadow: isBestPrice ? "0 4px 16px rgba(0,0,0,.08)" : "0 1px 4px rgba(0,0,0,.05)", textDecoration: "none", color: "inherit",
                 }}>
-                  {/* Image pièce/produit (offer.image_url ou produit) — cliquable pour agrandir */}
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className="offer-product-img"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (imgUrl && lightbox) lightbox.openLightbox(imgUrl); }}
-                    onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && imgUrl && lightbox) { e.preventDefault(); lightbox.openLightbox(imgUrl); } }}
-                    style={{ width: 96, height: 96, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", cursor: imgUrl ? "zoom-in" : "default" }}
-                  >
-                    {imgUrl ? (
-                      <img src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} loading="lazy" />
-                    ) : (
-                      <Icon name="cart" s={28} color="#9CA3AF" style={{ opacity: 0.6 }} />
-                    )}
-                  </div>
+                  <ProductImg item={item} size={96} priorityUrl={offer?.image_url?.trim() || undefined} />
                   <div className="retailer-main" style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 0 }}>
                     <RetailerLogo r={r} size={56} className="retailer-logo" />
                     <div style={{ flex: 1, minWidth: 0 }}>
