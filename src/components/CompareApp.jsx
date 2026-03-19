@@ -2602,11 +2602,9 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
             ? `Les meilleures offres pour acheter ${item.brand} ${item.name} neuf. Livraison rapide, garantie fabricant.`
             : `Les meilleures offres ${sl.toLowerCase()} pour ${item.brand} ${item.name}. Garantie 12 à 24 mois, qualité vérifiée.`}
         </p>
-        {!isSupabaseConfigured() && (
-          <div style={{ background: "#FEF3C7", border: "1px solid #F59E0B", borderRadius: 8, padding: "10px 14px", marginBottom: 10, fontSize: 12, color: "#92400E" }}>
-            ⚠️ Supabase non configuré — variables NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY manquantes dans Vercel
-          </div>
-        )}
+        <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 8, padding: "8px 14px", marginBottom: 10, fontSize: 11, color: "#166534", fontFamily: "monospace" }}>
+          [DEBUG] Supabase configuré: {isSupabaseConfigured() ? "OUI" : "NON"} | supabaseOffers: {supabaseOffers === null ? "null (chargement...)" : `Array(${supabaseOffers.length})`} | slug: {getProductSlug(item)}
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {(isNeuf || isOcc) ? (() => {
             const offers = Array.isArray(supabaseOffers) ? supabaseOffers : [];
