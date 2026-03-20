@@ -149,7 +149,8 @@ export async function getOffersForNeuf(productSlug) {
 
   const filtered = (offers ?? []).filter((o) => {
     if (o.is_hidden === true) return false;
-    const condOk = !o.condition || o.condition === "new" || o.product_condition === "new" || o.condition === "neuf";
+    const c = (o.condition ?? "").toLowerCase();
+    const condOk = !c || c === "new" || c === "neuf" || c === "used" || c === "occasion" || c === "occ";
     if (!condOk) return false;
     if (!isMainProductOffer(o)) return false;
     return true;
