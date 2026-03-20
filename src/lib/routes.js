@@ -158,7 +158,7 @@ export function pathProductIssue(item, issue) {
   if (!item) return "/";
   const base = pathProduct(item);
   if (!issue) return base;
-  return `${base}/${getIssueSlug(issue)}`;
+  return `${base}/reparer/${getIssueSlug(issue)}`;
 }
 
 export function pathProductReparer(item, issues = []) {
