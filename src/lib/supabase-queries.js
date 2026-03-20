@@ -224,6 +224,8 @@ export async function getOffersForOcc(productSlug) {
     const c = (o.condition ?? o.product_condition ?? "").toLowerCase();
     if (!occConditions.some((term) => c.includes(term))) return false;
     if (!isMainProductOffer(o)) return false;
+    // Exiger un match exact pour le reconditionné — évite les faux positifs (match_confidence=0.5)
+    if (o.source === "awin_feed" && o.is_exact_match !== true) return false;
     return true;
   });
   const sorted = [...filtered].sort((a, b) => {
