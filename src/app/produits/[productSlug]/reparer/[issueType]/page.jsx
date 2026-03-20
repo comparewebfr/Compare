@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import CompareApp from "../../../../../components/CompareAppWrapper";
 import { ITEMS } from "../../../../../lib/data";
 import { findProductBySlug, getIssues, findIssueBySlug } from "../../../../../lib/helpers";
@@ -79,7 +80,18 @@ function getIssueInfo(issueType) {
 }
 
 export async function generateMetadata({ params }) {
-  const { productSlug, issueType } = await params;
+  const awaitedParams = await params;
+  let productSlug = awaitedParams?.productSlug;
+  let issueType = awaitedParams?.issueType;
+
+  // Fallback: extract from x-pathname header injected by middleware
+  if (!productSlug) {
+    const h = await headers();
+    const pathname = h.get("x-pathname") ?? "";
+    productSlug = pathname.match(/\/produits\/([^/]+)/)?.[1] ?? "";
+    issueType = issueType ?? pathname.match(/\/reparer\/([^/]+)/)?.[1] ?? "";
+  }
+
   const item = findProductBySlug(productSlug);
   if (!item) return { title: "Produit introuvable | Compare." };
 
