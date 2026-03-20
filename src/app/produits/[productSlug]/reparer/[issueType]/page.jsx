@@ -111,20 +111,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export async function generateStaticParams() {
-  const params = [];
-  const EXCLUDED_CATS = ["electromenager", "plomberie", "chauffage", "jardin"];
-
-  for (const item of ITEMS) {
-    if (EXCLUDED_CATS.includes(item.category)) continue;
-    const productSlug = getProductSlug(item);
-    const issues = getIssues(item);
-    for (const issue of issues) {
-      params.push({ productSlug, issueType: getIssueSlug(issue) });
-    }
-  }
-  return params;
-}
+// Rendu dynamique à la demande — évite les 4000+ pages à pré-générer au build
+export const dynamic = "force-dynamic";
 
 export default function Page({ params }) {
   return (
