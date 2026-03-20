@@ -23,10 +23,10 @@ function getOfferDisplayPriority(o) {
   return 3;
 }
 
-/** Inclut les offres produit principal + alternative (exclut part/accessory) */
+/** Inclut uniquement les offres produit principal (exclut alternatives, parts, accessoires) */
 function isMainProductOffer(o) {
   const kind = (o.offer_kind ?? "").toLowerCase();
-  if (!kind || kind === "main_product" || kind === "alternative_product") return true;
+  if (!kind || kind === "main_product") return true;
   return false;
 }
 
