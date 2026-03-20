@@ -2685,7 +2685,8 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                           <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 4, background: "#FEF3C7", color: "#92400E", flexShrink: 0 }}>Alternative plus récente</span>
                         )}
                       </div>
-                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
+                      <div style={{ fontSize: 12, color: "#111", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 }}>{item.brand} {item.name}</div>
+                      <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.t}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{priceStr}</div>
@@ -2749,7 +2750,8 @@ function AffPage({ item, issues, affType, onNav, alts: passedAlts }) {
                           <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 4, background: "#FEF3C7", color: "#92400E", flexShrink: 0 }}>Alternative plus récente</span>
                         )}
                       </div>
-                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subLabel}</div>
+                      <div style={{ fontSize: 12, color: "#111", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 }}>{item.brand} {item.name}</div>
+                      <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subLabel}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontWeight: 800, fontSize: 20, color: "#111" }}>{priceStr}</div>
