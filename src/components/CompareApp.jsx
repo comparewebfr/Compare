@@ -1497,7 +1497,8 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
       getOffersForParts(getProductSlug(item)),
     ]).then(([occRes, partsRes]) => {
       if (cancelled) return;
-      const occMin = occRes.data?.[0]?.price_amount != null ? Math.round(Number(occRes.data[0].price_amount)) : null;
+      const occOffers = (occRes.data ?? []).filter(o => o.price_amount != null && Number(o.price_amount) > 0);
+      const occMin = occOffers.length ? Math.round(Math.min(...occOffers.map(o => Number(o.price_amount)))) : null;
       setMinOccPrice(occMin);
       setPartsOffers(partsRes.data ?? []);
     });
