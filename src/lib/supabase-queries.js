@@ -153,6 +153,8 @@ export async function getOffersForNeuf(productSlug) {
     const condOk = !c || c === "new" || c === "neuf" || c === "used" || c === "occasion" || c === "occ";
     if (!condOk) return false;
     if (!isMainProductOffer(o)) return false;
+    // Exiger un match exact pour les offres importées — élimine les faux positifs (accessoires, fallbacks)
+    if (o.source === "awin_feed" && o.is_exact_match !== true) return false;
     return true;
   });
   const sorted = [...filtered].sort((a, b) => {
