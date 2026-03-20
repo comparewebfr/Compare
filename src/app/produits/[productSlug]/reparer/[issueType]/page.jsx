@@ -123,8 +123,26 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// Rendu dynamique à la demande — évite les 4000+ pages à pré-générer au build
-export const dynamic = "force-dynamic";
+// Génère statiquement les smartphones + tablettes + ordinateurs (les plus importants SEO)
+// Les autres catégories sont rendues dynamiquement à la demande (dynamicParams = true par défaut)
+export async function generateStaticParams() {
+  const { ITEMS } = await import("../../../../../lib/data");
+  const { getIssues } = await import("../../../../../lib/helpers");
+  const { getProductSlug, getIssueSlug } = await import("../../../../../lib/routes");
+
+  const priorityCategories = ["smartphones", "tablettes", "ordinateurs", "tv", "consoles", "audio"];
+  const items = ITEMS.filter(i => priorityCategories.includes(i.category));
+  const result = [];
+  for (const item of items) {
+    const pSlug = getProductSlug(item);
+    const issues = getIssues(item);
+    for (const issue of issues) {
+      const iSlug = getIssueSlug(issue);
+      if (iSlug) result.push({ productSlug: pSlug, issueType: iSlug });
+    }
+  }
+  return result;
+}
 
 export default function Page({ params }) {
   return (
