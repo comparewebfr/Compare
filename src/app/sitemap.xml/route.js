@@ -50,10 +50,16 @@ export async function GET() {
   }
 
   for (const item of INDEXABLE_ITEMS) {
-    urls.push(urlEntry(`/produits/${getProductSlug(item)}`, "weekly", 0.9));
+    const pSlug = getProductSlug(item);
+    urls.push(urlEntry(`/produits/${pSlug}`, "weekly", 0.9));
+    urls.push(urlEntry(`/produits/${pSlug}/reparer/`, "monthly", 0.85));
+    urls.push(urlEntry(`/produits/${pSlug}/acheter-neuf/`, "weekly", 0.85));
+    urls.push(urlEntry(`/produits/${pSlug}/acheter-reconditionne/`, "weekly", 0.85));
     const issues = getIssues(item);
     for (const issue of issues) {
-      urls.push(urlEntry(`/produits/${getProductSlug(item)}/${getIssueSlug(issue)}`, "monthly", 0.85));
+      const iSlug = getIssueSlug(issue);
+      urls.push(urlEntry(`/produits/${pSlug}/${iSlug}`, "monthly", 0.8));
+      urls.push(urlEntry(`/produits/${pSlug}/reparer/${iSlug}/`, "monthly", 0.9));
     }
   }
 

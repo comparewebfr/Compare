@@ -31,7 +31,7 @@ import { CATS, PTYPES, ITEMS, OCC_CATS, SIDEBAR_GROUPS, CHIP_TO_PRODUCT, POPULAR
 import { slugify, getIssues, getVerdict, getRepairEstimate, getAlternatives, getRet, buildRetailerUrl, buildRetailerUrlForParts, buildPartsOfferLabel, buildRepairerMapsUrl, buildRepairerMapsUrlForType, pathCategory, pathProduct, pathProductType, pathProductIssue, pathBrand, pathCompare, pathAff, pathModelsList, pathRepairPage, findProductByChip, findProductByPopular, findCategoryBySlug, findProductBySlug, findProductTypeBySlug, findIssueBySlug, shLabel, getCumulTimeInfo, parseTimeRange, formatTimeRangeLabel, formatSingleTime, isRepairabilityEligible, isQualiReparEligible, getQualiReparBonus, QUALUREPAR_ANNUAIRE_URL, getRepairabilityIndex, getTutorialSteps, getYoutubeRepairQuery, getSmartReplacementRecommendation, getSeoProductName, getSeoQuestionPhrase } from "../lib/helpers";
 import { getOffersForNeuf, getOffersForOcc, getOffersForParts } from "../lib/supabase-queries";
 import { isSupabaseConfigured } from "../lib/supabase";
-import { getProductSlug } from "../lib/routes";
+import { getProductSlug, getIssueSlug } from "../lib/routes";
 import { useProductImage } from "../lib/product-image-context";
 import { useImageLightbox } from "../lib/image-lightbox-context";
 import { useMinPriceNeuf } from "../lib/min-price-neuf-context";
@@ -2120,9 +2120,9 @@ function ComparatorPage({ itemId, onNav, user, onAuth, initialIssueId }) {
                 <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(iss.ytQuery)}`} target="_blank" rel="noopener noreferrer" style={{ padding: "10px 16px", borderRadius: 8, background: "#FF0000", color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>
                   <Icon name="play" s={14} color="#fff" /> Tutoriel vidéo
                 </a>
-                <button onClick={() => onNav("aff", { item, issues: [iss], affType: "pcs", alts })} style={{ padding: "10px 16px", borderRadius: 8, background: GREEN, color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", fontFamily: F, display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <a href={`/produits/${getProductSlug(item)}/reparer/${getIssueSlug(iss)}`} style={{ padding: "10px 16px", borderRadius: 8, background: GREEN, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>
                   <Icon name="cart" s={14} color="#fff" /> Acheter les pièces{iss.partPrice != null ? ` (${iss.partPrice} €)` : ""}
-                </button>
+                </a>
               </div>
               <div style={{ marginTop: 8, fontSize: 11, color: "#9CA3AF", lineHeight: 1.4 }}>
                 Recherche YouTube : « {iss.ytQuery.length > 55 ? iss.ytQuery.substring(0, 55) + "…" : iss.ytQuery} »
@@ -2898,7 +2898,7 @@ export default function App() {
   const productTypeSlug = params?.productTypeSlug;
   const brandSlug = params?.brandSlug;
   const productSlug = params?.productSlug;
-  const issueSlug = params?.issueSlug;
+  const issueSlug = params?.issueSlug ?? params?.issueType;
 
   // Fallback anciennes routes /c/ et /p/
   const legacyCatSlug = params?.category ?? (pathname?.match(/^\/c\/([^/]+)/)?.[1]);
@@ -2933,7 +2933,9 @@ export default function App() {
       pageType = ptype ? "cat-type" : isBrand ? "cat-brand" : "cat-type";
     } else pageType = "cat";
   } else if (pathname?.startsWith("/produits/")) {
-    if (pathname?.endsWith("/reparer")) {
+    if (/\/reparer\/[^/]+\/?$/.test(pathname ?? "")) {
+      pageType = "issue";
+    } else if (pathname?.endsWith("/reparer")) {
       pageType = "aff";
       affType = "pcs";
     } else if (pathname?.endsWith("/acheter-neuf")) {

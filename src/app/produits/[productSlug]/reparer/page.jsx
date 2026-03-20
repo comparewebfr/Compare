@@ -9,10 +9,12 @@ export async function generateMetadata({ params }) {
   const item = findProductBySlug(productSlug);
   if (!item) return { title: "Produit introuvable | Compare." };
   const name = `${item.brand} ${item.name}`;
+  const canonical = `https://compare-fr.com/produits/${productSlug}/reparer/`;
   return {
-    title: `Pièces détachées — ${name} | Compare.`,
-    description: `Prix et offres pièces détachées pour ${name}. Comparateur d'offres.`,
-    alternates: { canonical: `https://compare-fr.com/produits/${productSlug}` },
+    title: `${name} : réparer ou racheter ? Prix réparation | Compare.`,
+    description: `Votre ${name} est en panne ? Comparez le coût de réparation (écran, batterie, connecteur…) vs racheter neuf ou reconditionné. Pièces détachées et verdict sur Compare.`,
+    alternates: { canonical },
+    openGraph: { title: `${name} : réparer ou racheter ?`, description: `Comparez réparation vs remplacement pour ${name}.`, siteName: "Compare.", type: "website", url: canonical },
   };
 }
 
