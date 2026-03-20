@@ -14,12 +14,12 @@ const CompareApp = dynamic(() => import("./CompareApp"), {
   ),
 });
 
-export default function CompareAppWrapper() {
+export default function CompareAppWrapper({ productSlug, issueType }) {
   return (
     <ProductImageProvider>
       <MinPriceNeufProvider>
         <ImageLightboxProvider>
-          <CompareApp />
+          <CompareApp initialProductSlug={productSlug} initialIssueType={issueType} />
         </ImageLightboxProvider>
       </MinPriceNeufProvider>
     </ProductImageProvider>

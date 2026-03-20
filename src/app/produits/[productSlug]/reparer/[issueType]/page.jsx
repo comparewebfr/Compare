@@ -142,10 +142,11 @@ export async function generateStaticParams() {
   return result;
 }
 
-export default function Page({ params }) {
+export default async function Page({ params }) {
+  const { productSlug, issueType } = await params;
   return (
     <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F6F0" }}>Chargement...</div>}>
-      <CompareApp />
+      <CompareApp productSlug={productSlug} issueType={issueType} />
     </Suspense>
   );
 }
