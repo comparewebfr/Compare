@@ -2897,8 +2897,8 @@ export default function App() {
   const categorySlug = params?.categorySlug;
   const productTypeSlug = params?.productTypeSlug;
   const brandSlug = params?.brandSlug;
-  const productSlug = params?.productSlug;
-  const issueSlug = params?.issueSlug ?? params?.issueType;
+  const productSlug = params?.productSlug ?? pathname?.match(/^\/produits\/([^/]+)/)?.[1];
+  const issueSlug = params?.issueSlug ?? params?.issueType ?? pathname?.match(/\/reparer\/([^/]+)\/?$/)?.[1];
 
   // Fallback anciennes routes /c/ et /p/
   const legacyCatSlug = params?.category ?? (pathname?.match(/^\/c\/([^/]+)/)?.[1]);
