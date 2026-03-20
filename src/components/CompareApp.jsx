@@ -2284,7 +2284,10 @@ function OfferCardImg({ offerImgUrl, item, productImgUrl, lightbox }) {
       {src ? (
         <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} loading="lazy" onError={() => setIdx((i) => i + 1)} />
       ) : (
-        <Icon name="cart" s={28} color="#9CA3AF" style={{ opacity: 0.6 }} />
+        <div style={{ padding: "8px 6px", textAlign: "center" }}>
+          {item?.brand && <div style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1.2 }}>{item.brand}</div>}
+          {item?.name && <div style={{ fontSize: 9, color: "#9CA3AF", marginTop: 3, lineHeight: 1.3, wordBreak: "break-word" }}>{item.name}</div>}
+        </div>
       )}
     </div>
   );
