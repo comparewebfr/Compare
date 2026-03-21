@@ -150,7 +150,7 @@ export async function getOffersForNeuf(productSlug) {
   const filtered = (offers ?? []).filter((o) => {
     if (o.is_hidden === true) return false;
     const c = (o.condition ?? "").toLowerCase();
-    const condOk = !c || c === "new" || c === "neuf" || c === "used" || c === "occasion" || c === "occ";
+    const condOk = !c || c === "new" || c === "neuf";
     if (!condOk) return false;
     if (!isMainProductOffer(o)) return false;
     // Exiger un match exact pour les offres importées — élimine les faux positifs (accessoires, fallbacks)
