@@ -189,6 +189,8 @@ export async function getOffersForParts(productSlug) {
   const partsConditions = ["parts", "pièces", "pieces", "reparation", "réparation"];
   const filtered = (offers ?? []).filter((o) => {
     if (o.is_hidden === true) return false;
+    // offer_kind = 'part' : pièce de réparation importée depuis le feed
+    if ((o.offer_kind ?? "").toLowerCase() === "part") return true;
     const c = (o.condition ?? o.product_condition ?? "").toLowerCase();
     return partsConditions.some((term) => c.includes(term));
   });
@@ -220,7 +222,7 @@ export async function getOffersForOcc(productSlug) {
     .eq("fallback_for_product_id", product.id);
   const offers = [...(directOffers ?? []), ...(fallbackOffers ?? [])];
 
-  const occConditions = ["refurbished", "occasion", "occ", "reconditionné", "reconditionne"];
+  const occConditions = ["refurbished", "used", "occasion", "occ", "reconditionné", "reconditionne"];
   const filtered = (offers ?? []).filter((o) => {
     if (o.is_hidden === true) return false;
     const c = (o.condition ?? o.product_condition ?? "").toLowerCase();
