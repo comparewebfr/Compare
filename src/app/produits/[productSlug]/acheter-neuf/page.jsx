@@ -12,7 +12,7 @@ export async function generateMetadata({ params }) {
   return {
     title: `Acheter neuf — ${name} | Compare.`,
     description: `Prix et offres neuf pour ${name}. Comparateur d'offres.`,
-    alternates: { canonical: `https://compare-fr.com/produits/${productSlug}` },
+    alternates: { canonical: `https://compare-fr.com/produits/${productSlug}/acheter-neuf` },
   };
 }
 

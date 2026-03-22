@@ -3,19 +3,66 @@
  * Server Component — PAS "use client"
  */
 
-export function ProductJsonLd({ item }) {
+const SITE = "https://compare-fr.com";
+// Valide 1 an à partir d'aujourd'hui
+function priceValidUntil() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 1);
+  return d.toISOString().split("T")[0];
+}
+
+export function ProductJsonLd({ item, imageUrl }) {
   if (!item) return null;
   const data = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: `${item.brand} ${item.name}`,
+    description: `${item.brand} ${item.name} — ${item.productType}${item.year ? ` (${item.year})` : ""}. Comparez les prix neuf, reconditionné et les options de réparation sur Compare.`,
     brand: { "@type": "Brand", name: item.brand },
     category: item.productType,
+    ...(imageUrl ? { image: imageUrl } : {}),
     offers: {
       "@type": "Offer",
       priceCurrency: "EUR",
       price: item.priceNew,
       availability: "https://schema.org/InStock",
+      url: `${SITE}/produits/${item.slug ?? ""}`,
+      priceValidUntil: priceValidUntil(),
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "FR",
+        returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+        merchantReturnDays: 30,
+        returnMethod: "https://schema.org/ReturnByMail",
+        returnFees: "https://schema.org/FreeReturn",
+      },
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingRate: {
+          "@type": "MonetaryAmount",
+          value: "0",
+          currency: "EUR",
+        },
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          handlingTime: {
+            "@type": "QuantitativeValue",
+            minValue: 0,
+            maxValue: 1,
+            unitCode: "DAY",
+          },
+          transitTime: {
+            "@type": "QuantitativeValue",
+            minValue: 1,
+            maxValue: 5,
+            unitCode: "DAY",
+          },
+        },
+        shippingDestination: {
+          "@type": "DefinedRegion",
+          addressCountry: "FR",
+        },
+      },
     },
   };
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
@@ -46,9 +93,8 @@ export function BreadcrumbJsonLd({ items }) {
         position: i + 1,
         name: item.label,
       };
-      // Pas d'URL sur le dernier élément (page courante)
       if (i < items.length - 1 && item.path) {
-        entry.item = `https://compare-fr.com${item.path}`;
+        entry.item = `${SITE}${item.path}`;
       }
       return entry;
     }),

@@ -4,6 +4,7 @@ import { ProductJsonLd, BreadcrumbJsonLd } from "../../../components/JsonLd";
 import { CATS, ITEMS } from "../../../lib/data";
 import { findProductBySlug, getIssues, getVerdict, pathCategory } from "../../../lib/helpers";
 import { getProductSlug } from "../../../lib/routes";
+import { getProductPrimaryImageBySlug } from "../../../lib/supabase-queries";
 
 export async function generateMetadata({ params }) {
   const { productSlug } = await params;
@@ -39,10 +40,11 @@ export default async function Page({ params }) {
         { label: `${item.brand} ${item.name}`, path: `/produits/${productSlug}` },
       ]
     : [];
+  const imageUrl = item ? await getProductPrimaryImageBySlug(productSlug) : null;
   return (
     <>
       {item && <ProductSeoContent item={item} />}
-      {item && <ProductJsonLd item={item} />}
+      {item && <ProductJsonLd item={item} imageUrl={imageUrl} />}
       {breadcrumb.length > 0 && <BreadcrumbJsonLd items={breadcrumb} />}
       <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F6F0" }}>Chargement...</div>}>
         <CompareApp />

@@ -13,7 +13,7 @@ export async function generateMetadata({ params }) {
   return {
     title: `${typeLabel} — ${name} | Compare.`,
     description: `Prix et offres ${typeLabel.toLowerCase()} pour ${name}. Comparateur d'offres.`,
-    alternates: { canonical: `https://compare-fr.com/produits/${productSlug}` },
+    alternates: { canonical: `https://compare-fr.com/produits/${productSlug}/acheter-reconditionne` },
   };
 }
 
