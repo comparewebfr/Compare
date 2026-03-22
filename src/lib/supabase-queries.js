@@ -164,7 +164,46 @@ export async function getOffersForNeuf(productSlug) {
     return (Number(a.price_amount) ?? 99999) - (Number(b.price_amount) ?? 99999);
   });
 
-  return { data: sorted, error: null };
+  // Si des offres neuf existent, on les retourne directement
+  if (sorted.length > 0) return { data: sorted, error: null };
+
+  // Pas d'offre neuf : afficher l'occasion dans le bloc neuf SEULEMENT si
+  // son prix est supérieur au meilleur prix reconditionné (sinon le reconditionné
+  // est déjà plus avantageux et il ne faut pas polluer le bloc neuf)
+  const occForNeuf = (offers ?? []).filter((o) => {
+    if (o.is_hidden === true) return false;
+    const c = (o.condition ?? "").toLowerCase();
+    if (c !== "used" && c !== "occasion" && c !== "occ") return false;
+    if (!isMainProductOffer(o)) return false;
+    if (o.source === "awin_feed" && o.is_exact_match !== true) return false;
+    return true;
+  });
+  if (occForNeuf.length === 0) return { data: [], error: null };
+
+  const refurbOffers = (offers ?? []).filter((o) => {
+    if (o.is_hidden === true) return false;
+    const c = (o.condition ?? "").toLowerCase();
+    return c === "refurbished" || c === "reconditionné" || c === "reconditionne";
+  });
+
+  const withPrice = (arr) => arr.filter((o) => o.price_amount != null && Number(o.price_amount) > 0);
+  const minOcc = Math.min(...withPrice(occForNeuf).map((o) => Number(o.price_amount)));
+  const minRefurb = withPrice(refurbOffers).length > 0
+    ? Math.min(...withPrice(refurbOffers).map((o) => Number(o.price_amount)))
+    : null;
+
+  // N'afficher l'occasion en neuf que si elle coûte plus cher que le reconditionné
+  if (minRefurb === null || minOcc > minRefurb) {
+    const sortedOcc = [...occForNeuf].sort((a, b) => {
+      const pa = getOfferDisplayPriority(a);
+      const pb = getOfferDisplayPriority(b);
+      if (pa !== pb) return pa - pb;
+      return (Number(a.price_amount) ?? 99999) - (Number(b.price_amount) ?? 99999);
+    });
+    return { data: sortedOcc, error: null };
+  }
+
+  return { data: [], error: null };
 }
 
 /**
